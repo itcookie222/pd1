@@ -1,0 +1,37 @@
+.heading {
+    color: #ffffff;
+    text-align: center;
+}
+
+.dealsContainer {
+    color: #ffffff;
+}
+
+.dealsItem {
+    margin-bottom: 16px;
+    position: relative;
+}
+
+.dealsImg {
+    width: 100%;
+    border-radius: 5px;
+    position: relative;
+    display: block;
+}
+
+.imgContainer:hover .dealsItem:after {
+    opacity: 0;
+}
+
+.dealsItem:after {
+    content: '';
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: rgba(50, 50, 50, .6);
+    -webkit-transition: opacity .2s ease;
+    transition: opacity .2s ease;
+}
+

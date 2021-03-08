@@ -1,0 +1,3270 @@
+/*
+ *
+ * Copyright (c) 2006-2014 Sam Collett (http://www.texotela.co.uk)
+ * Dual licensed under the MIT (http://www.opensource.org/licenses/mit-license.php)
+ * and GPL (http://www.opensource.licenses/org/gpl-license.php) licenses.
+ *
+ * Version 1.4.1
+ * Demo: http://www.texotela.co.uk/code/jquery/numeric/
+ *
+ */
+
+/*
+
+*/
+
+
+
+(function (factory) { if (typeof define === 'function' && define.amd) { define(['jquery'], factory); } else { factory(window.jQuery); } }(function ($) { $.fn.numeric = function (config, callback) { if (typeof config === "boolean") { config = { decimal: config, negative: true, decimalPlaces: -1 } } config = config || {}; if (typeof config.negative === "undefined") { config.negative = true } var decimal = config.decimal === false ? "" : config.decimal || "."; var negative = config.negative === true ? true : false; var decimalPlaces = typeof config.decimalPlaces === "undefined" ? -1 : config.decimalPlaces; callback = typeof callback === "function" ? callback : function () { }; return this.data("numeric.decimal", decimal).data("numeric.negative", negative).data("numeric.callback", callback).data("numeric.decimalPlaces", decimalPlaces).keypress($.fn.numeric.keypress).keyup($.fn.numeric.keyup).blur($.fn.numeric.blur) }; $.fn.numeric.keypress = function (e) { var decimal = $.data(this, "numeric.decimal"); var negative = $.data(this, "numeric.negative"); var decimalPlaces = $.data(this, "numeric.decimalPlaces"); var key = e.charCode ? e.charCode : e.keyCode ? e.keyCode : 0; if (key === 13 && this.nodeName.toLowerCase() === "input") { return true } else if (key === 13) { return false } var allow = false; if (e.ctrlKey && key === 97 || e.ctrlKey && key === 65) { return true } if (e.ctrlKey && key === 120 || e.ctrlKey && key === 88) { return true } if (e.ctrlKey && key === 99 || e.ctrlKey && key === 67) { return true } if (e.ctrlKey && key === 122 || e.ctrlKey && key === 90) { return true } if (e.ctrlKey && key === 118 || e.ctrlKey && key === 86 || e.shiftKey && key === 45) { return true } if (key < 48 || key > 57) { var value = $(this).val(); if ($.inArray("-", value.split("")) !== 0 && negative && key === 45 && (value.length === 0 || parseInt($.fn.getSelectionStart(this), 10) === 0)) { return true } if (decimal && key === decimal.charCodeAt(0) && $.inArray(decimal, value.split("")) !== -1) { allow = false } if (key !== 8 && key !== 9 && key !== 13 && key !== 35 && key !== 36 && key !== 37 && key !== 39 && key !== 46) { allow = false } else { if (typeof e.charCode !== "undefined") { if (e.keyCode === e.which && e.which !== 0) { allow = true; if (e.which === 46) { allow = false } } else if (e.keyCode !== 0 && e.charCode === 0 && e.which === 0) { allow = true } } } if (decimal && key === decimal.charCodeAt(0)) { if ($.inArray(decimal, value.split("")) === -1) { allow = true } else { allow = false } } } else { allow = true; if (decimal && decimalPlaces > 0) { var dot = $.inArray(decimal, $(this).val().split("")); if (dot >= 0 && $(this).val().length > dot + decimalPlaces) { allow = false } } } return allow }; $.fn.numeric.keyup = function (e) { var val = $(this).val(); if (val && val.length > 0) { var carat = $.fn.getSelectionStart(this); var selectionEnd = $.fn.getSelectionEnd(this); var decimal = $.data(this, "numeric.decimal"); var negative = $.data(this, "numeric.negative"); var decimalPlaces = $.data(this, "numeric.decimalPlaces"); if (decimal !== "" && decimal !== null) { var dot = $.inArray(decimal, val.split("")); if (dot === 0) { this.value = "0" + val; carat++; selectionEnd++ } if (dot === 1 && val.charAt(0) === "-") { this.value = "-0" + val.substring(1); carat++; selectionEnd++ } val = this.value } var validChars = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, "-", decimal]; var length = val.length; for (var i = length - 1; i >= 0; i--) { var ch = val.charAt(i); if (i !== 0 && ch === "-") { val = val.substring(0, i) + val.substring(i + 1) } else if (i === 0 && !negative && ch === "-") { val = val.substring(1) } var validChar = false; for (var j = 0; j < validChars.length; j++) { if (ch === validChars[j]) { validChar = true; break } } if (!validChar || ch === " ") { val = val.substring(0, i) + val.substring(i + 1) } } var firstDecimal = $.inArray(decimal, val.split("")); if (firstDecimal > 0) { for (var k = length - 1; k > firstDecimal; k--) { var chch = val.charAt(k); if (chch === decimal) { val = val.substring(0, k) + val.substring(k + 1) } } } if (decimal && decimalPlaces > 0) { dot = $.inArray(decimal, val.split("")); if (dot >= 0) { val = val.substring(0, dot + decimalPlaces + 1); selectionEnd = Math.min(val.length, selectionEnd) } } this.value = val; $.fn.setSelection(this, [carat, selectionEnd]) } }; $.fn.numeric.blur = function () { var decimal = $.data(this, "numeric.decimal"); var callback = $.data(this, "numeric.callback"); var negative = $.data(this, "numeric.negative"); var val = this.value; if (val !== "") { var re = new RegExp("^" + (negative ? "-?" : "") + "\\d+$|^" + (negative ? "-?" : "") + "\\d*" + decimal + "\\d+$"); if (!re.exec(val)) { callback.apply(this) } } }; $.fn.removeNumeric = function () { return this.data("numeric.decimal", null).data("numeric.negative", null).data("numeric.callback", null).data("numeric.decimalPlaces", null).unbind("keypress", $.fn.numeric.keypress).unbind("keyup", $.fn.numeric.keyup).unbind("blur", $.fn.numeric.blur) }; $.fn.getSelectionStart = function (o) { if (o.type === "number") { return undefined } else if (o.createTextRange && document.selection) { var r = document.selection.createRange().duplicate(); r.moveEnd("character", o.value.length); if (r.text === "") return o.value.length; return Math.max(0, o.value.lastIndexOf(r.text)) } else { try { return o.selectionStart } catch (e) { return 0 } } }; $.fn.getSelectionEnd = function (o) { if (o.type === "number") { return undefined } else if (o.createTextRange && document.selection) { var r = document.selection.createRange().duplicate(); r.moveStart("character", -o.value.length); return r.text.length } else return o.selectionEnd }; $.fn.setSelection = function (o, p) { if (typeof p === "number") { p = [p, p] } if (p && p.constructor === Array && p.length === 2) { if (o.type === "number") { o.focus() } else if (o.createTextRange) { var r = o.createTextRange(); r.collapse(true); r.moveStart("character", p[0]); r.moveEnd("character", p[1] - p[0]); r.select() } else { o.focus(); try { if (o.setSelectionRange) { o.setSelectionRange(p[0], p[1]) } } catch (e) { return; } } } } }));
+
+
+$("#formLogin").keyup(function (e) {
+    if (e.which === 13) {
+        $("#login_bt").click();
+        e.preventDefault();
+    }
+});
+$("#formSignUp").keyup(function (e) {
+    if (e.which === 13) {
+        $("#signup-button").click();
+        e.preventDefault();
+    }
+});
+
+
+//$(function(){
+//  $("#phone,#phone-contact").numeric();
+//});\
+
+var latlng = [];
+
+var myLatLng;
+
+var arrMarkers = [];
+
+gmarkers = [];
+
+
+
+$(function () {
+
+
+    if (document.getElementById("google-map-detail") !== null) {
+        var longlat = $("#longlat").val().split(",");
+        var lat = longlat[0];
+        var lng = longlat[1];
+        //
+        initMap(lat, lng);
+        //
+
+
+
+
+
+    }
+
+    function FindNearlySearvices(longlat, findType) {
+        var service = new google.maps.places.PlacesService(mapDetail);
+
+        //var pyrmont = { lat: latitude, lng: longitude };
+
+
+        var response = service.nearbySearch({
+            location: longlat,
+            radius: 1000,
+            type: [findType]
+        }, function (results, status) {
+
+
+            callback(results, status, findType)
+
+        });
+
+
+
+    }
+
+    var table = '';
+
+    function callback(results, status, type) {
+        latlng = [];
+
+        if (status === google.maps.places.PlacesServiceStatus.OK) {
+            var originalLong = $("#longitude").val();
+            var originalLat = $("#latitude").val();
+
+            var longlat = new google.maps.LatLng(originalLat, originalLong)
+
+            latlng.push(longlat);
+
+            table = '<table class="table table-striped" id="tbNearlyServices"><thead><tr><td>Tên địa điểm</td><td>Khoảng cách</td></tr></thead><tbody>';
+            if (results.length > 0) {
+                for (var i = 0; i < results.length; i++) {
+                    createMarker(results[i], type, i);
+
+                    var destLat = results[i].geometry.location.lat();
+                    var destLon = results[i].geometry.location.lng();
+
+                    //console.log(results[i].geometry.location.lat())
+                    table = table + '<tr onclick="Alerthaha(' + i + ')"><td>' + results[i].name + '</td><td>' + Math.round(getDistanceFromLatLonInKm(originalLat, originalLong, destLat, destLon) * 100) / 100 + ' km</td></tr>';
+
+                    longlat = new google.maps.LatLng(destLat, destLon)
+
+                    latlng.push(longlat);
+                }
+            }
+            else {
+                table = table + '<tr><td>Không có địa điểm này!</td><td>Không có địa điểm này!</td></tr>';
+            }
+            table += '</tbody></table>';
+            $("#listOfServices").empty();
+            $("#listOfServices").append(table);
+
+
+            var latlngbounds = new google.maps.LatLngBounds();
+            for (i = 0; i < latlng.length; i++) {
+                latlngbounds.extend(latlng[i]);
+            }
+            mapDetail.fitBounds(latlngbounds);
+            $("#google-map-detail").find("div[class='gm-style-cc']").remove();
+
+        }
+    }
+
+    function createMarker(place, type, numberID) {
+        var infowindow = new google.maps.InfoWindow();
+
+        var placeLoc = place.geometry.location;
+
+        switch (type) {
+
+            case "hospital":
+                var marker = new google.maps.Marker({
+                    map: mapDetail,
+                    icon: "https://www.gachvang.com/images/Hospital-red-icon.png",
+                    position: place.geometry.location
+
+                });
+                //marker.metadata = { type: "point", id: numberID + 1 };
+                break;
+
+            case "school":
+                marker = new google.maps.Marker({
+                    map: mapDetail,
+                    icon: "https://www.gachvang.com/images/school.png",
+                    position: place.geometry.location
+
+                });
+                //marker.metadata = { type: "point", id: numberID + 1 };
+                break;
+            case "police":
+                marker = new google.maps.Marker({
+                    map: mapDetail,
+                    icon: "https://www.gachvang.com/images/government.png",
+                    position: place.geometry.location
+
+                });
+                //marker.metadata = { type: "point", id: numberID + 1 };
+                break;
+            case "shopping_mall":
+                marker = new google.maps.Marker({
+                    map: mapDetail,
+                    icon: "https://www.gachvang.com/images/market.png",
+                    position: place.geometry.location
+
+                });
+                //marker.metadata = { type: "point", id: numberID + 1 };
+                break;
+
+            case "bank":
+                marker = new google.maps.Marker({
+                    map: mapDetail,
+                    icon: "https://www.gachvang.com/images/bank.png",
+                    position: place.geometry.location
+
+                });
+                //marker.metadata = { type: "point", id: numberID + 1 };
+                break;
+            case "post_office":
+                marker = new google.maps.Marker({
+                    map: mapDetail,
+                    icon: "https://www.gachvang.com/images/post_office.png",
+                    position: place.geometry.location
+
+                });
+                //marker.metadata = { type: "point", id: numberID + 1 };
+                break;
+
+
+            case "embassy":
+                marker = new google.maps.Marker({
+                    map: mapDetail,
+                    icon: "https://www.gachvang.com/images/embassy.png",
+                    position: place.geometry.location
+
+                });
+                //marker.metadata = { type: "point", id: numberID + 1 };
+                break;
+
+        }
+
+
+
+        marker.addListener('mouseover', function () {
+            infowindow.setContent(place.name);
+            infowindow.open(mapDetail, this);
+        });
+
+        marker.addListener('mouseout', function () {
+            infowindow.close();
+        });
+
+
+
+
+        arrMarkers.push(marker);
+
+
+
+    }
+
+    function GetNeighbors(longitude, latitude, type) {
+        $("#containerNeighbors").empty();
+
+
+        for (var i = 0; i < arrMarkers.length; i++) {
+            arrMarkers[i].setMap(null);
+
+        }
+
+        arrMarkers = [];
+
+
+
+    }
+
+
+    function infoWindowSetup(marker, content) {
+        var infoWindow = new google.maps.InfoWindow;
+
+
+        google.maps.event.addListener(marker, 'mouseover', function () {
+
+            infoWindow.setContent(content);
+            infoWindow.open(map, marker);
+
+        });
+
+        google.maps.event.addListener(marker, 'mouseout', function () {
+            if (infoWindow) {
+                infoWindow.close();
+            }
+        });
+
+
+
+    }
+
+    $("#mapHospital").click(function () {
+        for (var i = 0; i < arrMarkers.length; i++) {
+            arrMarkers[i].setMap(null);
+
+        }
+
+        arrMarkers = [];
+
+
+        FindNearlySearvices(myLatLng, "hospital");
+        $("#google-map-detail").find("div[class='gm-style-cc']").remove();
+
+
+    });
+
+    $("#mapSchool").click(function () {
+
+        for (var i = 0; i < arrMarkers.length; i++) {
+            arrMarkers[i].setMap(null);
+
+        }
+        arrMarkers = [];
+
+        FindNearlySearvices(myLatLng, "school");
+        $("#google-map-detail").find("div[class='gm-style-cc']").remove();
+
+
+    });
+
+
+    $("#mapGovernment").click(function () {
+        for (var i = 0; i < arrMarkers.length; i++) {
+            arrMarkers[i].setMap(null);
+
+        }
+        arrMarkers = [];
+
+        FindNearlySearvices(myLatLng, "police");
+        $("#google-map-detail").find("div[class='gm-style-cc']").remove();
+
+
+
+    });
+
+    $("#mapMarket").click(function () {
+        for (var i = 0; i < arrMarkers.length; i++) {
+            arrMarkers[i].setMap(null);
+
+        }
+        arrMarkers = [];
+
+        FindNearlySearvices(myLatLng, "shopping_mall");
+        $("#google-map-detail").find("div[class='gm-style-cc']").remove();
+
+
+
+    });
+
+    $("#mapBank").click(function () {
+        for (var i = 0; i < arrMarkers.length; i++) {
+            arrMarkers[i].setMap(null);
+
+        }
+        arrMarkers = [];
+
+        FindNearlySearvices(myLatLng, "bank");
+        $("#google-map-detail").find("div[class='gm-style-cc']").remove();
+
+
+
+    });
+
+    $("#mapPostOffice").click(function () {
+        for (var i = 0; i < arrMarkers.length; i++) {
+            arrMarkers[i].setMap(null);
+
+        }
+        arrMarkers = [];
+
+        FindNearlySearvices(myLatLng, "post_office");
+        $("#google-map-detail").find("div[class='gm-style-cc']").remove();
+
+
+
+    });
+
+    $("#mapEmbassy").click(function () {
+        for (var i = 0; i < arrMarkers.length; i++) {
+            arrMarkers[i].setMap(null);
+
+        }
+        arrMarkers = [];
+
+        FindNearlySearvices(myLatLng, "embassy");
+        $("#google-map-detail").find("div[class='gm-style-cc']").remove();
+
+
+
+    });
+});
+
+
+function isPhone(inputtxt) {
+    if (inputtxt !== null) {
+        var phoneno = /[0-9-()+]{10,11}/;
+        if (inputtxt.match(phoneno)) {
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
+}
+function isNumber(inputtxt) {
+    if (inputtxt !== null) {
+        var phoneno = /^[0-9]*\.?[0-9]+$/;
+        if (inputtxt.match(phoneno)) {
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
+
+}
+function isText(inputext) {
+    var phoneno11 = '/^[a-z0-9_-]{3,16}$/';
+    if (inputext.value.match(phoneno11)) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+function checkPass() {
+    var passCheck = $('#UserDetail_userPassword').val();
+    if (passCheck === 0) {
+        $('.fall-pass').show();
+        $('.true-pass').hide();
+    }
+    if (passCheck !== 0) {
+        $('.fall-pass').hide();
+        $('.true-pass').show();
+    }
+}
+function IsEmail(emailaddress) {
+    var regex = /^([\w-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([\w-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/;
+    return regex.test(emailaddress);
+}
+
+function lockcontactBoxM(n_aliasName, n_scontactAddress, buttonSubmit) {
+    var aliasName = $(".contactBoxM input[name*='" + n_aliasName + "']");
+
+
+    var emailphone = $(".contactBoxM input[name*='" + n_scontactAddress + "']");
+
+    $('.contactBoxM input[type="text"]').each(function () {
+        if (aliasName.val().length === 0 && emailphone.val().length === 0) {
+            $(".contactBoxM input[name*='" + buttonSubmit + "']").attr('disabled', 'true');
+        }
+        if (emailphone.val().length < 9 || emailphone.val().length > 11) {
+            $(".contactBoxM input[name*='" + buttonSubmit + "']").attr('disabled', 'true');
+        }
+    });
+    $('.contactBoxM input[type="text"]').keypress(function () {
+        if (aliasName.val().length !== 0 && emailphone.val().length !== 0 && emailphone.val().length >= 9 && emailphone.val().length <= 11) {
+            $(".contactBoxM input[name*='" + buttonSubmit + "']").removeAttr("disabled");
+        }
+    });
+    $('.contactBoxM input[type="text"]').keyup(function () {
+        if (aliasName.val().length === 0 || emailphone.val().length === 0 || emailphone.val().length < 9 || emailphone.val().length > 11) {
+            $(".contactBoxM input[name*='" + buttonSubmit + "']").attr('disabled', 'true');
+        }
+        else {
+            $(".contactBoxM input[name*='" + buttonSubmit + "']").removeAttr("disabled");
+        }
+    });
+}
+lockcontactBoxM("aliasName", "contactAddress", "nl-submit");
+
+function lockPassword(idPass1, idPass2, idButton) {
+    var Pass1 = $('#' + idPass1);
+    var Pass2 = $('#' + idPass2);
+    $('.form-group input[type="password"]').each(function () {
+        if (Pass1.val().length === 0 && Pass2.val().length === 0) {
+            $('#' + idButton).attr('disabled', 'true');
+        }
+
+    });
+    $('.form-group input[type="password"]').keypress(function () {
+        if (Pass1.val().length !== 0 && Pass2.val().length !== 0) {
+            $('#' + idButton).removeAttr("disabled");
+        }
+
+    });
+    $('.form-group input[type="password"]').keyup(function () {
+        if (Pass1.val().length === 0 || Pass2.val().length === 0) {
+            $('#' + idButton).attr('disabled', 'true');
+        }
+
+    });
+}
+lockPassword("passwordForSocial", "re_passwordForSocial", "btSavePasswordForSocial");
+lockPassword("newPassword", "renewPassword", "btSaveNewPassword");
+lockPassword("newPassword", "renewPassword", "btChangePassword");
+$(function () {
+
+    if (getCookie("noresult").toString() === "true") {
+        /*
+        <div class="container-our-suggest container-our-suggest-partial container-our-suggest-edition" style="position: absolute; max-height: 300px; z-index: 9999; width: 302px;"><div id="noresult" class="kill-padding-cls kill-padding-cls-no-result"><p class="autocomplete-suggestion bigg-sizee autocomplete-selected" data-index="0" style="display:block !important;" disabled="">Thông tin đang tìm không có kết quả (0)</p><p></p></div></div>
+        */
+        if (document.getElementById("txtPlaces-search-bar-1") !== null) {
+            $(".container-sug").append('<div class="container-our-suggest container-our-suggest-partial container-our-suggest-edition" style="position: absolute; max-height: 300px; z-index: 9999; width: 302px;"><div id="noresult" class="kill-padding-cls kill-padding-cls-no-result"><p class="autocomplete-suggestion bigg-sizee autocomplete-selected" data-index="0" style="display:block !important;" disabled="">Thông tin đang tìm không có kết quả (0)</p><p></p></div></div>');
+            $("#txtPlaces-search-bar-1").val(getCookie("cache_result").toString());
+            turnRed("row cc main-search > container-sug-top > input");
+            turnRed("container-sug > div > input");
+            turnRed("container-sug > input");
+        }
+        if (document.getElementById("tbSearchDZD") !== null) {
+            $(".form-dinhzadi > div > .container-sug-dzd ").append('<div class="container-our-suggest container-our-suggest-edition" style="position: absolute; max-height: 300px; z-index: 9999; width: 302px;"><div id="noresult" class="kill-padding-cls kill-padding-cls-no-result"><p class="autocomplete-suggestion bigg-sizee autocomplete-selected" data-index="0" style="display:block !important;" disabled="">Thông tin đang tìm không có kết quả (0)</p><p></p></div></div>');
+            turnRed("tbSearchDZD");
+            $("#tbSearchDZD").val(getCookie("cache_result").toString());
+        }
+        if (document.getElementById("txtPlaces_7") !== null) {
+            $(".container-sug_7").append('<div class="container-our-suggest" style="position: absolute; max-height: 300px; z-index: 9999; width: 302px;"><div id="noresult" class="kill-padding-cls kill-padding-cls-no-result"><p class="autocomplete-suggestion bigg-sizee" data-index="0" style="display:block !important;" disabled="">Thông tin đang tìm không có kết quả (0)</p><p></p></div></div>');
+            turnRed2("mobile-home-search-form > input");
+            $("#txtPlaces_7").val(getCookie("cache_result").toString());
+        }
+        if (document.getElementById("txtPlaces") !== null) {
+            $(".container-sug").append('<div class="container-our-suggest container-our-suggest-new-edition" style="position: absolute; max-height: 300px; z-index: 9999; width: 302px;"><div id="noresult" class="kill-padding-cls kill-padding-cls-no-result"><p class="autocomplete-suggestion bigg-sizee autocomplete-selected" data-index="0" style="display:block !important;" disabled="">Thông tin đang tìm không có kết quả (0)</p><p></p></div></div>');
+            $("#txtPlaces").val(getCookie("cache_result").toString());
+        }
+        deleteCookie2("noresult");
+        deleteCookie2("cache_result");
+        turnRed("container-sug > input");
+        $(".container-sug > input").css("outline", "none");
+        $(".container-sug").css("outline", "none");
+        $(".container-sug > input").blur();
+
+    }
+
+})
+
+
+
+$(document).ready(function () {
+    //
+    $("#my-menu").mmenu({
+        "offCanvas": {
+            "position": "left",
+            "zposition": "front"
+        }
+    });
+    $("#search-menu").mmenu({
+
+        "offCanvas": {
+            "position": "right",
+            "zposition": "front",
+            "classes": "mm-fullscreen",
+            "preventDefault": "false"
+        },
+        onClick: {
+            preventDefault: false
+        }
+
+    });
+    search_stick();
+
+});
+$(function () {
+    if ($(window).width() < 1100) {
+        $('.contact-us').insertAfter($('.rcontact'));
+    } else {
+        $('.rcontact').insertAfter($('.contact-us'));
+    }
+});
+
+
+function validateEmail(email) {
+    var re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(email);
+}
+
+//Cookies
+function setCookie(cname, cvalue, exdays) {
+    var d = new Date();
+    d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+    var expires = "expires=" + d.toGMTString();
+    document.cookie = cname + "=" + cvalue + "; " + expires + "; path=/";
+}
+
+function getCookie(cname) {
+    var name = cname + "=";
+    var ca = document.cookie.split(';');
+    for (var i = 0; i < ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1);
+        if (c.indexOf(name) === 0) {
+            return c.substring(name.length, c.length);
+        }
+    }
+    return "";
+}
+
+
+function deleteCookie(cname, cvalue) {
+    if (getCookie(cname)) {
+        document.cookie = cname + "=" + cvalue +
+            "; expires=Thu, 01-Jan-1970 00:00:01 GMT" + "; path=/";
+    }
+}
+function deleteCookie2(name) {
+    document.cookie = name +
+        '=; expires=Thu, 01-Jan-1970 00:00:01 GMT;';
+}
+//
+$(function () {
+    $("#formMainSearchBar").keydown(function (e) {
+        var key = e.charCode ? e.charCode : e.keyCode ? e.keyCode : 0;
+        if (key === 13) {
+            $("#btSearchHome").click();
+            e.preventDefault();
+        }
+    });
+    $("#tbSearchDZD").keydown(function (e) {
+        var key = e.charCode ? e.charCode : e.keyCode ? e.keyCode : 0;
+        if (key === 13) {
+            $("#btDinhZaDi").click();
+            e.preventDefault();
+        }
+    });
+});
+var pro_timeout = null;
+$(function () {
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        //
+        var currentWidth = 0;
+        var cacheWidth = $(".container-our-suggest").css("width");
+        //
+        if (document.getElementById("txtPlaces_7") !== null) {
+            addDeleteForMobile($("#txtPlaces_7").parent());
+
+        }
+        if (document.getElementById("tbSearchDZD") !== null) {
+            addDeleteForMobile($("#tbSearchDZD").parent());
+
+        }
+        if (document.getElementById("txtPlaces-search-bar-1") !== null) {
+            addDeleteForMobile($("#txtPlaces-search-bar-1").parent());
+        }
+        $("#txtPlaces_7 , #tbSearchDZD , #txtPlaces-search-bar-1").on("input", function () {
+            currentWidth = $("#txtPlaces_7 , #tbSearchDZD , #txtPlaces-search-bar-1").width();
+            if ($(this).val().trim().length > 1) {
+                if (pro_timeout !== null) {
+                    clearTimeout(pro_timeout);
+                }
+                pro_timeout = setTimeout(function () {
+                    $(".deleteX").show();
+                    $("#txtPlaces_7").css("padding-right", "30px");
+                }, 1000);
+            } else {
+                $(".deleteX").hide();
+                $("#txtPlaces_7").css("padding-right", "0");
+            }
+        });
+        //$(".deleteX").unbind("click").click(function () {
+        //    //
+        //    $("input").prop("value", "");
+        //    $(".deleteX").hide();
+        //    $("#txtPlaces_7").css("padding-right", "0");
+        //});
+        //
+        if (document.getElementById("txtPlaces_7") !== null) {
+            if ($("#txtPlaces_7").val().trim().length > 0) {
+                $(".deleteX").show();
+                $("#txtPlaces_7").css("padding-right", "30px");
+            } else {
+                $(".deleteX").hide();
+                $("#txtPlaces_7").css("padding-right", "0");
+            }
+        }
+        if (document.getElementById("tbSearchDZD") !== null) {
+            if ($("#tbSearchDZD").val().trim().length > 0) {
+                $(".deleteX").show();
+                $("#tbSearchDZD").css("padding-right", "30px");
+            } else {
+                $(".deleteX").hide();
+                $("#tbSearchDZD").css("padding-right", "0");
+            }
+        }
+        if (document.getElementById("txtPlaces-search-bar-1") !== null) {
+            if ($("#txtPlaces-search-bar-1").val().trim().length > 0) {
+                $(".deleteX").show();
+                $("#txtPlaces-search-bar-1").css("padding-right", "30px");
+            } else {
+                $(".deleteX").hide();
+                $("#txtPlaces-search-bar-1").css("padding-right", "0");
+            }
+        }
+
+    }
+});
+//
+function addDeleteForMobile(wrapper) {
+    wrapper.append("<p class='deleteX'>X</p>");
+}
+$(".login , .fg-pass , .s-up , #labelLoginstatus").click(function () {
+    setTimeout(function () {
+        if (document.getElementById("tbPhone") !== null) {
+            $("#tbPhone").focus();
+        }
+        if (document.getElementById("txtEmailResetPass") !== null) {
+            $("#txtEmailResetPass").focus();
+        }
+        if (document.getElementById("UserDetail_userFullName") !== null) {
+            $("#UserDetail_userFullName").focus();
+        }
+    }, 500);
+});
+$("#popupMainSearchBar .remove-box").click(function () {
+    $("#popupMainSearchBar .note-box-wrap").remove();
+});
+$("#txtPlaces").click(function () {
+    setCookie("popupMainSearchBar", "true", 365);
+
+    $(".note-box-wrap").remove();
+});
+
+$("#txtPlaces").on("input", function () {
+    setCookie("popupMainSearchBar", "true", 365);
+
+    $(".note-box-wrap").remove();
+});
+$("#tbSearchDZD").on("input", function () {
+
+    $("#popupMainSearchBarDzd.note-box-wrap").css("display", "none");
+});
+$("#txtPlaces_dinhzadi").on("input", function () {
+
+    $("#popupMainSearchBarDzd.note-box-wrap").css("display", "none");
+});
+
+
+
+function addWarnBox(text, wrapper, width, height) {
+    $("#warnbox").remove();
+    wrapper.append("<div id='warnbox'>\
+        <div id='wrapbox_box'>\
+        <p class='wrapbox-box-text'>"+ text + "</p>\
+        </div>\
+    </div>");
+    //
+    width, height;
+    curWidth = $("#warnbox").width();
+    curHeight = $("#warnbox").height();
+    //
+    if (typeof width !== "undefined") {
+        var tWidth = parseInt(curWidth) + parseInt(width);
+        $("#warnbox").width(tWidth);
+    }
+    if (typeof height !== "undefined") {
+        var tHeight = parseInt(curHeight) + parseInt(height);
+        $("#warnbox").height(tHeight);
+    }
+}
+
+
+function addWarnBoxUploadImageButton(text, wrapper, width, height) {
+    $("#warnbox").remove();
+    wrapper.append("<div id='warnbox' style='bottom:85px;left:-392px;'>\
+        <div id='wrapbox_box'>\
+        <p class='wrapbox-box-text'>"+ text + "</p>\
+        </div>\
+    </div>");
+    //
+    width, height;
+    curWidth = $("#warnbox").width();
+    curHeight = $("#warnbox").height();
+    //
+    if (typeof width !== "undefined") {
+        var tWidth = parseInt(curWidth) + parseInt(width);
+        $("#warnbox").width(tWidth);
+    }
+    if (typeof height !== "undefined") {
+        var tHeight = parseInt(curHeight) + parseInt(height);
+        $("#warnbox").height(tHeight);
+    }
+}
+
+
+
+function addWarnBoxPriceType(text, wrapper, width, height) {
+    $("#warnbox").remove();
+    wrapper.append("<div id='warnboxtypeprice'>\
+        <div id='wrapbox_box'>\
+        <p class='wrapbox-box-text'>"+ text + "</p>\
+        </div>\
+    </div>");
+    //
+    width, height;
+    curWidth = $("#warnbox").width();
+    curHeight = $("#warnbox").height();
+    //
+    if (typeof width !== "undefined") {
+        var tWidth = parseInt(curWidth) + parseInt(width);
+        $("#warnbox").width(tWidth);
+    }
+    if (typeof height !== "undefined") {
+        var tHeight = parseInt(curHeight) + parseInt(height);
+        $("#warnbox").height(tHeight);
+    }
+}
+
+function removeWarnbox() {
+    $("#warnbox").remove();
+}
+
+$("#txtPlaces").click(function () {
+
+});
+/**
+Customize
+**/
+$(".avatar-round-extension").click(function () {
+    location.href = "/thong-ke";
+});
+//var waitLiked;
+//$(".savePopup").click(function(){
+//  if(waitLiked !== null){
+//      clearTimeout(waitLiked);
+//  }
+//  waitLiked = setTimeout(function(){
+//      var heartElement = $(".savePopup i").css("color");
+//      var htmlColor = rgb2hex(heartElement);
+//      if(htmlColor === "#b70606"){
+//          messageBox("Bất động sản này đã được lưu vào danh sách theo dõi");
+//      }else{
+//          messageBox("Bất động sản này đã được xoá khỏi danh sách theo dõi");
+//      }   
+//  },1000);
+//});
+//$(".heart").click(function(){
+//    if(waitLiked !== null){
+//        clearTimeout(waitLiked);
+//    }
+//    waitLiked = setTimeout(function(){
+//        var heartElement = $(".heart a i").css("color");
+//        var htmlColor = rgb2hex(heartElement);
+//        alert(htmlColor);
+//        if(htmlColor.toLowerCase().trim() === "#b70606"){
+//            messageBox("Bất động sản này đã được lưu vào danh sách theo dõi");
+//        }else{
+//            messageBox("Bất động sản này đã được xoá khỏi danh sách theo dõi");
+//        }   
+//    },1000);
+//});
+
+function closeAllBox() {
+    $("#msgboxwrap").remove();
+}
+function messageBox(text) {
+    closeAllBox();
+    $("body").append("<div id='msgboxwrap' class='msgboxwrap2'><p id='msgboxwrap-text'>" + text + " <span style='cursor:pointer;text-decoration:underline' onclick='closeAllBox()'>Đóng</span></p></div>");
+}
+function messageBox2(text) {
+    closeAllBox();
+    $("body").append("<div id='msgboxwrap' class='msgboxwrap2' style='max-width: 370px;'><p id='msgboxwrap-text'>" + text + " <a href='/goi-thanh-vien' style='cursor:pointer;text-decoration:underline'>Nâng Cấp</span></a></div>");
+}
+function messageBox3(text) {
+    closeAllBox();
+    $("body").append("<div id='msgboxwrap' class='msgboxwrap2' style='max-width: 370px;'><p id='msgboxwrap-text'>" + text + " <a href='/tin-dung' style='cursor:pointer;text-decoration:underline'>Mua thêm</span></a></div>");
+}
+$(function () {
+    if (document.getElementById("google-map-maplisting") !== null) {
+        initializeMap();
+        google.maps.event.addDomListener(window, 'load', initializeMap);
+    }
+});
+
+function initializeMap() {
+    var mapProp = {
+        center: new google.maps.LatLng(51.508742, -0.120850),
+        zoom: 5,
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+    };
+    var map = new google.maps.Map(document.getElementById("google-map-maplisting"), mapProp);
+}
+function rgb2hex(rgb) {
+    rgb = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+    function hex(x) {
+        return ("0" + parseInt(x).toString(16)).slice(-2);
+    }
+    return "#" + hex(rgb[1]) + hex(rgb[2]) + hex(rgb[3]);
+}
+
+
+$(function () {
+    // Set up the number formatting.
+    $('.inputAmountVND').number(true);
+});
+
+
+$('.soOnly').keyup(function () {
+    this.value = this.value.replace(/[^0-9\,]/g, '');
+});
+
+$(function () {
+    animateRight();
+});
+function animateRight() {
+    $('.running-text-cls').css("left", "100%");
+    $('.running-text-cls').animate({ left: '0%' }, 10000, "", animateRight);
+}
+//$(function () {
+//    $("select").change(function () {
+//        var value = $(this).val();
+//        $("select").val(value);
+//    });
+//});
+//
+//var searchBoxValue = $("#dropListBuyRent_SearchBox").val();
+//if (typeof searchBoxValue !== "undefined") {
+//    $("#dropListBuyRent_Header").val(searchBoxValue);
+//}
+var iputSearchDZD = $("#tbSearchDZD").val();
+if (typeof iputSearchDZD !== "undefined") {
+    $("#tbSearchDZD").focus();
+}
+//
+$("#dropListBuyRent_SearchBox , #dropListBuyRent_Header , #group").change(function () {
+    var value = $(this).val();
+    $("#dropListBuyRent_SearchBox , #dropListBuyRent_Header , #group").val(value);
+
+
+    if (value === "1") {
+
+        $(".EnterSearch").attr("placeholder", "Nhập tên đường, khu vực hoặc dự án để định giá cùng DinhZaDi®");
+
+    }
+    else {
+
+        if (value === "59") {
+
+            $(".EnterSearch").attr("placeholder", "Định giá với DinhZaDi® Thuê theo Tên đường");
+
+        }
+        else {
+
+            $(".EnterSearch").attr("placeholder", "Tên đường, Khu vực hoặc Dự án");
+        }
+    }
+
+});
+//$("#txtPlaces_3,#txtPlaces,#txtPlaces-search-bar-1,#tbSearchDZD").change(function(){
+//    var value = $(this).val();
+//    $("#txtPlaces_3,#txtPlaces,#txtPlaces-search-bar-1,#tbSearchDZD").val(value);
+//});
+///
+loadPlace();
+///
+function loadPlace() {
+    var value = $("#txtPlaces,#txtPlaces-search-bar-1,#tbSearchDZD").val();
+    //$("#txtPlaces_3").val(value);
+}
+$("#share-emai-dashboard").click(function () {
+    var encodedParam = encodeURIComponent($("#code_link").val());
+    var content = "Xem thêm chi tiết DinhZaDi® tại " + encodedParam;
+    location.href = "mailto:?subject=Chia se cho ban be&body=" + content;
+});
+$("#share-facebook").click(function () {
+    var encodedParam = encodeURIComponent($("#code_link").val());
+    var share_text_text = "https://www.facebook.com/dialog/feed?app_id=1442341752762601&display=popup&caption=Xem thêm chi tiết DinhZaDi® tại gachvang.com&link=" + encodedParam + "&redirect_uri=http://www.gachvang.com";
+    location.href = share_text_text;
+});
+$("#share-twitter").click(function () {
+    var encodedParam = encodeURIComponent($("#code_link").val());
+    var link = "http://twitter.com/intent/tweet?text=" + "Chia se ban be" + "&url=" + encodedParam;
+    location.href = link;
+
+});
+
+function share(option, sharetext) {
+    var url = window.location.href;
+
+    var originalURL = url;
+
+    var encodedParam = encodeURIComponent(url);
+    url = url.replace("?commandLogin=ok", "");
+    if (option === "googleplus") {
+        location.href = "https://plus.google.com/share?url=" + encodedParam;
+    } else if (option === "facebook") {
+        var share_text_text = "https://www.facebook.com/dialog/feed?app_id=1442341752762601&display=popup&caption=Xem thêm chi tiết DinhZaDi® tại gachvang.com&link=" + encodedParam + "&redirect_uri=http://www.gachvang.com";
+        location.href = share_text_text;
+    } else if (option === "twitter") {
+        var content = "";
+        var link = "http://twitter.com/intent/tweet?text=" + sharetext + "&url=" + url;
+        location.href = link;
+    } else if (option === "pinterest") {
+        location.href = "Xem thêm chi tiết DinhZaDi® tại http://pinterest.com/pin/create/link/?url=" + encodedParam;
+    } else if (option === "email") {
+        $.ajax({
+            type: 'POST',
+            url: "/Home/GetShortURL",
+            dataType: 'json',
+
+            data: { longURL: originalURL },
+
+            success: function (data) {
+                if (data.data !== null && data.data !== "") {
+
+
+                    var address = $("#addressssss").val();
+                    var subject = "DinhZaDi® tại " + address;
+                    var content = "Xem thêm chi tiết DinhZaDi® tại " + $.parseHTML("<a href='" + data.data + "'> " + data.data + " </a>");
+                    location.href = "mailto:?subject=" + subject + "&body=" + content;
+
+                }
+            }
+        });
+
+
+    } else if (option === "whatsapp") {
+
+        $.ajax({
+            type: 'POST',
+            url: "/Home/GetShortURL",
+            dataType: 'json',
+
+            data: { longURL: url },
+
+            success: function (data) {
+                if (data.data !== null && data.data !== "") {
+
+                    if (sharetext.toLowerCase().indexOf("mua") > -1) {
+                        sharetext = sharetext.replace("Mua", "Bán");
+                    }
+                    var content = "gachvang.com | " + sharetext + " - ";
+                    //var address = $("#addressssss").val();
+                    //var subject = "DinhZaDi® tại " + address;
+                    //var content = "Xem thêm chi tiết DinhZaDi® tại " + $.parseHTML("<a href='" + data.data + "'> " + data.data + " </a>");
+                    //location.href = "mailto:?subject=" + subject + "&body=" + content;
+
+                    var shareurl = "whatsapp://send?text=" + content + data.data;
+
+
+                    location.href = shareurl;
+
+
+                }
+            }
+        });
+
+    }
+}
+
+function share2(option, sharetext) {
+    var url = window.location.href;
+    var encodedParam = encodeURIComponent(url);
+    url = url.replace("?commandLogin=ok", "");
+    if (option === "googleplus") {
+        location.href = "https://plus.google.com/share?url=" + encodedParam;
+    } else if (option === "facebook") {
+        var share_text_text = "https://www.facebook.com/dialog/feed?app_id=1442341752762601&display=popup&caption=Tặng bạn 20 tín dụng giá trị 20.000đ từ gachvang.com khi đăng ký với tại đây nhé&description=Tặng bạn 20 tín dụng giá trị 20.000đ từ gachvang.com khi đăng ký với tại đây nhé&link=" + encodedParam + "&redirect_uri=http://www.gachvang.com";
+        location.href = share_text_text;
+    } else if (option === "twitter") {
+        var content = "";
+        var link = "http://twitter.com/intent/tweet?text=" + sharetext + "&url=" + url;
+        location.href = link;
+    } else if (option === "pinterest") {
+        location.href = "Xem thêm chi tiết DinhZaDi® tại http://pinterest.com/pin/create/link/?url=" + encodedParam;
+    } else if (option === "email") {
+        var address = $("#addressssss").text();
+        var subject = "DinhZaDi® tại " + address;
+        content = "Xem thêm chi tiết DinhZaDi® tại " + encodedParam;
+        location.href = "mailto:?subject=" + subject + "&body=" + content;
+    } else if (option === "whatsapp") {
+        if (sharetext.toLowerCase().indexOf("mua") > -1) {
+            sharetext = sharetext.replace("Mua", "Bán");
+        }
+        content = "gachvang.com | " + sharetext + " - " + url;
+        var shareurl = "whatsapp://send?text=" + encodeURIComponent(content);
+        console.log(shareurl);
+        location.href = shareurl;
+    }
+}
+
+$(function () {
+    $('.search-bt-bt').click(function () {
+        var form = $(this).parents('form:first');
+        form.submit();
+        //if (typeof cacheVal.isOkay_dinhgia1 !== "undefined" && cacheVal.isOkay_dinhgia1) {
+        //    var form = $(this).parents('form:first');
+        //    form.submit();
+        //} else {
+        //    shakeYourBooty("txtPlaces");
+        //}
+    });
+    $('.header-search-bt').click(function () {
+        //if (typeof cacheVal.isOkay_dinhgia2 !== "undefined" && cacheVal.isOkay_dinhgia2) {
+        //    var form = $(this).parents('form:first');
+        //    form.submit();
+        //} else {
+        //    shakeYourBooty("txtPlaces_3");
+        //}
+
+
+
+        var searchText = $("#txtPlaces_3").val();
+
+        if (searchText !== "") {
+            var form = $(this).parents('form:first');
+            form.submit();
+        }
+        else {
+            shakeYourBooty("txtPlaces_3");
+        }
+
+
+    });
+    $(".partial-search-listing").click(function () {
+        //if (typeof cacheVal.isOkay_dinhgia3 !== "undefined" && cacheVal.isOkay_dinhgia3) {
+        //    var form = $(this).parents('form:first');
+        //    form.submit();
+        //} else {
+        //    shakeYourBooty("txtPlaces-search-bar-1");
+        //    var form = $(this).parents('form:first');
+        //    form.submit();
+        //}
+
+        var searchText = $("#txtPlaces-search-bar-1").val();
+
+        if (searchText !== "") {
+
+            $("select#type").prop('selectedIndex', 0);
+            $("select#beds").prop('selectedIndex', 0);
+            $("select#min-price").prop('selectedIndex', 0);
+            $("select#sort-type").prop('selectedIndex', 0);
+
+
+
+            var form = $(this).parents('form:first');
+            form.submit();
+        }
+        else {
+            shakeYourBooty("txtPlaces-search-bar-1");
+        }
+
+
+
+    });
+});
+
+function shakeYourBooty(id) {
+    //
+    var norun = false;
+    $("#" + id).keyup(function (e) {
+        if (e.keyCode === 8 || e.keyCode === 46) {
+            norun = true;
+        } else {
+            norun = false;
+        }
+    });
+    if (!norun) {
+        //$("#"+id).effect("shake");
+        //$("#"+id).css("border", "1px red solid");
+        //$("#"+id).css("outline", "1px red solid");
+    }
+    console.log("ok");
+}
+
+function turnRed(id) {
+    $("." + id).css("border", "1px red solid");
+    $("." + id).css("outline", "1px red solid");
+}
+function turnRed2(id) {
+    $("#" + id).css("border", "1px red solid");
+    $("#" + id).css("outline", "1px red solid");
+}
+function shakeYourBooty_mobile(id) {
+    //
+    var norun = false;
+    $("#" + id).keyup(function (e) {
+        if (e.keyCode === 8 || e.keyCode === 46) {
+            norun = true;
+        } else {
+            norun = false;
+        }
+    });
+    if (!norun) {
+        //$("#"+id).effect("shake");
+    }
+
+}
+
+
+$(function () {
+    $("#formMainSearchBar").on('keyup keypress', function (e) {
+        var code = e.keyCode || e.which;
+        if (code === 13) {
+            if (typeof cacheVal.isOkay_dinhgia1 !== "undefined" && cacheVal.isOkay_dinhgia1) {
+                $(this).submit();
+            } else {
+                shakeYourBooty("txtPlaces");
+            }
+            e.preventDefault();
+            return false;
+        }
+    });
+    $("#formHeaderSearchBar").on('keyup keypress', function (e) {
+        var code = e.keyCode || e.which;
+        if (code === 13) {
+            if (typeof cacheVal.isOkay_dinhgia2 !== "undefined" && cacheVal.isOkay_dinhgia2) {
+                $(this).submit();
+            } else {
+                shakeYourBooty("txtPlaces_3");
+            }
+            e.preventDefault();
+            return false;
+        }
+    });
+    //
+    $("#tbSearchDZD").on('keyup keypress', function (e) {
+        var code = e.keyCode || e.which;
+        if (code === 13) {
+            if (typeof cacheVal.isOkay_dinhgia4 !== "undefined" && cacheVal.isOkay_dinhgia4) {
+                $("#btDinhZaDi").click();
+            } else {
+                shakeYourBooty("tbSearchDZD");
+            }
+            e.preventDefault();
+            return false;
+        }
+    });
+    //
+    $("#formSearchList").on('keyup keypress', function (e) {
+        var code = e.keyCode || e.which;
+        if (code === 13) {
+            if (typeof cacheVal.isOkay_dinhgia3 !== "undefined" && cacheVal.isOkay_dinhgia3) {
+                $(this).submit();
+            } else {
+                shakeYourBooty("txtPlaces-search-bar-1");
+            }
+            e.preventDefault();
+            return false;
+        }
+    });
+});
+
+//Do not delete this , created by Bang 
+var cacheVal = {};
+//Do not delete this , created by Bang 
+
+
+
+
+
+$(function () {
+    $('.advance-1').click(function () {
+        $('#index-advance-search1').slideToggle(400);
+    });
+    $('.advance-2').click(function () {
+        $('#index-advance-search2').slideToggle(400);
+    });
+    $('.advance-3').click(function () {
+        $('#index-advance-search3').slideToggle(400);
+    });
+
+    //$('input.datepicker').datepicker({
+    //});
+    $('.date-panel').css("display", "none");
+    $('.show-date').click(function () {
+        $('.date-panel').css("display", "block");
+        $('.spacedate').css("display", "none");
+    });
+    $('.off-date').click(function () {
+        $('.date-panel').css("display", "none");
+        $('.spacedate').css("display", "block");
+    });
+});
+
+$(function () {
+    $('.group').hide();
+    $('#experience').show();
+    $('#selectPackage').change(function () {
+        $('.group').hide().removeClass('show');
+        $('#' + $(this).val()).show();
+        var nameCt = $(this).val();
+        if (nameCt === "mcorporate") {
+            $('.hidden-contact-us').hide();
+        }
+        else {
+            $('.hidden-contact-us').show();
+        }
+    });
+    $('.pay').click(function () {
+        $('.pay').toggleClass('no-active-credit active-credit');
+        $('.to-bank').toggleClass('no-active-bank active-bank')
+    });
+});
+
+$(window).resize(function () {
+    /*var coverIndex = $(window).height() - 55 - 170;
+    $('.cover-index').height(coverIndex);*/
+});
+$(window).resize(function () {
+    //var coverIndex = $(window).height() - 300;
+    //$('.slider-project > .item > img').height(coverIndex);
+});
+$(window).resize(function () {
+    var widthIndex = $(window).width();
+    if (widthIndex < 480) {
+        var coverIndex = $(window).height() - 120;
+        $('.slider-project > .item > img').height(coverIndex);
+    }
+});
+$(window).resize(function () {
+    /*var coverIndex = $(window).height() - 220;
+    var sliderIndex = $('.cover-index #carousel-example-generic .item img');
+    sliderIndex.height(coverIndex);*/
+});
+$(window).resize(function () {
+    var listMap = $(window).height() - 100 - 43;
+    var slider = $('.list-map');
+    slider.height(listMap);
+    var formgv = $('.formgv');
+    if (typeof formgv === "undefined") {
+        $('#map').height(listMap);
+    }
+
+});
+$(window).trigger('resize');
+
+
+var login = $('.login');
+var signin = $('.sign-in');
+var signup = $('.sign-up');
+var sup = $('.s-up');
+var formsign = $('.form-login-1');
+var lgin = $('.log-in');
+var backup = $('.back-up');
+var backin = $('.back-in');
+var forgetpass = $('.forget-pass');
+var fgpass = $('.fg-pass');
+var alsignin = $('.al-signin a');
+var alsignup = $('.al-signup a');
+$(function () {
+    signup.hide();
+    lgin.hide();
+    forgetpass.hide();
+    sup.click(function () {
+        signup.show(1000);
+        formsign.hide(600);
+    });
+    login.click(function () {
+        lgin.show(1000);
+        formsign.hide(600);
+    });
+
+    backup.click(function () {
+        signup.hide(600);
+        formsign.show(100);
+    });
+    backin.click(function () {
+        lgin.hide(600);
+        formsign.show(100);
+        forgetpass.hide(600);
+    });
+
+    fgpass.click(function () {
+        forgetpass.show(1000);
+        lgin.hide(600);
+        formsign.hide(600);
+    });
+    alsignup.click(function () {
+        signup.hide(600);
+        lgin.show(1000);
+    });
+    alsignin.click(function () {
+        lgin.hide(600);
+        signup.show(600);
+    });
+});
+
+
+
+function funshow(name) {
+    $('#' + name).css("display", "inline");
+
+}
+function funhide(name) {
+    $('#' + name).css("display", "none");
+
+}
+
+var showDetail = $('.show-detail');
+var hiddenDetail = $('.hidden-detail');
+$(function () {
+    showDetail.bind({
+        click: function () {
+            showDetail.hide();
+            hiddenDetail.show();
+        }
+    });
+    hiddenDetail.bind({
+        click: function () {
+            hiddenDetail.hide();
+            showDetail.show();
+        }
+    });
+});
+$(document).ready(function () {
+    var nameContact = $('#nameProject');
+    var phoneContact = $('#contactProject');
+    $('#sub-contact').attr("disabled", 'disabled');
+
+    $('.sidebarProject input[type="text"]').keypress(function () {
+        if (nameContact.val().length !== 0 && phoneContact.val().length !== 0) {
+            phoneContact.keypress(function () {
+                if (!IsEmail($('#contactProject').val())) {
+                    addWarnBox('Sai định dạng email', $("#err_1"));
+                } else {
+                    $("#warnbox").remove();
+                    $('#sub-contact').removeAttr('disabled');
+                }
+                //validate phone
+                var phone = phoneContact.val(),
+                    intRegex = /[0-9-()+]{10,11}/;
+                if (intRegex.test(phone)) {
+                    phoneContact.attr('maxlength', 11);
+                    $("#warnbox").remove();
+                    $('#sub-contact').removeAttr('disabled');
+                }
+                else {
+                    phoneContact.removeAttr('maxlength');
+                }
+            });
+        }
+        else {
+            $('#sub-contact').attr('disabled', 'true');
+
+        }
+    });
+
+
+    $('.sidebarProperty input[type="text"]').on("input", function () {
+        var phonecontactProperty = $('.phone-contact');
+        var phoneLen = phonecontactProperty.val().length;
+        if (phoneLen !== 0) {
+            var phone = phonecontactProperty.val(),
+                intRegex = /[0-9-()+]{10,11}/;
+            if (intRegex.test(phone)) {
+                if (phoneLen > 9) {
+                    $('#sub-contact').removeAttr('disabled');
+                    //phonecontactProperty.attr('maxlength', 11);
+                    $("#warnbox").remove();
+                }
+            } else {
+                console.log("not correct");
+                //phonecontactProperty.removeAttr('maxlength');
+                $('#sub-contact').attr('disabled', 'true');
+            }
+        }
+        else {
+            $('#sub-contact').attr('disabled', 'true');
+
+        }
+    });
+});
+/* $(function () {
+    var url = window.location.href;
+    var nameroot = $('.dinhzadi').attr('href');
+    var roothref = $('#root-dinhzadi').attr('href', nameroot);
+    var iddinhzadi = $('.dinhzadi-body').attr('id', nameroot);
+    $('#dinhzadi').each(function () {
+        this.href = this.href + nameroot;
+        var bob = jQuery(this).attr("href");
+        if (url === bob) {
+            $('.dinhzadi').addClass('active');
+            iddinhzadi.removeClass('collapse').addClass('in');
+            $("html, body").animate({ scrollTop: 0 }, 2000);
+        }
+    });
+    $('#dinhzadi').click(function () {
+        if (url) {
+            var activedinhzadi = $('.dinhzadi').addClass('active');
+            var indinhzadi = iddinhzadi.removeClass('collapse').addClass('in').addClass('collapsed');
+            $('.accordion-toggle').not(activedinhzadi).removeClass('active');
+            $('.accordion-body').not(indinhzadi).removeClass('collapse').removeClass('in').addClass('collapse');
+            $("html, body").animate({ scrollTop: 0 }, 2000);
+        }
+    });
+});
+$(function () {
+    var url = window.location.href;
+    var nameroot = $('.pricing').attr('href');
+    var roothref = $('#root-dinhzadi').attr('href', nameroot);
+    var iddinhzadi = $('.pricing-body').attr('id', nameroot);
+    $('#pricing').each(function () {
+        this.href = this.href + nameroot;
+        var bob = jQuery(this).attr("href");
+        if (url === bob) {
+            $('.pricing').addClass('active');
+            iddinhzadi.removeClass('collapse').addClass('in');
+            $("html, body").animate({ scrollTop: 0 }, 2000);
+        }
+    });
+    $('#pricing').click(function () {
+        if (url) {
+            var activedinhzadi = $('.pricing').addClass('active');
+            var indinhzadi = iddinhzadi.removeClass('collapse').addClass('in').addClass('collapsed');
+            $('.accordion-toggle').not(activedinhzadi).removeClass('active');
+            $('.accordion-body').not(indinhzadi).removeClass('collapse').removeClass('in').addClass('collapse');
+            $("html, body").animate({ scrollTop: 0 }, 2000);
+        }
+    });
+});
+$(function () {
+    var url = window.location.href;
+    var nameroot = $('.jobs').attr('href');
+    var roothref = $('#root-dinhzadi').attr('href', nameroot);
+    var iddinhzadi = $('.jobs-body').attr('id', nameroot);
+    $('#jobs').each(function () {
+        this.href = this.href + nameroot;
+        var bob = jQuery(this).attr("href");
+        if (url === bob) {
+            $('.jobs').addClass('active');
+            iddinhzadi.removeClass('collapse').addClass('in');
+            $("html, body").animate({ scrollTop: 0 }, 2000);
+        }
+    });
+    $('#jobs').click(function () {
+        if (url) {
+            var activedinhzadi = $('.jobs').addClass('active');
+            var indinhzadi = iddinhzadi.removeClass('collapse').addClass('in').addClass('collapsed');
+            $('.accordion-toggle').not(activedinhzadi).removeClass('active');
+            $('.accordion-body').not(indinhzadi).removeClass('collapse').removeClass('in').addClass('collapse');
+            $("html, body").animate({ scrollTop: 0 }, 2000);
+        }
+    });
+});
+$(function () {
+    var url = window.location.href;
+    var nameroot = $('.aboutus').attr('href');
+    var roothref = $('#root-dinhzadi').attr('href', nameroot);
+    var iddinhzadi = $('.about-body').attr('id', nameroot);
+    $('#aboutus').each(function () {
+        this.href = this.href + nameroot;
+        var bob = jQuery(this).attr("href");
+        if (url === bob) {
+            $('.jobs').addClass('active');
+            iddinhzadi.removeClass('collapse').addClass('in');
+            $("html, body").animate({ scrollTop: 0 }, 2000);
+        }
+    });
+    $('#aboutus').click(function () {
+        if (url) {
+            var activedinhzadi = $('.aboutus').addClass('active');
+            var indinhzadi = iddinhzadi.removeClass('collapse').addClass('in').addClass('collapsed');
+            $('.accordion-toggle').not(activedinhzadi).removeClass('active');
+            $('.accordion-body').not(indinhzadi).removeClass('collapse').removeClass('in').addClass('collapse');
+            $("html, body").animate({ scrollTop: 0 }, 2000);
+        }
+    });
+    $('.aboutus').click(function () {
+        var nameroot = $('.aboutus').attr('href');
+        var roothref = $('#root-dinhzadi').attr('href', nameroot);
+        var iddinhzadi = $('.about-body').attr('id', nameroot);
+    })
+});
+$(function () {
+    var url = window.location.href;
+    var nameroot = $('.team').attr('href');
+    var roothref = $('#root-dinhzadi').attr('href', nameroot);
+    var iddinhzadi = $('.team-body').attr('id', nameroot);
+    $('#team').each(function () {
+        this.href = this.href + nameroot;
+        var bob = jQuery(this).attr("href");
+        if (url === bob) {
+            $('.team').addClass('active');
+            iddinhzadi.removeClass('collapse').addClass('in');
+            $("html, body").animate({ scrollTop: 0 }, 2000);
+        }
+    });
+    $('#team').click(function () {
+        if (url) {
+            var activedinhzadi = $('.team').addClass('active');
+            var indinhzadi = iddinhzadi.removeClass('collapse').addClass('in').addClass('collapsed');
+            $('.accordion-toggle').not(activedinhzadi).removeClass('active');
+            $('.accordion-body').not(indinhzadi).removeClass('collapse').removeClass('in').addClass('collapse');
+            $("html, body").animate({ scrollTop: 0 }, 2000);
+        }
+    });
+});
+$(function () {
+    var url = window.location.href;
+    var nameroot = $('.contact').attr('href');
+    var roothref = $('#root-dinhzadi').attr('href', nameroot);
+    var iddinhzadi = $('.contact-body').attr('id', nameroot);
+    $('#contact').each(function () {
+        this.href = this.href + nameroot;
+        var bob = jQuery(this).attr("href");
+        if (url === bob) {
+            $('.contact').addClass('active');
+            iddinhzadi.removeClass('collapse').addClass('in');
+            $("html, body").animate({ scrollTop: 0 }, 2000);
+        }
+    });
+    $('#contact').click(function () {
+        if (url) {
+            var activedinhzadi = $('.contact').addClass('active');
+            var indinhzadi = iddinhzadi.removeClass('collapse').addClass('in').addClass('collapsed');
+            $('.accordion-toggle').not(activedinhzadi).removeClass('active');
+            $('.accordion-body').not(indinhzadi).removeClass('collapse').removeClass('in').addClass('collapse');
+            $("html, body").animate({ scrollTop: 0 }, 2000);
+        }
+    });
+});
+$(function () {
+    var url = window.location.href;
+    var nameroot = $('.faqs').attr('href');
+    var roothref = $('#root-dinhzadi').attr('href', nameroot);
+    var iddinhzadi = $('.faqs-body').attr('id', nameroot);
+    $('#faqs').each(function () {
+        this.href = this.href + nameroot;
+        var bob = jQuery(this).attr("href");
+        if (url === bob) {
+            $('.faqs').addClass('active');
+            iddinhzadi.removeClass('collapse').addClass('in');
+            $("html, body").animate({ scrollTop: 0 }, 2000);
+        }
+    });
+    $('#faqs').click(function () {
+        if (url) {
+            var activedinhzadi = $('.faqs').addClass('active');
+            var indinhzadi = iddinhzadi.removeClass('collapse').addClass('in').addClass('collapsed');
+            $('.accordion-toggle').not(activedinhzadi).removeClass('active');
+            $('.accordion-body').not(indinhzadi).removeClass('collapse').removeClass('in').addClass('collapse');
+            $("html, body").animate({ scrollTop: 0 }, 2000);
+        }
+    });
+});
+$(function () {
+    var url = window.location.href;
+    var nameroot = $('.terms').attr('href');
+    var roothref = $('#root-dinhzadi').attr('href', nameroot);
+    var iddinhzadi = $('.terms-body').attr('id', nameroot);
+    $('#terms').each(function () {
+        this.href = this.href + nameroot;
+        var bob = jQuery(this).attr("href");
+        if (url === bob) {
+            $('.terms').addClass('active');
+            iddinhzadi.removeClass('collapse').addClass('in');
+            $("html, body").animate({ scrollTop: 0 }, 2000);
+        }
+    });
+    $('#terms').click(function () {
+        if (url) {
+            var activedinhzadi = $('.terms').addClass('active');
+            var indinhzadi = iddinhzadi.removeClass('collapse').addClass('in').addClass('collapsed');
+            $('.accordion-toggle').not(activedinhzadi).removeClass('active');
+            $('.accordion-body').not(indinhzadi).removeClass('collapse').removeClass('in').addClass('collapse');
+            $("html, body").animate({ scrollTop: 0 }, 2000);
+        }
+    });
+*/
+
+function search_stick() {
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        return;
+    } else {
+        var window_top = $(window).scrollTop();
+        //------------------------------------------------------------------------
+        if (document.getElementById("socialsharecls") !== null) {
+            var div_top = $("#socialsharecls").offset().top;
+            var site_header_top = $(".site-header").scrollTop();
+            console.log("site header top " + site_header_top);
+            console.log("div top " + div_top);
+            console.log("window_top " + window_top);
+            if (window_top > 300) {
+                $("#socialsharecls").addClass("socialSticker");
+            } else {
+                $("#socialsharecls").removeClass("socialSticker");
+            }
+        }
+        //------------------------------------------------------------------------
+        if (document.getElementById("txtPlaces-search-bar-1") !== null) {
+            div_top = $('#txtPlaces-search-bar-1').offset().top;
+            if (window_top > div_top) {
+                $(".container-our-suggest-edition").addClass("sticky-suggestion");
+                var value1 = $('#txtPlaces-search-bar-1').val().trim();
+                if (value1.length > 0) {
+                    $("#txtPlaces_3").val(value1);
+                }
+            } else {
+                $(".container-our-suggest-edition").removeClass("sticky-suggestion");
+                if ($("#txtPlaces_3").val().trim().length > 0) {
+                    $("#txtPlaces-search-bar-1").val($("#txtPlaces_3").val());
+                    //$("#txtPlaces_3").val("");
+                }
+            }
+        }
+
+        if (document.getElementById("tbSearchDZD") !== null) {
+            div_top = $('#tbSearchDZD').offset().top;
+            console.log("div_top tbSearchDZD : " + div_top);
+            if (window_top > div_top) {
+                //container-our-suggest-edition-valuation 
+                $(".container-our-suggest-edition").addClass("sticky-suggestion");
+                $(".container-our-suggest-edition").addClass("container-our-suggest-edition-valuation");
+                value1 = $('#tbSearchDZD').val().trim();
+                console.log("value : " + value1);
+                if (value1.length > 0) {
+                    $("#txtPlaces_3").val(value1);
+                }
+            } else {
+                $(".container-our-suggest-edition").removeClass("sticky-suggestion");
+                $(".container-our-suggest-edition").removeClass("container-our-suggest-edition-valuation");
+                if ($("#txtPlaces_3").val().trim().length > 0) {
+                    $("#tbSearchDZD").val($("#txtPlaces_3").val());
+                    //$("#txtPlaces_3").val("");
+                }
+            }
+        }
+        if (document.getElementById("txtPlaces-search-bar-map-listing") !== null) {
+            div_top = $('#txtPlaces-search-bar-map-listing').offset().top;
+            if (window_top > div_top) {
+                $(".container-our-suggest-edition").addClass("sticky-suggestion");
+                value1 = $('#txtPlaces-search-bar-map-listing').val().trim();
+                if (value1.length > 0) {
+                    $("#txtPlaces_3").val(value1);
+                }
+            } else {
+                $(".container-our-suggest-edition").removeClass("sticky-suggestion");
+                if ($("#txtPlaces_3").val().trim().length > 0) {
+                    $("#txtPlaces-search-bar-map-listing").val($("#txtPlaces_3").val());
+                    //$("#txtPlaces_3").val("");
+                }
+            }
+        }
+
+        if (document.getElementById("txtPlaces") !== null) {
+            div_top = $('#txtPlaces').offset().top;
+            if (window_top > div_top) {
+                //container-our-suggest-edition-valuation
+                value1 = $('#txtPlaces').val().trim();
+                $(".container-our-suggest-new-edition").addClass("sticky-suggestion");
+                $(".container-our-suggest-new-edition").addClass("front-page");
+                if (value1.length > 0) {
+                    $("#txtPlaces_3").val(value1);
+                }
+            } else {
+                $(".container-our-suggest-new-edition").removeClass("sticky-suggestion");
+                $(".container-our-suggest-new-edition").removeClass("front-page");
+                if ($("#txtPlaces_3").val().trim().length > 0) {
+                    $("#txtPlaces").val($("#txtPlaces_3").val());
+                    //$("#txtPlaces_3").val("");
+                }
+
+            }
+        }
+    }
+}
+
+$(window).scroll(function () {
+    search_stick();
+    //
+    var htop = jQuery(".is-sticky").outerHeight();
+    var htopsearch = jQuery(".search-box").outerHeight();
+    htop = htop + htopsearch + 300;
+    //var htop2 = jQuery(".page-top").outerHeight();
+    //var htop = 500;
+    var t = jQuery(window).scrollTop();
+    //var hfooter = jQuery(".main-content").outerHeight();
+    //var hfooter2 = jQuery(".site-footer-bottom").outerHeight();
+    //hfooter = hfooter + hfooter2;
+    var hpage = jQuery(document).height();
+    //alert(t);
+    var limit = jQuery(".details-content").outerHeight();
+    limit = limit - htop;
+    var boxNewFuntion = $('#search-map-upsell');
+    var isboxNewFuntion = boxNewFuntion[0];
+
+    if (t > htop) {
+        // alert(limit);
+        jQuery("#card-contact").removeClass("poa");
+        jQuery("#card-contact").addClass("sticky");
+
+    }
+    else {
+        jQuery("#card-contact").removeClass("poa");
+        jQuery("#card-contact").removeClass("sticky");
+
+    }
+    //alert(limit);
+    if (t > limit) {
+        //alert(limit);
+        jQuery("#card-contact").removeClass("sticky");
+        jQuery("#card-contact").addClass("poa");
+
+    }
+
+
+    if (typeof isboxNewFuntion !== "undefined") {
+        var limit2 = jQuery("#search-map-upsell").outerHeight();
+        var widthLimit = jQuery("#search-map-upsell").outerWidth();
+        limit2 = htop + limit2 - 255;
+        if (t > limit2) {
+            jQuery("#search-map-upsell").addClass("sticky");
+            jQuery("#search-map-upsell").css("width", widthLimit + "px");
+        }
+        else {
+            jQuery("#search-map-upsell").removeClass("sticky");
+        }
+    }
+    //alert(limit);
+
+
+
+
+});
+
+function initCharts() {
+    if (!jQuery.plot) {
+        return;
+    }
+
+    function showChartTooltip(x, y, xValue, yValue) {
+        $('<div id="tooltip" class="chart-tooltip">' + yValue + '<\/div>').css({
+            position: 'absolute',
+            display: 'none',
+            top: y - 40,
+            left: x - 40,
+            border: '0 solid #ccc',
+            padding: '2px 6px',
+            'background-color': '#fff'
+        }).appendTo("body").fadeIn(200);
+    }
+
+    var data = [];
+    var totalPoints = 250;
+
+    // random data generator for plot charts
+
+    function getRandomData() {
+        if (data.length > 0) data = data.slice(1);
+        // do a random walk
+        while (data.length < totalPoints) {
+            var prev = data.length > 0 ? data[data.length - 1] : 50;
+            var y = prev + Math.random() * 10 - 5;
+            if (y < 0) y = 0;
+            if (y > 100) y = 100;
+            data.push(y);
+        }
+        // zip the generated y values with the x values
+        var res = [];
+        for (var i = 0; i < data.length; ++i) res.push([i, data[i]]);
+        return res;
+    }
+
+    function randValue() {
+        return (Math.floor(Math.random() * (1 + 50 - 20))) + 10;
+    }
+
+    var visitors = [
+        ['02/2013', 1500],
+        ['03/2013', 2500],
+        ['04/2013', 1700],
+        ['05/2013', 800],
+        ['06/2013', 1500],
+        ['07/2013', 2350],
+        ['08/2013', 1500],
+        ['09/2013', 1300],
+        ['10/2013', 4600]
+    ];
+
+
+    if ($('#site_statistics').length !== 0) {
+
+        $('#site_statistics_loading').hide();
+        $('#site_statistics_content').show();
+
+        var plot_statistics = $.plot($("#site_statistics"),
+            [{
+                data: visitors,
+                lines: {
+                    fill: 0.6,
+                    lineWidth: 0
+                },
+                color: ['#f89f9f']
+            }, {
+                data: visitors,
+                points: {
+                    show: true,
+                    fill: true,
+                    radius: 5,
+                    fillColor: "#f89f9f",
+                    lineWidth: 3
+                },
+                color: '#fff',
+                shadowSize: 0
+            }],
+
+            {
+                xaxis: {
+                    tickLength: 0,
+                    tickDecimals: 0,
+                    mode: "categories",
+                    min: 0,
+                    font: {
+                        lineHeight: 14,
+                        style: "normal",
+                        variant: "small-caps",
+                        color: "#6F7B8A"
+                    }
+                },
+                yaxis: {
+                    ticks: 5,
+                    tickDecimals: 0,
+                    tickColor: "#eee",
+                    font: {
+                        lineHeight: 14,
+                        style: "normal",
+                        variant: "small-caps",
+                        color: "#6F7B8A"
+                    }
+                },
+                grid: {
+                    hoverable: true,
+                    clickable: true,
+                    tickColor: "#eee",
+                    borderColor: "#eee",
+                    borderWidth: 1
+                }
+            });
+
+        var previousPoint = null;
+        $("#site_statistics").bind("plothover", function (event, pos, item) {
+            $("#x").text(pos.x.toFixed(2));
+            $("#y").text(pos.y.toFixed(2));
+            if (item) {
+                if (previousPoint !== item.dataIndex) {
+                    previousPoint = item.dataIndex;
+
+                    $("#tooltip").remove();
+                    var x = item.datapoint[0].toFixed(2),
+                        y = item.datapoint[1].toFixed(2);
+
+                    showChartTooltip(item.pageX, item.pageY, item.datapoint[0], item.datapoint[1] + ' visits');
+                }
+            } else {
+                $("#tooltip").remove();
+                previousPoint = null;
+            }
+        });
+    }
+
+
+    /* if ($('#site_activities').length !== 0) {
+        //site activities
+        var previousPoint2 = null;
+        $('#site_activities_loading').hide();
+        $('#site_activities_content').show();
+
+        var data1 = [
+            ['DEC', 300],
+            ['JAN', 600],
+            ['FEB', 1100],
+            ['MAR', 1200],
+            ['APR', 860],
+            ['MAY', 1200],
+            ['JUN', 1450],
+            ['JUL', 1800],
+            ['AUG', 1200],
+            ['SEP', 600]
+        ];
+
+
+        var plot_statistics = $.plot($("#site_activities"),
+
+            [{
+                data: data1,
+                lines: {
+                    fill: 0.2,
+                    lineWidth: 0,
+                },
+                color: ['#BAD9F5']
+            }, {
+                data: data1,
+                points: {
+                    show: true,
+                    fill: true,
+                    radius: 4,
+                    fillColor: "#9ACAE6",
+                    lineWidth: 2
+                },
+                color: '#9ACAE6',
+                shadowSize: 1
+            }, {
+                data: data1,
+                lines: {
+                    show: true,
+                    fill: false,
+                    lineWidth: 3
+                },
+                color: '#9ACAE6',
+                shadowSize: 0
+            }],
+
+            {
+
+                xaxis: {
+                    tickLength: 0,
+                    tickDecimals: 0,
+                    mode: "categories",
+                    min: 0,
+                    font: {
+                        lineHeight: 18,
+                        style: "normal",
+                        variant: "small-caps",
+                        color: "#6F7B8A"
+                    }
+                },
+                yaxis: {
+                    ticks: 5,
+                    tickDecimals: 0,
+                    tickColor: "#eee",
+                    font: {
+                        lineHeight: 14,
+                        style: "normal",
+                        variant: "small-caps",
+                        color: "#6F7B8A"
+                    }
+                },
+                grid: {
+                    hoverable: true,
+                    clickable: true,
+                    tickColor: "#eee",
+                    borderColor: "#eee",
+                    borderWidth: 1
+                }
+            });
+
+        $("#site_activities").bind("plothover", function (event, pos, item) {
+            $("#x").text(pos.x.toFixed(2));
+            $("#y").text(pos.y.toFixed(2));
+            if (item) {
+                if (previousPoint2 !== item.dataIndex) {
+                    previousPoint2 = item.dataIndex;
+                    $("#tooltip").remove();
+                    var x = item.datapoint[0].toFixed(2),
+                        y = item.datapoint[1].toFixed(2);
+                    showChartTooltip(item.pageX, item.pageY, item.datapoint[0], item.datapoint[1] + 'M$');
+                }
+            }
+        });
+
+        $('#site_activities').bind("mouseleave", function () {
+            $("#tooltip").remove();
+        });
+    } */
+};
+
+$(document).ready(function () {
+    initCharts();
+});
+
+var showInfo = $('#show');
+var hideInfo = $('#hide');
+var contentInfo = $('.show-company');
+$(function () {
+    contentInfo.hide();
+    showInfo.bind({
+        click: function () {
+            contentInfo.show();
+        }
+    });
+    hideInfo.bind({
+        click: function () {
+            contentInfo.hide();
+        }
+    });
+});
+
+
+
+sethrefs = function () {
+
+    if (document.querySelectorAll) {
+
+        var datahrefs = document.querySelectorAll('[data-href]'),
+            dhcount = datahrefs.length;
+
+        while (dhcount-- > 0) {
+
+            var ele = datahrefs[dhcount],
+                addevent = function (ele, event, func) {
+
+                    if (ele.addEventListener) ele.addEventListener(event, link, false);
+                    else ele.attachEvent('on' + event, link);
+
+                },
+                link = function (event) {
+
+                    var target = event.target,
+                        url = this.getAttribute('data-href');
+
+                    if (!target.href) {
+
+                        var newevent = document.createEvent("MouseEvents");
+
+                        if (newevent.initMouseEvent) {
+
+                            var newlink = document.createElement("a");
+
+                            newlink.setAttribute('href', url);
+                            newlink.innerHTML = 'link event';
+
+                            newevent.initMouseEvent(event.type, true, false, window, event.detail, event.screenX, event.screenY, event.clientX, event.clientY, event.ctrlKey, event.altKey, event.shiftKey, event.metaKey, event.button, null);
+
+                            newlink.dispatchEvent(newevent);
+
+                        }
+                        else {
+
+                            var meta = (event.metaKey) ? '_self' : '_blank';
+
+                            window.open(url, meta);
+
+                        }
+
+                    }
+
+                };
+
+            addevent(ele, 'click', link);
+
+        }
+
+    }
+
+};
+
+sethrefs();
+
+$(function () {
+    $('.tab-listings-right-ver1').hide();
+    $('.tab-listings-right-ver2').hide();
+    $('.neighbor').click(function () {
+        $('.tab-listings-right').slideToggle();
+        $(this).find('i').toggleClass('fa-angle-down fa-angle-up');
+    });
+    $('.nearcity').click(function () {
+        $('.tab-listings-right-ver1').slideToggle();
+        $(this).find('i').toggleClass('fa-angle-down fa-angle-up');
+    });
+    $('.nearzip').click(function () {
+        $('.tab-listings-right-ver2').slideToggle();
+        $(this).find('i').toggleClass('fa-angle-down fa-angle-up');
+    });
+});
+
+//$(function () {
+//    $('.content-dinhzadi').hide();
+//    $('.btn-dinhzadi').click(function () {
+//        $('.content-dinhzadi').slideToggle();
+//    });
+//});
+
+$(function () {
+    $('#pie-chart').highcharts({
+        chart: {
+            plotBackgroundColor: null,
+            plotBorderWidth: null,
+            plotShadow: false
+        },
+        credits: {
+            enabled: false
+        },
+        tooltip: {
+            pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+        },
+        title: {
+            text: 'Tổng quan BĐS trong khu vực'
+        },
+        plotOptions: {
+            pie: {
+                allowPointSelect: true,
+                cursor: 'pointer',
+                dataLabels: {
+                    distance: 5,
+                    enabled: true,
+                    format: '<b>{point.name}</b>: {point.percentage:.1f} %',
+                    style: {
+                        color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
+                    }
+                }
+            }
+        },
+        series: [{
+            type: 'pie',
+            name: 'BĐS',
+            data: [
+                ['TP HCM', 350],
+                ['Hà Nội', 355],
+                ['Đà Nẵng', 22],
+                ['Bình Dương', 17]
+            ]
+        }]
+    });
+    $('#pie-chart2').highcharts({
+        chart: {
+            plotBackgroundColor: null,
+            plotBorderWidth: null,
+            plotShadow: false
+        },
+        credits: {
+            enabled: false
+        },
+        tooltip: {
+            pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+        },
+        title: {
+            text: 'Tổng quan BĐS trong khu vực'
+        },
+        plotOptions: {
+            pie: {
+                allowPointSelect: true,
+                cursor: 'pointer',
+                dataLabels: {
+                    distance: 5,
+                    enabled: true,
+                    format: '<b>{point.name}</b>: {point.percentage:.1f} %',
+                    style: {
+                        color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
+                    }
+                }
+            }
+        },
+        series: [{
+            type: 'pie',
+            name: 'BĐS',
+            data: [
+                ['TP HCM', 350],
+                ['Hà Nội', 355],
+                ['Đà Nẵng', 22],
+                ['Bình Dương', 17]
+            ]
+        }]
+    });
+});
+
+
+
+$(function () {
+    $('.nav-link').on('click', function (event) {
+        var target = $($(this).attr('href'));
+        if (target.length) {
+            event.preventDefault();
+            $('html, body').animate({
+                scrollTop: target.offset().top - 130
+            }, 1000);
+        }
+    });
+});
+
+
+$(function () {
+    $('.nav-link_1').on('click', function (event) {
+        var target = $($(this).attr('href'));
+        if (target.length) {
+            event.preventDefault();
+            $('html, body').animate({
+                scrollTop: target.offset().top - 130
+            }, 1000);
+        }
+    });
+});
+
+
+
+/* $(function () {
+   $('.read-less').click(function () {
+       $('.show-more').slideToggle(500);
+       $('.text-normal').toggleClass('hidden');
+       $(this).find('i').toggleClass('fa-angle-down fa-angle-up');
+       if ($(this).find('.read-full').text() === 'Read Full Description') {
+           $('.read-full').text('Hide Description');
+       } else {
+           $(this).find('.read-full').text('Read Full Description');
+       }
+   });
+   var width = $(window).width();
+   if (width < 768) {
+       var count = $('.number').eq(1).nextAll().css('display', 'none');
+       $('.all-icon').click(function () {
+           count.slideToggle(500);
+           $(this).find('i').toggleClass('fa-angle-down fa-angle-up');
+           if ($(this).find('.text-see').text() === 'See All Amenities') {
+               $('.text-see').text('Hide All Amenities');
+           }
+           else {
+               $(this).find('.text-see').text('See All Amenities');
+           }
+       });
+   }
+});
+*/
+$(function () {
+    $('.share-contact').click(function () {
+        $('.detail-box-contact').css('z-index', '2');
+    });
+});
+$(window).resize(function () {
+    var widthIndex = $(window).width();
+    if (widthIndex < 480) {
+        var coverIndex = $(window).height() - 120;
+        $('.slider-project > .item > img').height(coverIndex);
+    }
+});
+//$(document).ready(function(){
+//      $(".tabme").tabIt();
+//      $(".metoo").tabIt();
+//    });
+
+//$(function(){
+//        $("#typed").typed({
+//            strings:['Find your dream house in a second', 'Approach to customers accurately', 'Valuate your property with DinhZaDi<sup class="fs30">®</sup>'],
+//            typeSpeed: 50,
+//            backDelay: 500,
+//            loop: true,
+//            cursorChar: "",
+//            contentType: 'html',
+//            loopCount: false,
+//            callback: function(){ foo(); },
+//            resetCallback: function() { newTyped(); }
+//        });
+//        $(".reset").click(function(){
+//            $("#typed").typed('reset');
+//        });
+//    });
+//function newTyped(){}
+
+//    function foo(){ console.log("Callback"); }
+
+
+
+//    $(document).ready(function() {
+
+//    });
+/* $(function(){
+       var $box=$('.main-menu-wrapper').find('.noti-header-include');
+       if ( $box.length ) {
+           $('.noti-header').hover(function(){
+               $box.show();
+               return false;
+               });
+           }
+       });
+$(document).ready(function() {
+   var $box=$('.main-menu-wrapper').find('.noti-header-include');
+   $(document.body).hoverable(function() {
+       if(!$(this).attr('id')!== 'btnFieldWorkers'){
+       if (!$(this).attr('id') !=='noclick') {
+               $box.hide();
+           }
+       }
+   });
+});
+*/
+
+//var chart = AmCharts.makeChart("chartdiv", {
+//  "type": "serial",
+//  "addClassNames": true,
+//  "theme": "light",
+//  "autoMargins": false,
+//  "marginLeft": 30,
+//  "marginRight": 8,
+//  "marginTop": 10,
+//  "marginBottom": 26,
+//  "balloon": {
+//    "adjustBorderColor": false,
+//    "horizontalPadding": 10,
+//    "verticalPadding": 8,
+//    "color": "#ffffff"
+//  },
+
+//  "dataProvider": [{
+//      "day": '25/09',
+//    "view": 300,
+//    "mes": 10,
+//    "hmes": 100
+//  }, {
+//      "day": '26/09',
+//    "view": 250,
+//    "mes": 16,
+//    "hmes": 160
+
+//  }],
+//  "startDuration": 1,
+//  "graphs": [{
+//    "alphaField": "alpha",
+//    "balloonText": "<span style='font-size:12px;'>[[title]]<br><span style='font-size:20px;'>[[value]]</span> [[additional]]</span>",
+//    "fillAlphas": 1,
+//    "title": "Lượt xem",
+//    "type": "column",
+//    "valueField": "view",
+//    "dashLengthField": "dashLengthColumn"
+//  }, {
+//    "id": "graph2",
+//    "balloonText": "<span style='font-size:12px;'>[[title]]<br><span style='font-size:20px;'>[[mes]]</span> [[additional]]</span>",
+//    "bullet": "round",
+//    "lineThickness": 3,
+//    "bulletSize": 7,
+//    "bulletBorderAlpha": 1,
+//    "bulletColor": "#FFFFFF",
+//    "useLineColorForBulletBorder": true,
+//    "bulletBorderThickness": 3,
+//    "fillAlphas": 0,
+//    "lineAlpha": 1,
+//    "title": "Tin nhắn",
+//    "valueField": "hmes"
+//  }],
+//  "categoryField": "day",
+//  "categoryAxis": {
+//    "gridPosition": "start",
+//    "axisAlpha": 0,
+//    "tickLength": 0
+//  },
+//  "export": {
+//    "enabled": true
+//  }
+//});
+
+
+
+$(function () {
+    $('.activi').click(function () {
+        $(this).toggleClass('active');
+        $('.system').toggleClass('active');
+        $('.tab-system').toggleClass('hidden show');
+    });
+    $('.system').click(function () {
+        $(this).toggleClass('active');
+        $('.activi').toggleClass('active');
+        $('.tab-system').toggleClass('hidden show');
+    });
+});
+
+$(function () {
+    $('#labelLoginstatus').click(function () {
+        $('.show-all').fadeIn(500);
+        $(".pAccountExist").css("display", "none");
+    });
+});
+
+
+/* $(window).resize(function () {
+    var widthPro = $(window).width();
+    if (widthPro < 480) {
+        $('.list-dinhzadi').removeClass('col-xs-6');
+        $('.remove-property').removeClass('col-xs-4 col-xs-8 col-xs-6');
+    }
+});
+$(window).trigger('resize');
+*/
+
+$(function () {
+    $('.advanceMobile').hide();
+    var tabValue = $('#mobile-menu-2 li').find('valuation-tab');
+    $('#mobile-menu-2 li').click(function () {
+        if (tabValue !== 'valuation-tab') {
+            $('.advanceMobile').show();
+        }
+    });
+    $('.valuation-tab').click(function () {
+        $('.advanceMobile').hide();
+        $('.index-advance-search').hide();
+    });
+});
+/* $(function(){
+    $('.count-listings li.type-rent').hide();
+    $('.count-listings li.type-rent').eq(2).prevAll().addClass('show');
+    $('.more-index').click(function(){
+        var shown= $('.count-listings li.type-rent.show').length;
+        $('.count-listings li.type-rent').eq(shown+2).prevAll().addClass('show');
+        var lastMore=$('.count-listings li.type-rent').length;
+        if(lastMore.last()){
+            $(this).hide();
+        }
+    });
+})
+*/
+
+$(document).ready(function () {
+    $('.count-listings li.type-rent').hide();
+    size_li = $(".count-listings li.type-rent").length;
+    x = 5;
+    $('.count-listings li.type-rent:lt(' + x + ')').addClass('show');
+    $('.more-index').click(function () {
+        x = (x + 5 <= size_li) ? x + 5 : size_li;
+        $('.count-listings li.type-rent:lt(' + x + ')').addClass('show');
+        size_last = $(".count-listings li.type-rent.show").length;
+        if (size_li === size_last) {
+            $('.more-index').addClass('hidden');
+        }
+    });
+});
+//$(function(){
+//    var path= $('.count-slider');
+//    var pathSum= $('.sum-slider');
+//    var countSlider= $('.sum-slides li.item').length;
+//    path.html(countSlider);
+//        var sumSlider =$('.sum-slidees').find('flex-active-slide').length;
+//        alert(sumSlider);
+//});
+$(function () {
+    var btSearch = $('.disable-search-active');
+    var sel = $('select option[value="30"]');
+    $("select").change(function () {
+        $('.disable-search-active').click(function () {
+            if ($('select option[value="30"]:selected').length > 0 && $('select option[value="7"]:selected').length > 0) {
+                if ($('select option[value="2"]:selected').length > 0) {
+                    /*
+                    $('.site-search-module-inside .txtPlaces-index').css('backgrount',' #F54F21!important'); */
+                    alert('Xin chào bạn');
+                }
+            }
+        });
+    });
+});
+
+
+
+$(function () {
+    $(window).resize(function () {
+        if ($(window).width() < 1100) {
+
+            $('.contact-us').insertAfter($('.rcontact'));
+            $('#eq1').insertAfter($('#eqLast'));
+        } else {
+            //$('#eq2').insertAfter($('#eq1'));
+            $('#eq2').insertBefore($('#eq3'));
+            $('#eq3').insertBefore($('#eq4'));
+            $('#eq4').insertBefore($('#eq5'));
+            $('#eq5').insertBefore($('#eq6'));
+            $('#eq6').insertBefore($('#eq7'));
+            $('#eq1').insertAfter($('#eqLast'));
+            $('#eqLast').hide();
+            $('.rcontact').insertAfter($('.contact-us'));
+
+            $('#eq2').css("margin-left", "10px");
+        }
+    });
+    $(window).trigger('resize');
+    //Tai vi resize chi kich hoat khi no window thay doi nen phai de o ngoai , (mobile)
+
+});
+//$(function () {
+//    $("#group").change(function () {
+//        var index = $("#group option:selected").index();
+//        if (index === 0) {
+//            $(".note-search").hide();
+//            $(".more-options").hide();
+
+//        } else {
+//            $(".note-search").show();
+//        }
+//    });
+//});
+$(function () {
+    $('#hClickS').on("click", function () {
+        $('.eqSearch-s').toggleClass('eqSearch show');
+        $('#eq1').insertAfter($('#eqLast'));
+    });
+});
+function checkPasswordMatch() {
+    var pass = $('#UserDetail_userPassword').val();
+    var repass = $('#repeatPassword').val();
+    if (pass !== repass) {
+        $('.fall-repass').show();
+        $('.true-repass').hide();
+    }
+    else {
+        $('.fall-repass').hide();
+        $('.true-repass').show();
+    }
+}
+function checkName() {
+    var NameCheck = $('#UserDetail_userFullName').val();
+    if ($('#UserDetail_userFullName').val() === 0) {
+        $('.fall-text').show();
+        $('.true-text').hide();
+    }
+    if (NameCheck !== 0) {
+        $(".fall-text").hide();
+        $(".true-text").show();
+    }
+}
+function checkEmail() {
+    if ($('#tbPhoneOrEmail').val() === 0) {
+        $('.fall-mail').show();
+        $('.true-mail').hide();
+    }
+    if ($('#tbPhoneOrEmail').val() !== 0) {
+        $('.fall-mail').hide();
+        $('.true-mail').show();
+        if (!IsEmail($('#tbPhoneOrEmail').val())) {
+            $('.fall-mail').show();
+            $('.true-mail').hide();
+        } else {
+            $('.fall-mail').hide();
+            $('.true-mail').show();
+        }
+        if (isPhone($('#tbPhoneOrEmail')) === true) {
+            $('.fall-mail').hide();
+            $('.true-mail').show();
+            $('#tbPhoneOrEmail').attr('maxlength', 11);
+        }
+        else {
+            $('#tbPhoneOrEmail').removeAttr('maxlength');
+        }
+    }
+};
+
+$(document).ready(function () {
+    $("#repeatPassword").mousedown(checkPasswordMatch).keyup(checkPasswordMatch);
+    $('.fall-text').hide();
+    $('.true-text').hide();
+    $('.fall-mail').hide();
+    $('.true-mail').hide();
+    $('.fall-pass').hide();
+    $('.true-pass').hide();
+    $('.fall-repass').hide();
+    $('.true-repass').hide();
+    $("#UserDetail_userFullName").mousedown(checkName).keyup(checkName);
+    $('#UserDetail_userPassword').mousedown(checkPass).keyup(checkPass);
+    $("#tbPhoneOrEmail").mousedown(checkEmail).keyup(checkEmail);
+});
+
+//(function () { var w = window; var ic = w.Intercom; if (typeof ic === "function") { ic('reattach_activator'); ic('update', intercomSettings); } else { var d = document; var i = function () { i.c(arguments) }; i.q = []; i.c = function (args) { i.q.push(args) }; w.Intercom = i; if (w.attachEvent) { w.attachEvent('onload', l); } else { w.addEventListener('load', l, false); } } })();
+
+//function l() { var s = d.createElement('script'); s.type = 'text/javascript'; s.async = true; s.src = 'https://widget.intercom.io/widget/pgcj6qcq'; var x = d.getElementsByTagName('script')[0]; x.parentNode.insertBefore(s, x); }
+
+$(document).ready(function () {
+    var $box = $('.popup-note');
+    $('html').click(function (e) {
+        if (e.target.id === 'popup-note') {
+            $box.hide();
+        }
+    });
+});
+
+$(document).ready(function () {
+    var $box = $('#updateMail');
+    $('html').click(function (e) {
+        if (e.target.id === 'updateMail') {
+            $box.hide();
+        }
+    });
+});
+
+$(document).ready(function () {
+    var $box = $('#trigger');
+    $('html').click(function (e) {
+        if (e.target.id === 'trigger') {
+            $box.hide();
+        }
+    });
+});
+
+$(document).ready(function () {
+    var $box = $('#box-email');
+    $('html').click(function (e) {
+        if (e.target.id === 'box-email') {
+            $box.hide();
+        }
+    });
+});
+
+$(document).on('click', function () {
+    $('.whatDinhzadi').hide();
+});
+$('.btnNoteDzd, #whatDinhzadi').on('click', function (e) {
+    e.stopPropagation();
+});
+
+$(document).ready(function () {
+    $('.btnNoteDzd1').click(function () {
+        var parent = this.parentNode;
+        var des = parent.getElementsByClassName("col-md-6 col-sm-6 whatDinhzadi");
+        des[0].setAttribute("style", "display:block;");
+    });
+});
+$(document).on('click', function () {
+    $('#whatDinhzadi1').hide();
+});
+$('.btnNoteDzd1, #whatDinhzadi1').on('click', function (e) {
+    e.stopPropagation();
+});
+$(function () {
+    var EmailTest = $('#UserDetail_userEmail');
+    $('#popup-note').hide();
+    $('#trigger').hide();
+    if (EmailTest.val() === 0) {
+        $(".box-email").fadeIn(850);
+    } else {
+        $(".box-email").hide();
+    }
+    $(".skipEmail").click(function (e) {
+        $(".box-email").hide();
+        e.preventDefault();
+    });
+});
+$(function () {
+    $('#fullname').on('focus keydown mousedown', function (e) {
+        //e.preventDefault();
+    });
+});
+$(document).on('click', function () {
+    $('.popDzd').hide();
+});
+$('.popDzd').on('click', function () {
+    e.stopPropagation();
+});
+$('.click-login3').click(function () {
+    $('.popDzd').hide();
+});
+$('.btnPopDzd').click(function () {
+    $('.container-dzd').hide();
+});
+$(document).ready(function () {
+    $('.count-listproject li.grid-item').hide();
+    size_li = $(".count-listings li.type-rent").length;
+    x = 5;
+    $('.count-listproject li.grid-item:lt(' + x + ')').addClass('show');
+    $('.more-index-project').click(function () {
+        x = (x + 5 <= size_li) ? x + 5 : size_li;
+        $('.count-listproject li.grid-item:lt(' + x + ')').addClass('show');
+        size_last = $(".count-listproject li.grid-item.show").length;
+        if (size_li === size_last) {
+            $('.more-index-project').addClass('hidden');
+        }
+    });
+
+    $("#showDistrictSlider").load("/Home/Datadistrict/30");
+});
+function changeCity(ddl) {
+    var CityID = $('option:selected', ddl).val();
+    $("#showDistrictSlider").load("/Home/Datadistrict/" + CityID);
+}
+
+function lockContact(nameUser, namephone) {
+    var nameContact = $('#' + nameUser);
+    var phoneContact = $('#' + namephone);
+    $('.input-container input[type="text"]').each(function () {
+        if (nameContact.val().length === 0 && phoneContact.val().length === 0) {
+            $('#sub-contact').attr('disabled', 'true');
+        }
+        if (phoneContact.val().length < 9 || phoneContact.val().length > 11) {
+            $('#sub-contact').attr('disabled', 'true');
+        }
+
+    });
+    $('.input-container input[type="text"]').keypress(function () {
+        if (nameContact.val().length !== 0 && phoneContact.val().length !== 0 && phoneContact.val().length >= 9 && phoneContact.val().length <= 11) {
+            $('#sub-contact').removeAttr("disabled");
+        }
+
+    });
+    $('.input-container input[type="text"]').keyup(function () {
+        if (nameContact.val().length === 0 || phoneContact.val().length === 0 || phoneContact.val().length < 9 || phoneContact.val().length > 11) {
+            $('#sub-contact').attr('disabled', 'true');
+        }
+        else {
+            $('#sub-contact').removeAttr("disabled");
+        }
+
+    });
+}
+$('.loader').hide();
+
+
+
+
+//function CheckForm1() {
+
+//    var len1 = $("input[name*='aliasName']").val().length;
+//    var len2 = $("input[name*='contactAddress']").val().length;
+//    if (len1 === 0 || len2 === 0) {
+//        $("input[name*='nl-submit']").attr('disabled', 'true');
+//    }
+//    else {
+//        $("input[name*='nl-submit']").removeAttr("disabled");
+//    }
+//}
+
+function myamination(idAmi) {
+    var Ami = $("#" + idAmi);
+    var animaS = Ami.attr("nameAnimation");
+    Ami.show().css("animation-name", animaS);
+}
+
+if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+    $('.font-icon-calendar strong:contains("Đang giao dịch")').css("font-size", "9px");
+    $(".show-all input").blur(function () {
+        $("body").css("position", "relative");
+    });
+    var show = $('.show-all').find('in');
+    if (show) {
+        $(".show-all input").focus(function () {
+            $("body").css({ "position": 'fixed', "top": '0', 'bottom': "0" });
+        });
+    } else {
+        $(".show-all input").blur(function () {
+            $("body").css("position", "relative");
+        });
+    }
+    var body = $('html, body');
+
+    $('.show-all a').click(function (e) {
+        e.preventDefault();
+        body.animate({ scrollTop: 0 }, '10000', 'swing');
+    });
+}
+$(function () {
+    if ($(window).width() < 1100) {
+        $('.rightContact').insertAfter($('.leftContact'));
+    } else {
+        $('.leftContact').insertAfter($('.rightContact'));
+    }
+});
+
+$(document).ready(function () {
+    $(".contact-form #phone").keypress(function (e) {
+        if (e.which !== 8 && e.which !== 0 && (e.which < 48 || e.which > 57)) {
+            $(this).attr('maxlength', 11);
+            return false;
+        }
+    });
+    //$('#dropListBuyRent_Header').prop('selected', 'selected');
+});
+$(document).ready(function () {
+    $("#phone").attr('maxlength', 11);
+    $("#phone").keydown(function (e) {
+        if (e.which !== 8 && e.which !== 0 && (e.which < 48 || e.which > 57)) {
+            return false;
+        }
+    });
+    //$('#dropListBuyRent_Header').prop('selected', 'selected');
+});
+
+
+$(function () {
+    $(".tooltip-main").addClass('in');
+    $(".show-all input").blur(function () {
+        $("body").css("position", "relative");
+    });
+    var show = $('.show-all').find('in');
+    if (show) {
+        $(".show-all input").focus(function () {
+            $("body").css({ "position": 'fixed', "top": '0', 'bottom': "0" });
+        });
+    } else {
+        $(".show-all input").blur(function () {
+            $("body").css("position", "relative");
+        });
+    }
+    var body = $('html, body');
+
+    $('.show-all a').click(function (e) {
+        e.preventDefault();
+        body.animate({ scrollTop: 0 }, '10000', 'swing');
+    });
+
+});
+
+function toggleCir(btn_hover, cnt_hover) {
+    var btn = '.' + btn_hover;
+    var cnt = '.' + cnt_hover;
+
+    $(btn).click(function () {
+        $(cnt).show();
+    });
+    $(btn).mouseleave(function () {
+        $(cnt).hide();
+    });
+}
+
+toggleCir('btnCir', 'cnt_detail_1');
+toggleCir('small-goingdown_1', 'cnt_detail_2');
+toggleCir('small-goingdown_2', 'cnt_detail_3');
+
+function valuation_apartment(id_main) {
+    var main = '#' + id_main;
+    var min_apartment = main + ' ' + '#' + 'min-apartment';
+    var max_apartment = main + ' ' + '#' + 'max-apartment';
+    var med_apartment = main + ' ' + '#' + 'med-apartment';
+
+    if ($(min_apartment).val() !== null && $(max_apartment).val() !== "") {
+        //Apartment
+        var min = $(min_apartment).val();
+        var max = $(max_apartment).val();
+        var med = $(med_apartment).val();
+        var minvalue = [(min * 10000) / (max * 100) - ((((max * 10000) / (max * 100)) * 10) / 100) + 6];
+        var maxvalue = [(max * 10000) / (max * 100) - ((((max * 10000) / (max * 100)) * 10) / 100) + 6];
+        var medvalue = [(med * 10000) / (max * 100) - ((((max * 10000) / (max * 100)) * 10) / 100) + 10];
+
+        //show data
+        var textMin_apartment_chart = main + ' ' + '#' + 'tbMedianMin';
+        var textMax_apartment_chart = main + ' ' + '#' + 'tbMedianMax';
+        var textMed_apartment_chart = main + ' ' + '#' + 'tbMedianMed';
+        var textBigMed_apartment_chart = main + ' ' + '#' + 'tbBigMedApartment';
+        var textBigMed1_apartment_chart = main + ' ' + '#' + 'tbBigMedApartment';
+
+        $(textMin_apartment_chart).text(commasNumber(min));
+        $(textMed_apartment_chart).text(commasNumber(med));
+        $(textMax_apartment_chart).text(commasNumber(max));
+        $(textBigMed_apartment_chart).text(commasNumber(med));
+        $(textBigMed1_apartment_chart).append(' <span class="dzd-donvi">₫/m<sup>2</sup></span>');
+
+        var about = +maxvalue - +minvalue;
+        var min_apartment_chart = main + ' ' + '.' + 'min';
+        var max_apartment_chart = main + ' ' + '.' + 'max';
+        var med_apartment_chart = main + ' ' + '.' + 'med';
+        var back_apartment_chart = main + ' ' + '.' + 'background';
+
+        $(min_apartment_chart).animate({ "left": minvalue + '%' });
+        $(max_apartment_chart).animate({ "left": maxvalue + '%' });
+        $(med_apartment_chart).animate({ "left": medvalue + '%' });
+        $(back_apartment_chart).css({ "width": about + '%', "background-color": "rgba(146, 215, 249,0.5)" }).animate({ "margin-left": minvalue + '%' });
+
+
+
+        if (minvalue < 21) {
+            $(textMin_apartment_chart).css({ 'right': 'initial', 'left': '0' });
+        }
+        if (minvalue > 21) {
+            $(textMin_apartment_chart).css({ 'left': 'initial', 'right': '0' });
+        }
+
+        if (maxvalue < 21) {
+            $(textMax_apartment_chart).css({ 'right': 'initial', 'left': '0' });
+        }
+        if (maxvalue > 21) {
+            $(textMax_apartment_chart).css({ 'left': 'initial', 'right': '0' });
+        }
+
+        if (about < 41) {
+            $(max_apartment_chart).animate({ "left": maxvalue - 20 + '%' });
+            $(min_apartment_chart).animate({ "left": minvalue - 30 + '%' });
+            $(med_apartment_chart).animate({ "left": medvalue - 25 + '%' });
+            $(textMin_apartment_chart).css({ 'left': 'initial', 'right': '0' });
+            $(textMax_apartment_chart).css({ 'right': 'initial', 'left': '0' });
+            $(back_apartment_chart).css({ "width": about + 10 + '%', "background-color": "rgba(146, 215, 249,0.5)" }).animate({ "margin-left": minvalue - 30 + '%' });
+        }
+
+        $(window).trigger('resize');
+
+
+
+
+    }
+}
+//Land
+function valuation_land(id_main) {
+    var main = '#' + id_main;
+    var min_Land = main + ' ' + '#' + 'min-land';
+    var max_Land = main + ' ' + '#' + 'max-land';
+    var med_Land = main + ' ' + '#' + 'med-land';
+
+    if ($(min_Land).val() !== null && $(max_Land).val() !== "") {
+
+        //Land
+        var minland = $(min_Land).val();
+        var maxland = $(max_Land).val();
+        var medland = $(med_Land).val();
+
+
+        var minLand = [((minland * 10000) / (maxland * 100)) - ((((maxland * 10000) / (maxland * 100)) * 10) / 100) + 6];
+        var maxLand = [(maxland * 10000) / (maxland * 100) - ((((maxland * 10000) / (maxland * 100)) * 10) / 100) + 6];
+        var medLand = [(medland * 10000) / (maxland * 100) - ((((maxland * 10000) / (maxland * 100)) * 10) / 100) + 10];
+
+        var textMin_Land_chart = main + ' ' + '#' + 'tbMedianMin_Land_House';
+        var textMax_Land_chart = main + ' ' + '#' + 'tbMedianMax_Land_House';
+        var textMed_Land_chart = main + ' ' + '#' + 'tbMedian_Land_House';
+        var textBigMed_Land_chart = main + ' ' + '#' + 'tbBigMedLand';
+        var textBigMed1_Land_chart = main + ' ' + '#' + 'tbBigMedLand';
+
+        $(textMin_Land_chart).text(commasNumber(minland));
+        $(textMax_Land_chart).text(commasNumber(maxland));
+        $(textMed_Land_chart).text(commasNumber(medland));
+        $(textBigMed_Land_chart).text(commasNumber(medland));
+        $(textBigMed1_Land_chart).append(' <span class="dzd-donvi">₫/m<sup>2</sup></span>');
+
+
+        var aboutLand = +maxLand - +minLand;
+        var min_land_chart = main + ' ' + '.' + 'min-land';
+        var max_land_chart = main + ' ' + '.' + 'max-land';
+        var med_land_chart = main + ' ' + '.' + 'med-land';
+        var back_land_chart = main + ' ' + '.' + 'background-land';
+
+        $(min_land_chart).animate({ "left": minLand + '%' });
+        $(max_land_chart).animate({ "left": maxLand + '%' });
+        $(med_land_chart).animate({ "left": medLand + '%' });
+        $(back_land_chart).css({ "width": aboutLand + '%', "background-color": "rgba(146, 215, 249,0.5)" }).animate({ "margin-left": minLand + '%' });
+
+
+
+        if (minLand < 21) {
+            $(textMin_Land_chart).css({ 'right': 'initial', 'left': '0' });
+        }
+        if (minLand > 21) {
+            $(textMin_Land_chart).css({ 'left': 'initial', 'right': '0' });
+        }
+
+        if (maxLand < 21) {
+            $(textMax_Land_chart).css({ 'right': 'initial', 'left': '0' });
+        }
+        if (maxLand > 21) {
+            $(textMax_Land_chart).css({ 'left': 'initial', 'right': '0' });
+        }
+
+        if (medLand < 21) {
+            $(textMed_Land_chart).css({ 'right': 'initial', 'left': '0' });
+        }
+        if (medLand > 21) {
+            $(textMed_Land_chart).css({ 'left': 'initial', 'right': '0' });
+        }
+
+        if (aboutLand < 41) {
+            $(max_land_chart).animate({ "left": maxLand - 20 + '%' });
+            $(min_land_chart).animate({ "left": minLand - 30 + '%' });
+            $(med_land_chart).animate({ "left": medLand - 25 + '%' });
+            $(textMin_Land_chart).css({ 'left': 'initial', 'right': '0' });
+            $(textMax_Land_chart).css({ 'right': 'initial', 'left': '0' });
+            $(back_land_chart).css({ "width": aboutLand + 10 + '%', "background-color": "rgba(146, 215, 249,0.5)" }).animate({ "margin-left": minLand - 30 + '%' });
+        }
+
+        $(window).trigger('resize');
+
+
+
+
+
+    }
+
+}
+function commasNumber(val) {
+    while (/(\d+)(\d{3})/.test(val.toString())) {
+        val = val.toString().replace(/(\d+)(\d{3})/, '$1' + '.' + '$2');
+    }
+    return val;
+}
+//$(function () {
+//    //Dinhzadi 1
+//    valuation_apartment('GDA_1'); //apartment
+
+//    //Dinhzadi thu 2
+//    valuation_apartment('GDA_2'); //apartment
+//    valuation_land('GDA_2');   //land
+
+//    //Dinhzadi 3
+//    valuation_apartment('GDA_3'); //apartment
+//    valuation_land('GDA_3');   //land
+
+//    //Dinhzadi thu 4
+//    valuation_apartment('GDA_4'); //apartment
+//    valuation_land('GDA_4');   //land
+
+//    //Dinhzadi thu 2
+//    valuation_apartment('GDA_5'); //apartment
+//    valuation_land('GDA_5');   //land
+//});
+
+
+
+
+
+
+$(function () {
+    $('.submit_dev').attr("disabled", 'disabled');
+    $('.form_dev input').keypress(function () {
+
+        if ($('.signin-dev').val().length !== 0) {
+            if (!IsEmail($('.signin-dev').val())) {
+                addWarnBox('Sai định dạng email', $("#err"));
+            } else {
+                $("#warnbox").remove();
+            }
+            //validate phone
+            var phone = $('.signin-dev').val(),
+                intRegex = /[0-9-()+]{10,11}/;
+            if (intRegex.test(phone)) {
+                $('.signin-dev').attr('maxlength', 11);
+            }
+            else {
+                $('.signin-dev').removeAttr('maxlength');
+            }
+            if ($('.pass-dev').val().length !== 0) {
+                $('.submit_dev').removeAttr("disabled").css({ "background": "#E4002B", "color": "#ffffff", "cursor": "pointer" });
+            }
+        }
+    });
+});
+
+
+var th = ['', 'ngàn', 'triệu', 'tỷ', 'nghìn tỷ'];
+
+var dg = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
+
+var tn = ['mười', 'mười một', 'mười hai', 'mười ba', 'mười bốn', 'mười lăm', 'mười sáu', 'mười bảy', 'mười tám', 'mười chín'];
+
+var tw = ['hai mươi', 'ba mươi', 'bốn mươi', 'năm mươi', 'sáu mươi', 'bảy mươi', 'tám mươi', 'chín mươi'];
+
+function toWords(s) {
+    s = s.toString();
+    s = s.replace(/[\,. ]/g, '');
+    if (s !== parseFloat(s)) return '';
+    var x = s.indexOf('.');
+    if (x === -1) x = s.length;
+    if (x > 12) return 'Vượt mức tối đa. Liên hệ để được hỗ trợ.';
+    var n = s.split('');
+    var str = '';
+    var sk = 0;
+    for (var i = 0; i < x; i++) {
+        if ((x - i) % 3 === 2) {
+            if (n[i] === '1') {
+                str += tn[Number(n[i + 1])] + ' ';
+                i++;
+                sk = 1;
+            } else if (n[i] !== 0) {
+                str += tw[n[i] - 2] + ' ';
+                sk = 1;
+            }
+        } else if (n[i] !== 0) {
+            str += dg[n[i]] + ' ';
+            if ((x - i) % 3 === 0) str += 'trăm ';
+            sk = 1;
+        }
+        if ((x - i) % 3 === 1) {
+            if (sk) str += th[(x - i - 1) / 3] + ' ';
+            sk = 0;
+        }
+    }
+    if (x !== s.length) {
+        var y = s.length;
+        str += '';
+        for (i = x + 1; i < y; i++) str += dg[n[i]] + ' ';
+    }
+    return str.replace(/\s+/g, ' ');
+
+}
+
+$(function () {
+    $('.rnum').hide();
+    $('#tbPrice').keydown(function () {
+        $('.rnum').show();
+    });
+});
+$(function () {
+
+
+    var cityName = "";
+
+    var url = window.location.href;
+
+    if (url.toLowerCase().indexOf("heatmaps") > -1 || url.indexOf("ban-do-dinhzadi")) {
+
+        $(document).on("mouseover", "#ulLand > li", function (e) {
+            e.stopPropagation();
+            $('#ulLand li').removeClass('add-color-blue');
+            AlertHeatMapLeave(cityName);
+
+            if (lastmouseover !== null) {
+                if ($(this) !== lastmouseover) {
+                    $(lastmouseover).removeClass('add-color-blue');
+
+                }
+            }
+
+            $(this).addClass('add-color-blue');
+            cityName = $(this).attr("title");
+
+
+            AlertHeatMap(cityName);
+            lastmouseover = $(this);
+
+        });
+
+
+        $(document).on("click", "#ulLand > li", function (e) {
+            e.stopPropagation();
+
+
+            $('#ulLand li').removeClass('add-color-blue');
+            $(this).addClass('add-color-blue');
+            cityName = $(this).attr("title");
+
+
+            AlertHeatMap(cityName);
+
+        });
+
+
+        //$(document).on("mouseout", "#ulLand > li", function (e) {
+        //    e.stopPropagation();
+        //    AlertHeatMapLeave(cityName);
+
+        //});
+    }
+    else {
+
+
+
+
+
+        $(document).on("mouseover", "#ulLand > li", function (e) {
+            e.stopPropagation();
+            //$('#ulLand li').removeClass('add-color-blue');
+
+            //if (lastmouseover !== null) {
+            //    if ($(this) !== lastmouseover) {
+            //        $(lastmouseover).removeClass('add-color-blue');
+
+            //    }
+            //}
+
+            $(this).addClass('add-color-blue');
+            cityName = $(this).attr("title");
+
+
+            AlertHeatMap(cityName);
+            //lastmouseover = $(this);
+
+        });
+
+
+        $(document).on("click", "#ulLand > li", function (e) {
+            e.stopPropagation();
+
+
+            //$('#ulLand li').removeClass('add-color-blue');
+            $(this).addClass('add-color-blue');
+            cityName = $(this).attr("title");
+
+
+            AlertHeatMap(cityName);
+
+        });
+
+
+        $(document).on("mouseout", "#ulLand > li", function (e) {
+            e.stopPropagation();
+            $(this).removeClass('add-color-blue');
+            AlertHeatMapLeave(cityName);
+
+        });
+    }
+
+});
+$(function () {
+    $('.select-bank').change(function () {
+        if ($('.select-bank option').is(":selected")) {
+
+            return;
+
+        }
+    });
+});
+
+
+$(document).on('click', function () {
+    $('#popup-bank').hide();
+});
+$('.btnbank, #popup-bank .modal-dialog').on('click', function (e) {
+    e.stopPropagation();
+});
+
+
+$(function () {
+    $('.click-pay').on('click', function (event) {
+        var target = $($(this).attr('href'));
+        if (target.length) {
+            event.preventDefault();
+            $('html, body').animate({
+                scrollTop: target.offset().top - 10
+            }, 1000);
+        }
+    });
+});
+$(function () {
+    $('.click-pay-1').on('click', function (event) {
+        var target = $($(this).attr('href'));
+        if (target.length) {
+            event.preventDefault();
+            $('html, body').animate({
+                scrollTop: target.offset().top - 10
+            }, 1000);
+        }
+    });
+});

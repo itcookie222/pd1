@@ -1,0 +1,336 @@
+.searchboxContainer {
+  position: relative;
+  margin-top: -40px;
+}
+
+.searchboxContainer *:not(input) {
+    -webkit-user-select: none;
+       -moz-user-select: none;
+        -ms-user-select: none;
+            user-select: none;
+}
+
+.searchboxContainer.focus {
+    z-index: 100;
+}
+
+.searchboxContainer.international {
+  margin-top: -34px;
+}
+
+.searchboxContainer:before {
+  content: '';
+  z-index: -1;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #232A31;
+  opacity: 0;
+  -webkit-transition: all .2s ease-out;
+  transition: all .2s ease-out;
+}
+
+.searchboxContainer.dim:before {
+  opacity: 0.92;
+}
+
+.searchbox {
+  margin: auto;
+  min-height: 200px;
+  height: 100%;
+}
+
+.domestic .searchbox {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+.international .searchbox {
+  display: block;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.searchTitle {
+  padding: 16px 16px 0 16px;
+}
+
+.domestic .tabContainer {
+  position: absolute;
+  min-height: 100%;
+  width: 100%;
+}
+
+.domestic .sideMenu {
+  position: relative;
+  width: 30%;
+  border-right: 1px solid #dadada;
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+  /*overflow-y: scroll; /*always show scrollbar to make width consistent*/ */
+  min-height: 200px;
+  background: #f6f6f6;
+  -webkit-transition: width .1s ease-out;
+  transition: width .1s ease-out;
+}
+
+.productTitle {
+    position: relative;
+    overflow: hidden;
+    -webkit-transition: width .1s ease-out;
+    transition: width .1s ease-out;
+}
+
+.domestic .sideMenu.collapse {
+    overflow: hidden;
+    width: 60px;
+}
+
+.domestic .sideMenu.collapse .productTitle {
+    visibility: hidden;
+}
+
+.international .tabContainer {
+  position: relative;
+  margin: auto;
+  padding-bottom: 2px;
+}
+
+.domestic .tabList {
+  background: #f6f6f6;
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 100%;
+  border-bottom-left-radius: 4px;
+  border-top-left-radius: 4px;
+}
+
+.tabLabel {
+  font-size: 14px;
+  line-height: 21px;
+  min-height: 33.33333px;
+  color: #696969;
+  padding: 4px 16px;
+  letter-spacing: 0;
+  text-transform: capitalize;
+  cursor: pointer;
+  border-right: 2px solid transparent;
+  white-space: nowrap;
+  -webkit-transition: all .2s ease-out;
+  transition: all .2s ease-out;
+}
+
+.tabLabel > div {
+  display: block;
+}
+
+.tabLabel.hasChild:after {
+  content: '';
+  display: block;
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-bottom: 2px solid #696969;
+  border-right: 2px solid #696969;
+  -webkit-transform: rotate(45Deg);
+          transform: rotate(45Deg);
+  top: 13px;
+  right: 11px;
+}
+
+.accent {
+  width: 100%;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  border-top-right-radius: 4px;
+  display: none;
+}
+
+.international .tabLabel {
+  background: #f6f6f6;
+  -webkit-box-shadow: inset 0 -1px 3px 0 rgba(27, 27, 27, .10);
+          box-shadow: inset 0 -1px 3px 0 rgba(27, 27, 27, .10);
+  border-radius: 4px 4px 0 0;
+  border: none;
+  display: inline-block;
+  margin-right: 4px;
+}
+
+.international .tabLabel.hasChild:after {
+  margin-left: 8px;
+  vertical-align: middle;
+  display: inline-block;
+  position: static;
+}
+
+.international .tabLabel.hasChild.active:after {
+  border-color: #fff;
+}
+
+.domestic .tabLabel:not(.active):hover,
+.domestic .tabLabel.active {
+  background: #fff;
+  color: #434343;
+}
+
+.domestic .tabLabel {
+  position: relative;
+  padding: 0;
+  margin-right: 8px;
+}
+
+.domestic .sideMenu.collapse .tabLabel.hasChild:after {
+    border: 0;
+}
+
+.domestic .tabLabel > div {
+  padding: 6px 16px;
+}
+
+.tabLabel svg {
+  vertical-align: text-top;
+  margin-right: 8px;
+}
+
+.international .tabLabel.active svg {
+  fill: #fff !important;
+}
+
+.international .tabLabel.active {
+  color: #fff;
+  -webkit-box-shadow: none;
+          box-shadow: none;
+}
+
+.international .tabLabel.active .accent {
+  display: block;
+}
+
+.tabContent {
+  width: 100%;
+  min-height: 200px;
+  z-index: 2;
+}
+
+.childDropdown > div:last-child {
+  right: -20px;
+}
+
+.international .childDropdown {
+  display: inline-block;
+}
+
+.promoContainer {
+  position: relative;
+  margin: auto;
+  display:none;
+}
+.focusBox .promoContainer {
+    display: block;
+}
+    .overlayEnter .promoInner {
+    opacity: 0;
+    padding-top: 64px;
+    -webkit-transition: all .2s ease-out;
+    transition: all .2s ease-out;
+}
+
+.overlayEnter.overlayEnterActive .promoInner {
+  opacity: 1;
+  padding-top: 56px;
+}
+
+.overlayLeave .promoInner {
+  position: absolute;
+  width: 100%;
+  top: 0;
+  padding-top: 56px;
+  opacity: 1;
+}
+
+.overlayLeave {
+  padding-top: 0;
+  opacity: 1;
+  -webkit-transition: all .2s ease-out;
+  transition: all .2s ease-out;
+}
+
+.overlayLeave.overlayLeaveActive .promoInner {
+  padding-top: 64px;
+  opacity: 0;
+}
+
+.promoInner {
+    padding-top: 56px;
+    position: absolute;
+    width: 100%;
+}
+
+.scrollText {
+  position: absolute;
+  opacity: .8;
+  top: -32px;
+  text-align: center;
+  display: block;
+  width: 100%;
+  color: #fff;
+}
+
+.scrollText svg {
+  vertical-align: text-top;
+  margin-right: 4px;
+}
+
+.promoContainer .heading {
+  text-align: center;
+  color: #fff;
+  margin-top: 0 !important;
+}
+
+.collapseContainer {
+    position: absolute;
+    top: 0;
+    right: -8px;
+    z-index: 2;
+    cursor: pointer;
+    height: 100%;
+    width: 16px;
+
+}
+
+.collapseDisplay {
+    width: 8px;
+    height: 100%;
+    background: rgba(218, 218, 218, .5);
+}
+
+.collapseDisplay:hover {
+    background: rgba(218, 218, 218, 1);
+}
+
+.collapseDisplay:active {
+    background: rgba(218, 218, 218, .5);
+}
+
+.collapseDisplay:active svg {
+    opacity: .5;
+}
+
+.chevron {
+    position: absolute;
+    top: 45%;
+}
+
+
+span.desTitle {
+    position: absolute;
+    bottom: 10px;
+    left: 20px;
+    color: #FFF;
+    font-weight: 700;
+}

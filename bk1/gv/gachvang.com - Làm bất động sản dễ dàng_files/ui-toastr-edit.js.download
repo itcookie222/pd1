@@ -1,0 +1,110 @@
+var UIToastr = function () {
+
+    return {
+        //main function to initiate the module
+        init: function (stit, smess) {
+
+            var i = -1,
+                toastCount = 0,
+                $toastlast,
+                getMessage = function () {
+                    var msgs = ['Test'
+                    ];
+                    i++;
+                    if (i === msgs.length) {
+                        i = 0;
+                    }
+                    return msgs[i];
+                };
+            function getNoti(tit, mess) {    
+                var shortCutFunction = "gv";
+                var toastIndex = toastCount++;
+                toastr.options = {
+                    "closeButton": true,
+                    "debug": true,
+                    "positionClass": "toast-bottom-left",
+                    "showDuration": "7000",
+                    "hideDuration": "6000",
+                    "timeOut": "20000",
+                    "extendedTimeOut": "20000",
+                    "showEasing": "swing",
+                    "hideEasing": "linear",
+                    "showMethod": "fadeIn",
+                    "hideMethod": "fadeOut"
+                }
+                var $toast = toastr[shortCutFunction](mess, tit); 
+                $toastlast = $toast;
+
+                $('#clearlasttoast').click(function () {
+                    toastr.clear($toastlast);
+                });
+            }
+            $('#cleartoasts').click(function () {
+                toastr.clear();
+            });
+
+            getNoti(stit, smess);
+
+
+        },
+        init2: function (stit, smess) {
+
+            var i = -1,
+                toastCount = 0,
+                $toastlast,
+                getMessage = function () {
+                    var msgs = ['Test'
+                    ];
+                    i++;
+                    if (i === msgs.length) {
+                        i = 0;
+                    }
+                    return msgs[i];
+                };
+            function getNoti(tit, mess) {
+                var shortCutFunction = "gv2";
+                var toastIndex = toastCount++;
+                toastr.options = {
+                    "closeButton": true,
+                    "debug": true,
+                    "positionClass": "toast-bottom-left",
+                    "showDuration": "6000",
+                    "hideDuration": "6000",
+                    "timeOut": "20000",
+                    "extendedTimeOut": "20000",
+                    "showEasing": "swing",
+                    "hideEasing": "linear",
+                    "showMethod": "fadeIn",
+                    "hideMethod": "fadeOut"
+                }
+                var $toast = toastr[shortCutFunction](mess, tit);
+                $toastlast = $toast;
+
+                $('#clearlasttoast').click(function () {
+                    toastr.clear($toastlast);
+                });
+            }
+            $('#cleartoasts').click(function () {
+                toastr.clear();
+            });
+
+            getNoti(stit, smess);
+
+
+        },
+        clear: function () {
+
+            toastr.clear();
+
+
+        }
+
+
+
+    };
+
+}();
+
+//jQuery(document).ready(function() {    
+//   UIToastr.init();
+//});

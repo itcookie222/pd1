@@ -1,0 +1,1960 @@
+﻿var waitLiked;
+function savelisting(bt, id) {
+    if ($(bt).hasClass('active')) {
+        $.ajax({
+            url: "/Property/ClearSaveListing",
+            type: "GET",
+            dataType: "json",
+            data: { id: id },
+            success: function (data) {
+                if (data.message === "ok") {
+                    $(bt).removeClass('active');
+                    $(bt).html('<i class="fa fa-heart-o"></i><i class="fa fa-heart heart-hidden"></i>');
+                    $(".countSave").html(data.icount);
+                    if (waitLiked !== null) {
+                        clearTimeout(waitLiked);
+                    }
+                    waitLiked = setTimeout(function () {
+                        messageBox("Đã được xoá khỏi danh sách theo dõi");
+                    }, 1000);
+
+                } else {
+                    $('.show-all').fadeIn(1500);
+                    $('#login').modal('show');
+                    //window.location.href = "/Property/Index/" + data.id + "?commandLogin=" + data.message;
+                }
+            },
+            error: function (data) {
+                $('.show-all').fadeIn(1500);
+                $('#login').modal('show');
+                //window.location.href = "/Property/Index/" + data.id + "?commandLogin=" + data.message;
+
+            }
+        });
+
+
+
+    } else {
+        $.ajax({
+            url: "/Property/SaveListing",
+            type: "GET",
+            dataType: "json",
+            data: { id: id },
+            success: function (data) {
+                if (data.message === "ok") {
+                    $(bt).addClass('active');
+                    $(bt).html('<i class="fa fa-heart heart-hidden active"></i>');
+                    $(".countSave").html(data.icount);
+                    if (waitLiked !== null) {
+                        clearTimeout(waitLiked);
+                    }
+                    waitLiked = setTimeout(function () {
+                        messageBox("Đã được lưu vào danh sách theo dõi");
+                    }, 1000);
+
+                }
+                else if (data.message === "duplicate") {
+                    if (waitLiked !== null) {
+                        clearTimeout(waitLiked);
+                    }
+                    waitLiked = setTimeout(function () {
+                        messageBox("Đã được lưu vào danh sách theo dõi trước đó");
+                    }, 1000);
+                }
+                else {
+                    $('.show-all').fadeIn(1500);
+                    $('#login').modal('show');
+                    //window.location.href = "/Property/Index/" + data.id + "?commandLogin=" + data.message;
+                }
+            },
+
+            error: function (data) {
+                $('.show-all').fadeIn(1500);
+                $('#login').modal('show');
+                //window.location.href = "/Property/Index/" + data.id + "?commandLogin=" + data.message;
+
+            }
+        });
+    }
+}
+
+function savelistingMobi(bt, id) {
+    if ($(bt).hasClass('active')) {
+        $.ajax({
+            url: "/Property/ClearSaveListing",
+            type: "GET",
+            dataType: "json",
+            data: { id: id },
+            success: function (data) {
+                if (data.message === "ok") {
+                    $(bt).removeClass('active');
+                    $(bt).html('<i class="fa fa-heart-o"></i>');
+                    $(".countSave").html(data.icount);
+                    if (waitLiked !== null) {
+                        clearTimeout(waitLiked);
+                    }
+                    waitLiked = setTimeout(function () {
+                        messageBox("Đã được xoá khỏi danh sách theo dõi");
+                    }, 1000);
+
+                }
+
+                else {
+
+                    $('.show-all').fadeIn(1500);
+
+                    $('#login').modal('show');
+
+
+                    //window.location.href = "/Property/Index/" + data.id + "?commandLogin=" + data.message;
+                }
+            },
+            error: function (data) {
+
+                $('.show-all').fadeIn(1500);
+                $('#login').modal('show');
+                //window.location.href = "/Property/Index/" + data.id + "?commandLogin=" + data.message;
+
+            }
+        });
+
+
+
+    } else {
+        $.ajax({
+            url: "/Property/SaveListing",
+            type: "GET",
+            dataType: "json",
+            data: { id: id },
+            success: function (data) {
+                if (data.message === "ok") {
+                    $(bt).addClass('active');
+                    $(bt).html('<i class="fa fa-heart active"></i>');
+                    $(".countSave").html(data.icount);
+                    if (waitLiked !== null) {
+                        clearTimeout(waitLiked);
+                    }
+                    waitLiked = setTimeout(function () {
+                        messageBox("Đã được lưu vào danh sách theo dõi");
+                    }, 1000);
+
+                }
+                else if (data.message === "duplicate") {
+                    if (waitLiked !== null) {
+                        clearTimeout(waitLiked);
+                    }
+                    waitLiked = setTimeout(function () {
+                        messageBox("Đã được lưu vào danh sách theo dõi trước đó");
+                    }, 1000);
+                }
+                else {
+                    $('.show-all').fadeIn(1500);
+                    $('#login').modal('show');
+                    //window.location.href = "/Property/Index/" + data.id + "?commandLogin=" + data.message;
+                }
+            },
+            error: function (data) {
+                $('.show-all').fadeIn(1500);
+                $('#login').modal('show');
+                //window.location.href = "/Property/Index/" + data.id + "?commandLogin=" + data.message;
+
+            }
+        });
+    }
+}
+
+
+function changeLanguage() {
+    var cookieLang = getCookie("_culture");
+    if (cookieLang === "en") {
+        deleteCookie("_culture", "en");
+        setCookie("_culture", "vi", 7);
+    }
+    else if (cookieLang === "vi" || cookieLang === null || cookieLang === "") {
+        deleteCookie("_culture", "vi");
+        setCookie("_culture", "en", 7);
+    }
+    else {
+        deleteCookie("_culture", "en");
+        setCookie("_culture", "vi", 7);
+    }
+    location.reload();
+}
+
+function ResetPassByEmail(inputEmail) {
+
+    var email = $('#' + inputEmail).val();
+    var here = $('#' + inputEmail).parent();
+    if (email === '') {
+        //alert('Email is not empty!');
+        return false;
+    }
+    $.ajax({
+        url: "/Home/ResetPass",
+        type: "POST",
+        dataType: "json",
+        async: false,
+        cache: false,
+        data: {
+            email: email
+        },
+        success: function (data) {
+            if (document.getElementById("reset-pass") !== null) {
+                $("#reset-pass").remove();
+            }
+            if (data.message === 'error') {
+
+                $('.noti-resetPass').remove();
+                here.append("<p id = 'reset-pass' class='color-red noti-resetPass'>Không tìm thấy tài khoản này với email này</p>");
+            } else {
+                //$('.noti-resetPass').remove();
+                //here.append("<p class='color-red noti-resetPass'>Ok</p>");
+
+                //window.location.href = "/Home/ResetPass";
+
+                $(".pEmailSended").css("display", "block");
+
+            }
+        },
+        error: function (data, status, err) { alert(status + '\n' + err); alert("xhr: " + data.readyState); }
+    });
+}
+
+//$('.popovers').popover(
+//    {
+//        html: true,
+//        template: '<div class="popover tooltip-content" role="tooltip"><div class="arrow"></div><div class="popover-content"></div><button class="close close-popover-notification closenotification" type="button" onclick="closenotification(this);"><i class="fa fa-times"></i></button></div>'
+//    });
+
+function closenotification(thisbt) {
+    $(thisbt).parent().hide();
+};
+
+
+function funLoadContact(id) {
+    $('#card-contact').load("/Project/DataContact/" + id);
+};
+
+
+function savelistingPDetail(bt, id) {
+    if ($(bt).hasClass('active')) {
+        $.ajax({
+            url: "/Project/ClearSaveListing",
+            type: "GET",
+            dataType: "json",
+            data: { id: id },
+            success: function (data) {
+                if (data.message === "ok") {
+                    $(bt).removeClass('active');
+                    $(bt).html('<i class="fa fa-heart-o"></i><i class="fa fa-heart heart-hidden"></i> <span class="text">Lưu</span> </a>');
+                    $(".countSave").html(data.icount);
+                    if (waitLiked !== null) {
+                        clearTimeout(waitLiked);
+                    }
+                    waitLiked = setTimeout(function () {
+                        messageBox("Đã được xoá khỏi danh sách theo dõi");
+                    }, 1000);
+
+                }
+
+                else {
+                    $('.show-all').fadeIn(1500);
+                    $('#login').modal('show');
+                }
+            },
+            error: function (data) {
+                $('.show-all').fadeIn(1500);
+                $('#login').modal('show');
+            }
+        });
+    } else {
+        $.ajax({
+            url: "/Project/SaveListing",
+            type: "GET",
+            dataType: "json",
+            data: { id: id },
+            success: function (data) {
+                if (data.message === "ok") {
+                    $(bt).addClass('active');
+                    $(bt).html('<i class="fa fa-heart active"></i> <span class="text">Đã Lưu</span> </a>');
+                    $(".countSave").html(data.icount);
+                    if (waitLiked !== null) {
+                        clearTimeout(waitLiked);
+                    }
+                    waitLiked = setTimeout(function () {
+                        messageBox("Đã được lưu vào danh sách theo dõi");
+                    }, 1000);
+
+                }
+                else if (data.message === "duplicate") {
+                    if (waitLiked !== null) {
+                        clearTimeout(waitLiked);
+                    }
+                    waitLiked = setTimeout(function () {
+                        messageBox("Đã được lưu vào danh sách theo dõi trước đó");
+                    }, 1000);
+                }
+                else {
+                    $('.show-all').fadeIn(1500);
+                    $('#login').modal('show');
+                }
+            },
+
+            error: function (data) {
+                $('.show-all').fadeIn(1500);
+                $('#login').modal('show');
+
+            }
+        });
+    }
+}
+function savelistingP(bt, id) {
+    if ($(bt).hasClass('active')) {
+        $.ajax({
+            url: "/Project/ClearSaveListing",
+            type: "GET",
+            dataType: "json",
+            data: { id: id },
+            success: function (data) {
+                if (data.message === "ok") {
+                    $(bt).removeClass('active');
+                    $(bt).html('<i class="fa fa-heart-o"></i><i class="fa fa-heart heart-hidden"></i>');
+                    $(".countSave").html(data.icount);
+                    if (waitLiked !== null) {
+                        clearTimeout(waitLiked);
+                    }
+                    waitLiked = setTimeout(function () {
+                        messageBox("Đã được xoá khỏi danh sách theo dõi");
+                    }, 1000);
+
+                } else {
+                    $('.show-all').fadeIn(1500);
+                    $('#login').modal('show');
+                }
+            },
+            error: function (data) {
+                $('.show-all').fadeIn(1500);
+                $('#login').modal('show');
+            }
+        });
+    } else {
+        $.ajax({
+            url: "/Project/SaveListing",
+            type: "GET",
+            dataType: "json",
+            data: { id: id },
+            success: function (data) {
+                if (data.message === "ok") {
+                    $(bt).addClass('active');
+                    $(bt).html('<i class="fa fa-heart heart-hidden active"></i>');
+                    $(".countSave").html(data.icount);
+                    if (waitLiked !== null) {
+                        clearTimeout(waitLiked);
+                    }
+                    waitLiked = setTimeout(function () {
+                        messageBox("Đã được lưu vào danh sách theo dõi");
+                    }, 1000);
+
+                }
+                else if (data.message === "duplicate") {
+                    if (waitLiked !== null) {
+                        clearTimeout(waitLiked);
+                    }
+                    waitLiked = setTimeout(function () {
+                        messageBox("Đã được lưu vào danh sách theo dõi trước đó");
+                    }, 1000);
+                }
+                else {
+                    $('.show-all').fadeIn(1500);
+                    $('#login').modal('show');
+                }
+            },
+
+            error: function (data) {
+                $('.show-all').fadeIn(1500);
+                $('#login').modal('show');
+
+            }
+        });
+    }
+}
+
+function savelistingPMobi(bt, id) {
+    if ($(bt).hasClass('active')) {
+        $.ajax({
+            url: "/Project/ClearSaveListing",
+            type: "GET",
+            dataType: "json",
+            data: { id: id },
+            success: function (data) {
+                if (data.message === "ok") {
+                    $(bt).removeClass('active');
+                    $(bt).html('<i class="fa fa-heart-o"></i>');
+                    $(".countSave").html(data.icount);
+                    if (waitLiked !== null) {
+                        clearTimeout(waitLiked);
+                    }
+                    waitLiked = setTimeout(function () {
+                        messageBox("Đã được xoá khỏi danh sách theo dõi");
+                    }, 1000);
+
+                } else {
+
+                    $('.show-all').fadeIn(1500);
+
+                    $('#login').modal('show');
+
+                }
+            },
+            error: function (data) {
+
+                $('.show-all').fadeIn(1500);
+                $('#login').modal('show');
+
+            }
+        });
+    } else {
+        $.ajax({
+            url: "/Project/SaveListing",
+            type: "GET",
+            dataType: "json",
+            data: { id: id },
+            success: function (data) {
+                if (data.message === "ok") {
+                    $(bt).addClass('active');
+                    $(bt).html('<i class="fa fa-heart active"></i>');
+                    $(".countSave").html(data.icount);
+                    if (waitLiked !== null) {
+                        clearTimeout(waitLiked);
+                    }
+                    waitLiked = setTimeout(function () {
+                        messageBox("Đã được lưu vào danh sách theo dõi");
+                    }, 1000);
+
+                }
+                else if (data.message === "duplicate") {
+                    if (waitLiked !== null) {
+                        clearTimeout(waitLiked);
+                    }
+                    waitLiked = setTimeout(function () {
+                        messageBox("Đã được lưu vào danh sách theo dõi trước đó");
+                    }, 1000);
+                }
+                else {
+                    $('.show-all').fadeIn(1500);
+                    $('#login').modal('show');
+
+                }
+            },
+            error: function (data) {
+                $('.show-all').fadeIn(1500);
+                $('#login').modal('show');
+            }
+        });
+    }
+}
+
+function uploadAvatarDeveloper(fl) {
+
+    var filedata = fl,
+        formdata = false;
+    if (window.FormData) {
+        formdata = new FormData();
+    }
+    var i = 0, len = filedata.files.length, reader, file;
+
+    for (; i < len; i++) {
+        file = filedata.files[i];
+
+        if (window.FileReader) {
+            reader = new FileReader();
+            reader.onloadend = function (e) {
+                //showUploadedItem(e.target.result, file.fileName);
+            };
+            reader.readAsDataURL(file);
+        }
+        if (formdata) {
+            formdata.append("file", file);
+        }
+    }
+    if (formdata) {
+        $.ajax({
+            url: "/Admin/SavePhotoDeveloper",
+            type: "POST",
+            data: formdata,
+            processData: false,
+            contentType: false,
+            success: function (res) {
+                $("#ImgDeveloper").attr("src", "/images/developer/" + res.Message);
+                $("#developerLogoURL").val(res.Message);
+            },
+            error: function (res) {
+            }
+        });
+    }
+}
+function uploadAvatarDeveloper2(fl, desImg, desInput) {
+
+    var filedata = fl,
+        formdata = false;
+    if (window.FormData) {
+        formdata = new FormData();
+    }
+    var i = 0, len = filedata.files.length, reader, file;
+
+    for (; i < len; i++) {
+        file = filedata.files[i];
+
+        if (window.FileReader) {
+            reader = new FileReader();
+            reader.onloadend = function (e) {
+                //showUploadedItem(e.target.result, file.fileName);
+            };
+            reader.readAsDataURL(file);
+        }
+        if (formdata) {
+            formdata.append("file", file);
+        }
+    }
+    if (formdata) {
+        $.ajax({
+            url: "/Admin/SavePhotoDeveloper",
+            type: "POST",
+            data: formdata,
+            processData: false,
+            contentType: false,
+            success: function (res) {
+                $("#" + desImg).attr("src", "/images/developer/" + res.Message);
+                $("#" + desInput).val(res.Message);
+            },
+            error: function (res) {
+            }
+        });
+    }
+}
+function showTriggerDzd() {
+    if (Cookies.get('triggerDzd') !== null) {
+        var a = Cookies.get('triggerDzd');
+        if (a === 2) {
+            $('#modalTriggerDzd').modal('hide');
+        }
+        else {
+
+            var timer,
+                counter = 5;
+            timer = setInterval(function () {
+                counter--;
+                if (counter === 0) {
+                    $('#modalTriggerDzd').modal('show');
+                    clearInterval(timer);
+                }
+            }, 1000);
+
+        }
+    } else {
+        Cookies.set('triggerListing', '1');
+
+        timer = 0;
+        counter = 5;
+        timer = setInterval(function () {
+            counter--;
+            if (counter === 0) {
+                $('#modalTriggerDzd').modal('show');
+                clearInterval(timer);
+            }
+        }, 1000);
+
+    }
+}
+//var pagedzd = $('#page-dzd');
+//var ispagedzd = pagedzd[0];
+//if (typeof ispagedzd !== "undefined") {
+//    showTriggerDzd();
+//    $("#modalTriggerDzd a.close").click(function () {
+//        Cookies.set('triggerDzd', '2');
+//        $.ajax({
+//            url: '/Home/funTriggerActivity', name: 'User tắt trigger DZD',
+//            type: "POST",
+//            data: { typeID: '15' },
+//            dataType: "json",
+//            error: function (error) {
+//                //alert(error);
+//            },
+//            success: function (data) {
+//                if (data.message === "ok") {
+//                    //alert("ok");
+//                } else {
+//                    //alert("errorr");
+//                }
+
+//            }
+//        });
+//    });
+//    $("#modalTriggerDzd .bt-startNow").click(function () {
+//        Cookies.set('triggerDzd', '2');
+//        $.ajax({
+//            url: '/Home/funTriggerActivity', name: 'User tắt trigger DZD',
+//            type: "POST",
+//            data: { typeID: '15' },
+//            dataType: "json",
+//            error: function (error) {
+//                //alert(error);
+//            },
+//            success: function (data) {
+//                if (data.message === "ok") {
+//                    //alert("ok");
+//                } else {
+//                    //alert("errorr");
+//                }
+
+//            }
+//        });
+
+//    });
+//}
+
+function showTriggerListing() {
+    if (Cookies.get('triggerListing') !== null) {
+        var a = Cookies.get('triggerListing');
+        if (a === 2) {
+            $('#TriggerListing').modal('hide');
+        }
+        else {
+            //$('#TriggerListing').modal({ backdrop: 'static', keyboard: false });
+            $('#TriggerListing').modal('show');
+        }
+    } else {
+        Cookies.set('triggerListing', '1');
+        //$('#TriggerListing').modal({ backdrop: 'static', keyboard: false });
+        $('#TriggerListing').modal('show');
+    }
+}
+var propertyListing = $('#property-Listing');
+var ispropertyListing = propertyListing[0];
+if (typeof ispropertyListing !== "undefined") {
+    //showTriggerListing();
+
+
+    $("#TriggerListing .bt-continue").click(function () {
+        Cookies.set('triggerListing', '2');
+        var optionSelect = $('input[name=optionSelect]:checked').val();
+
+        $.ajax({
+            url: '/Home/funTriggerActivity',
+            type: "POST",
+            data: { typeID: '14', name: 'tắt trigger listing' + ' - chọn: ' + optionSelect },
+            dataType: "json",
+            error: function (error) {
+                //alert(error);
+            },
+            success: function (data) {
+                if (data.message === "ok") {
+                    //alert("ok");
+                } else {
+                    //alert("errorr");
+                }
+
+            }
+        });
+
+    });
+
+    $("#TriggerListing .close").click(function () {
+        Cookies.set('triggerListing', '2');
+        var optionSelect = $('input[name=optionSelect]:checked').val();
+        $.ajax({
+            url: '/Home/funTriggerActivity',
+            type: "POST",
+            data: { typeID: '14', name: 'tắt trigger listing' + ' - chọn: ' + optionSelect },
+            dataType: "json",
+            error: function (error) {
+                //alert(error);
+            },
+            success: function (data) {
+                if (data.message === "ok") {
+                    //alert("ok");
+                } else {
+                    //alert("errorr");
+                }
+
+            }
+        });
+    });
+    $("#TriggerListing .bt-skip").click(function () {
+        var url = "/dinh-gia";
+        $(location).attr('href', url);
+
+    });
+}
+$("#project-sort-types").change(function () {
+
+    var indexSelected = $('option:selected', this).val();
+
+
+    window.location.href = indexSelected;
+
+});
+$("#project-sort-typesMobi").change(function () {
+
+    var indexSelected = $('option:selected', this).val();
+
+
+    window.location.href = indexSelected;
+
+});
+
+function focustxt2(txt) {
+    $("#" + txt).focus();
+
+}
+
+function submitContactProjectM(bt) {
+
+    var emailphone = $(".contactBoxM  input[name*='contactAddress']").val().trim();
+    var kq = 0;
+    if (isPhone(emailphone) || IsEmail(emailphone)) {
+        kq++;
+    } else {
+
+        $("#alert-box").html("Số điện thoại không đúng định dạng");
+        $(".contactBoxM  input[name*='contactAddress']").focus();
+        return false;
+    }
+    if (kq === 1) {
+        var form = $(bt).closest('form');
+        form.submit();
+    }
+
+}
+function submitContactProject(bt) {
+
+    var emailphone = $("input[name*='contactAddress']").val().trim();
+    var kq = 0;
+    if (isPhone(emailphone) || IsEmail(emailphone)) {
+        kq++;
+    } else {
+        addWarnBox("Số điện thoại", $("input[name*='contactAddress']").parent());
+        $("input[name*='contactAddress']").focus();
+        return false;
+    }
+    if (kq === 1) {
+        var form = $(bt).closest('form');
+        form.submit();
+    }
+
+}
+function submitContactPropertyM(bt) {
+
+    var emailphone = $(".contactBoxM input[name*='contactAddress']").val().trim();
+    var kq = 0;
+    if (isPhone(emailphone) || IsEmail(emailphone)) {
+        kq++;
+    } else {
+        $("#alert-box").html("Số điện thoại không đúng định dạng");
+        $(".contactBoxM input[name*='contactAddress']").focus();
+        return false;
+    }
+    if (kq === 1) {
+        var form = $(bt).closest('form');
+        form.submit();
+    }
+
+}
+function submitContactProperty(bt) {
+
+    var emailphone = $("input[name*='contactAddress']").val().trim();
+    var kq = 0;
+    if (isPhone(emailphone) || IsEmail(emailphone)) {
+        kq++;
+    } else {
+        addWarnBox("Số điện thoại", $("input[name*='contactAddress']").parent());
+        $("input[name*='contactAddress']").focus();
+        return false;
+    }
+    if (kq === 1) {
+        var form = $(bt).closest('form');
+        form.submit();
+    }
+
+}
+$("#btSaveUserInformation").click(function () {
+    var fullname = $("#UserDetail_userFullName").val().trim();
+    var phone = $("#UserDetail_userMobileNumber").val().trim();
+    var email = $("#UserDetail_userEmail").val().trim();
+    if (fullname.length === 0) {
+        waitLiked = setTimeout(function () {
+            messageBox("Không được để trống Họ Tên!");
+        }, 1000);
+        $("#UserDetail_userFullName").focus();
+        return false;
+    }
+    if (!isPhone(phone)) {
+        waitLiked = setTimeout(function () {
+            messageBox("Không đúng định dạng điện thoại!");
+        }, 1000);
+        $("#UserDetail_userMobileNumber").focus();
+        return false;
+    } else {
+        if (!IsEmail(email)) {
+            waitLiked = setTimeout(function () {
+                messageBox("Không đúng định dạng Email!");
+            }, 1000);
+            $("#UserDetail_userEmail").focus();
+            return false;
+        }
+        else {
+            var form = $(this).closest('form');
+            form.submit();
+        }
+    }
+
+});
+
+
+function extractPageName(hrefString) {
+    hrefString = hrefString.toLowerCase();
+    var arr = hrefString.split('?');
+    if (arr.length > 0) {
+        hrefString = arr[0];
+    }
+    return hrefString;
+}
+
+function setActiveMenu(arr, crtPage) {
+    for (var i = 0; i < arr.length; i++) {
+        var link = extractPageName(arr[i].href);
+        if (link === crtPage) {
+            if (arr[i].parentNode.tagName !== "DIV") {
+                var here = arr[i].parentNode;
+                here.className = "active";
+            }
+        }
+    }
+}
+function setPage() {
+    hrefString = document.location.href ? document.location.href : document.location;
+    if (document.getElementsByClassName("yah") !== null) {
+        var menu = document.getElementsByClassName("yah");
+        //var arr = menu.getElementsByTagName("a");
+        setActiveMenu(menu, extractPageName(hrefString));
+    }
+}
+
+setPage();
+
+
+function setActiveMenuMember(arr, crtPage) {
+    for (var i = 0; i < arr.length; i++) {
+        var link = extractPageName(arr[i].href);
+        if (link === crtPage) {
+
+            if (arr[i].parentNode.tagName === "DIV") {
+
+                var here = arr[i].parentNode;
+
+                here.className = "col-md-2 MenuActive";
+            }
+        }
+    }
+}
+function setPageMenuMember() {
+    hrefString = document.location.href ? document.location.href : document.location;
+    if (document.getElementsByClassName("link-member") !== null) {
+        var menu = document.getElementsByClassName("link-member");
+        //var arr = menu.getElementsByTagName("a");
+
+        setActiveMenuMember(menu, extractPageName(hrefString));
+    }
+}
+var pageMember = $('.menuMember');
+var ispageMember = pageMember[0];
+if (typeof ispageMember !== "undefined") {
+
+    setPageMenuMember();
+}
+
+var nodata = $('.nodata');
+var valuedata = nodata[0];
+if (typeof valuedata !== "undefined") {
+    //$('#eq5 select').attr('disabled', 'true');
+    //$('#eq6 select').attr('disabled', 'true');
+    //$('#eq7 select').attr('disabled', 'true');
+    //$('#sort-types').attr('disabled', 'true');
+
+}
+
+$("#submitAddProject").on("click", function () {
+    var projectSize = $("#projectSize").val().trim();
+    var projectArea = $("#projectArea").val().trim();
+    var projectSummary = $("#projectSummary").val().trim();
+    var minPrice = $("#inputminPrice").val().trim();
+    var indexSelectCity = $("#dropDownListCity")[0].selectedIndex;
+    var indexSelectDistrict = $("#dropDownListDistrict")[0].selectedIndex;
+    var indexSelectWard = $("#dropDownListWard")[0].selectedIndex;
+    var indexSelectStreet = $("#dropDownListStreet")[0].selectedIndex;
+    if (projectSize.length < 1) {
+        addWarnBox("Nhập thông tin quy mô", $("div #projectSize").parent());
+
+        $("#projectSize").css("border", "1px red solid");
+        $('html, body').animate({
+            scrollTop: $("#projectSize").offset().top - 100
+        }, 500);
+        return false;
+    } else {
+        removeWarnbox();
+        $("#projectSize").css("border", "1px solid #e5e5e5");
+    }
+    if (projectArea.length < 1) {
+        addWarnBox("Nhập diện tích dự án", $("div #projectArea").parent());
+
+        $("#projectArea").css("border", "1px red solid");
+        $('html, body').animate({
+            scrollTop: $("#projectArea").offset().top - 100
+        }, 500);
+        return false;
+    } else {
+        removeWarnbox();
+        $("#projectArea").css("border", "1px solid #e5e5e5");
+    }
+    if (projectSummary.length < 1) {
+        addWarnBox("Nhập chi tiết dự án", $("div #projectSummary").parent());
+
+        $("#projectSummary").css("border", "1px red solid");
+        $('html, body').animate({
+            scrollTop: $("#projectSummary").offset().top - 100
+        }, 500);
+        return false;
+    } else {
+        removeWarnbox();
+        $("#projectSummary").css("border", "1px solid #e5e5e5");
+    }
+
+    if (minPrice.length < 1) {
+        addWarnBox("Nhập giá thấp nhất", $("div #inputminPrice").parent());
+
+        $("#inputminPrice").css("border", "1px red solid");
+        $('html, body').animate({
+            scrollTop: $("#inputminPrice").offset().top - 100
+        }, 500);
+        return false;
+    } else {
+        removeWarnbox();
+        $("#inputminPrice").css("border", "1px solid #e5e5e5");
+    }
+    if (maxPrice.length < 1) {
+        addWarnBox("Nhập giá thấp nhất", $("div #inputmaxPrice").parent());
+
+        $("#inputmaxPrice").css("border", "1px red solid");
+        $('html, body').animate({
+            scrollTop: $("#inputmaxPrice").offset().top - 100
+        }, 500);
+        return false;
+    } else {
+        removeWarnbox();
+        $("#inputmaxPrice").css("border", "1px solid #e5e5e5");
+    }
+    if (indexSelectCity === 0) {
+        $("#select2-chosen-3").css("color", "red");
+
+
+
+        $('html, body').animate({
+            scrollTop: $("#select2-chosen-3").offset().top - 100
+        }, 500);
+
+        return false;
+    }
+    else {
+        $("#select2-chosen-3").css("color", "black");
+    }
+
+
+    if (indexSelectDistrict === 0) {
+        $("#select2-chosen-4").css("color", "red");
+
+
+
+        $('html, body').animate({
+            scrollTop: $("#select2-chosen-4").offset().top - 100
+        }, 500);
+
+        return false;
+    }
+    else {
+        $("#select2-chosen-4").css("color", "black");
+    }
+
+    if (indexSelectWard === 0) {
+        $("#select2-chosen-5").css("color", "red");
+
+        $('html, body').animate({
+            scrollTop: $("#select2-chosen-5").offset().top - 100
+        }, 500);
+
+        return false;
+    }
+    else {
+        $("#select2-chosen-5").css("color", "black");
+    }
+
+    if (indexSelectStreet === 0) {
+        $("#select2-chosen-6").css("color", "red");
+
+
+
+        $('html, body').animate({
+            scrollTop: $("#select2-chosen-6").offset().top - 100
+        }, 500);
+
+        return false;
+    } else {
+        $("#select2-chosen-6").css("color", "black");
+    }
+
+    var projectInformation = CKEDITOR.instances.projectInformation.getData();
+    if (projectInformation === "") {
+        $('html, body').animate({
+            scrollTop: $("#div_ck").offset().top - 100
+        }, 500);
+        addWarnBox("Không được để trống mô tả", $("#div_ck"));
+        return false;
+    }
+    if ($("#agree_1").is(':checked') && $("#agree_2").is(':checked')) {
+        $("form#formAddProperty").submit();
+    } else {
+        addWarnBox("Xin chọn vào mục xác nhận", $("div #agree_1").parent());
+        return false;
+    }
+
+
+});
+$("#formAddProject #selectProject").change(function () {
+    var getProjectID = $('option:selected', this).val();
+    var getProjectName = $('option:selected', this).text();
+    if (String(getProjectID) === "0") {
+        $(".div-new-project").removeClass("hidden");
+        $("#projectName").val("");
+    }
+    else {
+        $(".div-new-project").addClass("hidden");
+        $("#projectName").val(getProjectName);
+    }
+});
+$("#formUpdateProject #selectProject").change(function () {
+    var getProjectID = $('option:selected', this).val();
+    var getProjectName = $('option:selected', this).text();
+    if (String(getProjectID) === "0") {
+        $(".div-new-project").removeClass("hidden");
+        $("#projectName").val("");
+    }
+    else {
+        $(".div-new-project").addClass("hidden");
+        $("#projectName").val(getProjectName);
+    }
+});
+
+$(".btRefreshDateProject").click(function () {
+    var id = $(this).attr("name");
+    $("#idProjectForRefreshDate").val(id);
+    $("#modalRefreshDateForProject").modal("show");
+});
+
+
+//Remove Project Home/ManageProject
+
+$(".btRemoveProject").click(function () {
+    $("#modalDeleteProject").modal("show");
+    var id = $(this).attr("name");
+    $("#idProjectForDelete").val(id);
+    return false;
+});
+
+
+//Remove Project Home/ManageProject
+
+$(".btPauseProject").click(function () {
+    $("#modalEditProject").modal("show");
+    var id = $(this).attr("name");
+    $("#idProjectForPause").val(id);
+    return false;
+});
+
+$("#btConfirmRefreshProject").click(function () {
+    var idProject = $("#idProjectForRefreshDate").val();
+    $.ajax({
+        url: '/Home/RefreshProject',
+        type: "POST",
+        data: { idProject: idProject },
+        dataType: "json",
+        error: function (error) {
+            //alert(error);
+        },
+        success: function (data) {
+            if (data.command === "ok") {
+                location.reload();
+            } else {
+                $("#pRefreshNotEnoughCredit").css("display", "block");
+            }
+        }
+    });
+});
+$("#btConfirmDeleteProject").click(function () {
+    var idProject = $("#idProjectForDelete").val();
+    window.location.href = '/Project/RemoveProject?id=' + idProject;
+});
+
+
+$("#btConfirmPauseProject").click(function () {
+    var idProject = $("#idProjectForPause").val();
+    var page = getParameterByName("page");
+    window.location.href = '/Project/PauseProject?id=' + idProject;
+});
+
+$(function () {
+    $("#share-emai-dashboard").click(function () {
+        var encodedParam = $("#value_link").text();
+        var content = "Tặng bạn 20 tín dụng giá trị 20.000đ từ gachvang.com khi đăng ký với tại đây nhé " + encodedParam;
+        location.href = "mailto:?subject=Tặng bạn 20 tín dụng giá trị 20.000đ từ gachvang.com khi đăng ký với tại đây nhé&body=" + content;
+    });
+
+    $("#share-emai-referral").click(function () {
+        var encodedParam = $("#copy_copy").val();
+        var content = "Tặng bạn 20 tín dụng giá trị 20.000đ từ gachvang.com khi đăng ký với tại đây nhé " + encodedParam;
+        location.href = "mailto:?subject=Tặng bạn 20 tín dụng giá trị 20.000đ từ gachvang.com khi đăng ký với tại đây nhé&body=" + content;
+    });
+
+
+    //$("#share-facebook").click(function () {
+    //    var encodedParam = $("#value_link").text()
+    //    var facebookContent = encodeURIComponent("Tặng bạn 20 tín dụng giá trị 20.000đ từ gachvang.com khi đăng ký với tại đây nhé");
+    //    var share_text_text = "https://www.facebook.com/dialog/feed?app_id=1442341752762601&display=popup&caption=" + facebookContent + "&description=" + facebookContent + "&caption=Tặng bạn 20 tín dụng giá trị 20.000đ từ gachvang.com khi đăng ký với tại đây nhé&link=" + encodedParam + "&redirect_uri=https://www.gachvang.com";
+    //    location.href = share_text_text;
+    //});
+    $("#share-twitter").click(function () {
+        var encodedParam = $("#value_link").text();
+        var link = "http://twitter.com/intent/tweet?text=" + "Tặng bạn 20 tín dụng giá trị 20.000đ từ gachvang.com khi đăng ký với tại đây nhé " + "&url=" + encodedParam;
+        location.href = link;
+    });
+});
+
+$(function () {
+    $("#copy_copy_button").click(function () {
+
+        clipboard.copy({
+            'text/plain': 'https://www.gachvang.com/hAkiZU3kaqdx875h51ue'
+        }).then(
+            function () {
+                messageBox("Mã chia sẽ đã được sao chép");
+                setTimeout(function () {
+                    $("#msgboxwrap , .msgboxwrap2").css("display", "block");
+                    $("#msgboxwrap , .msgboxwrap2").show();
+                }, 1000);
+            },
+            function (err) {
+                console.log('failure', err);
+            });
+
+    });
+
+});
+
+$("#printPDF").click(function () {
+    $("#loading-download").css("display", "block");
+    var url = window.location.href;
+    var streetName = $("#fullStreet")[0].firstChild.nodeValue;
+    var filename = "report";
+    if (streetName !== null) {
+        filename = streetName;
+    }
+    $.ajax({
+        url: '/Home/funPrintPDF',
+        type: "POST",
+        data: { url: url, filename: filename },
+        dataType: "json",
+        error: function (error) {
+            //alert(error);
+        },
+        success: function (data) {
+            $("#loading-download").css("display", "none");
+
+        }
+    });
+});
+
+
+
+$(function () {
+    $("#button_play").click(function () {
+        if (document.getElementById("shadow_cover") !== null) {
+            $("#shadow_cover").remove();
+        }
+        $("body").append('<div id="shadow_cover" class="shadow_cover">\
+	<p id="close_video">X</p>\
+	<div id="video_cover">\
+    <iframe style= "width:100%;height:100%;" src="https://www.youtube.com/embed/pRM3iVuOE6I?&autohide=0&modestbranding=1&controls=0&autoplay=1&showinfo=0" frameborder="0" allowfullscreen></iframe>\
+	</div>\
+</div>');
+        $("#close_video,#shadow_cover").unbind("click").click(function () {
+            if (document.getElementById("shadow_cover") !== null) {
+                $("#shadow_cover").remove();
+            }
+        });
+    });
+
+});
+
+var pageSignup = $('#page-signup');
+var ispageSignup = pageSignup[0];
+if (typeof ispageSignup !== "undefined") {
+    $('#login').modal({ backdrop: 'static', keyboard: false });
+    $('#login').modal('show');
+    $('#login-login-box').hide();
+    $('#sign-login-box').show(500);
+    //$('.x-remove').remove();
+    //$('.modal').css("z-index", "2");
+    $('#requestPostAnAd').val('index');
+
+    $(".x-remove").click(function () {
+        var url = "/";
+        $(location).attr('href', url);
+
+    });
+}
+var pageSignin = $('#page-signin');
+var ispageSignin = pageSignin[0];
+if (typeof ispageSignin !== "undefined") {
+    $('#login').modal({ backdrop: 'static', keyboard: false });
+    $('#login').modal('show');
+    //$('#login-login-box').hide();
+    //$('#sign-login-box').show(500);
+    //$('.x-remove').remove();
+    //$('.modal').css("z-index", "2");
+    $('#requestPostAnAd').val('index');
+
+    $(".x-remove").click(function () {
+        var url = "/";
+        $(location).attr('href', url);
+
+    });
+}
+
+
+function tracKingBanner(id, groupAds, typeTracking, widgetID) {
+    $.ajax({
+        url: '/Ads/TrackingAdsFull',
+        data: {
+            id: id,
+            groupAds: groupAds,
+            typeTracking: typeTracking,
+            widgetID: widgetID
+        },
+        type: 'POST',
+        dataType: "json",
+        error: function () {
+            return;
+        },
+        success: function (data) {
+            return;
+        }
+    });
+}
+function loadBanner(id, type, des) {
+    var target = '#' + des;
+    var _target = $(target);
+    var is_target = _target[0];
+    if (typeof is_target !== "undefined") {
+        var t = "/Ads/AdsBannerData/" + id + "?type=" + type;
+        var i = $.get(t);
+        i.done(function (nn) {
+            var ff = $($.parseHTML(nn));
+            if (ff.length > 1) {
+                $(target).empty();
+                $(target).append(ff);
+            } else {
+                $(target).empty();
+            }
+        });
+    }
+};
+function loadBackground(id, type, des) {
+    var target = '#' + des;
+    var _target = $(target);
+    var is_target = _target[0];
+    if (typeof is_target !== "undefined") {
+        var t = "/Ads/AdsBackgroundData/" + id + "?type=" + type;
+        var i = $.get(t);
+        i.done(function (nn) {
+            var ff = $($.parseHTML(nn));
+
+            if (ff.length > 1) {
+
+                $(target).empty();
+                $(target).append(ff);
+
+            } else {
+                $(target).empty();
+
+            }
+        });
+    }
+};
+
+function hideWordBanner($wordBanner) {
+    var nextWordBanner = takeNextBanner($wordBanner);
+    switchWordBanner($wordBanner, nextWordBanner);
+    showWordBanner(nextWordBanner);
+}
+function showWordBanner($wordBanner, $durationBanner) {
+    setTimeout(function () { hideWordBanner($wordBanner) }, 20000);
+}
+function takeNextBanner($wordBanner) {
+    return (!$wordBanner.is(':last-child')) ? $wordBanner.next() : $wordBanner.parent().children().eq(0);
+}
+
+function takePrevBanner($wordBanner) {
+    return (!$wordBanner.is(':first-child')) ? $wordBanner.prev() : $wordBanner.parent().children().last();
+}
+
+function switchWordBanner($oldWordBanner, $newWordBanner) {
+    $oldWordBanner.removeClass('is-visible').addClass('is-hidden');
+    $newWordBanner.removeClass('is-hidden').addClass('is-visible');
+
+    var t = "/Ads/AdsWidgetData/" + id + "?type=" + type;
+    var i = $.get(t);
+    i.done(function (nn) {
+        var ff = $($.parseHTML(nn));
+        if (ff.length > 1) {
+            $(target).empty();
+            $(target).append(ff);
+        } else {
+            $(target).empty();
+        }
+    });
+}
+
+function loadWidget(id, type, des) {
+    var target = '#' + des;
+    var _target = $(target);
+    var is_target = _target[0];
+    if (typeof is_target !== "undefined") {
+        if (id === '4' || id === '6') {
+
+            var t = "/Ads/AdsWidgetData/" + id + "?type=" + type;
+            var i = $.get(t);
+            i.done(function (nn) {
+                var ff = $($.parseHTML(nn));
+                if (ff.length > 1) {
+                    $(target).empty();
+                    $(target).append(ff);
+                } else {
+                    $(target).empty();
+                }
+            });
+            var parentNode = $(is_target).parent();
+            var nameSlide = des + 'Slide';
+            var SlideBoxHtml = '<span id=' + nameSlide + '" style="display:none"><b class="is-visible"></b><b></b></span>';
+            $(parentNode).append(SlideBoxHtml);
+            var headlineArr = $('#' + nameSlide);
+            setTimeout(function () { hideWordBanner(headlineArr.find('.is-visible').eq(0)) }, 20000);
+
+        }
+        else {
+            var tBanner = "/Ads/AdsWidgetData/" + id + "?type=" + type;
+            var iBanner = $.get(tBanner);
+            iBanner.done(function (nnBanner) {
+                var ffBanner = $($.parseHTML(nnBanner));
+                if (ffBanner.length > 1) {
+                    $(target).empty();
+                    $(target).append(ffBanner);
+                } else {
+                    $(target).empty();
+                }
+            });
+        }
+
+    }
+};
+
+
+
+var detailProperty = $('.detail-property');
+var isdetailProperty = detailProperty[0];
+if (typeof isdetailProperty !== "undefined") {
+    loadBanner('1', '1', 'banner728x90');
+
+    loadBanner('19', '1', 'slideBannerThumb');
+    var img = $('#slideBanner img').attr('src');
+    $("#bannerThumb").attr("src", img);
+}
+var contentDinhzadi = $('.content-dinhzadi');
+var iscontentDinhzadi = contentDinhzadi[0];
+//if (typeof iscontentDinhzadi !== "undefined") {
+//    loadWidget('6', '1', 'bannerDZD');
+//}
+
+var listProperty = $('.list-property');
+var islistProperty = listProperty[0];
+if (typeof islistProperty !== "undefined") {
+    loadWidget('4', '1', 'bannerBigLeaderboard');
+    loadBanner('20', '1', 'bannerLeftSide300x100');
+    loadBanner('5', '1', 'bannerLeftSide300x250');
+}
+
+
+var homeContent = $('.home-content');
+var ishomeContent = homeContent[0];
+if (typeof ishomeContent !== "undefined") {
+    loadBackground('7', '1', 'backgroundSlide1');
+    loadBackground('8', '1', 'backgroundSlide2');
+}
+
+$(".check-premium").click(function () {
+    if (waitLiked !== null) {
+        clearTimeout(waitLiked);
+    }
+    waitLiked = setTimeout(function () {
+        messageBox2("<a href='/goi-thanh-vien'>Bạn phải nâng cấp tài khoản để xem tính năng này!</a>");
+    }, 1000);
+
+});
+
+var stypeTra = $('#stype');
+var isstypeTra = stypeTra[0];
+if (typeof isstypeTra !== "undefined") {
+    var stype = $('#stype').val();
+
+    if (stype === 3) {
+        var squeryID = $('#squeryID').val();
+        var activityName = $('.fullAddMain').text();
+        $.ajax({
+            url: '/Home/funUseTraIns3',
+            type: "POST",
+            data: { typeID: stype, queryID: squeryID, activityName: activityName },
+            dataType: "json",
+            error: function (error) {
+                //alert(error);
+            },
+            success: function (data) {
+                if (data.message === "ok") {
+                    //alert("ok");
+                } else {
+                    //alert("errorr");
+                }
+            }
+        });
+    }
+    else if (stype === 2 || stype === 11) {
+        squeryID = $('#squeryID').val();
+        activityName = $('#sactivityName').val();
+        $.ajax({
+            url: '/Home/funUseTraIns3',
+            type: "POST",
+            data: { typeID: stype, queryID: squeryID, activityName: activityName },
+            dataType: "json",
+            error: function (error) {
+                //alert(error);
+            },
+            success: function (data) {
+                if (data.message === "ok") {
+                    //alert(activityName);
+                } else {
+                    //alert("errorr");
+                }
+            }
+        });
+    }
+    else {
+        if (stype === 22) {
+            squeryID = $('#hideAddress_DZD').val();
+            activityName = $('#hideProjectID_DZD').val();
+            $.ajax({
+                url: '/Home/funUseTraIns3',
+                type: "POST",
+                data: { typeID: stype, queryID: squeryID, activityName: activityName },
+                dataType: "json",
+                error: function (error) {
+                    //alert(error);
+                },
+                success: function (data) {
+                    if (data.message === "ok") {
+                        //alert("ok");
+                    } else {
+                        //alert("errorr");
+                    }
+                }
+            });
+        }
+        else {
+            $.ajax({
+                url: '/Home/funUseTraIns1',
+                type: "POST",
+                data: { typeID: stype },
+                dataType: "json",
+                error: function (error) {
+                    //alert(error);
+                },
+                success: function (data) {
+                    if (data.message === "ok") {
+                        //alert("ok");
+                    } else {
+                        //alert("errorr");
+                    }
+
+                }
+            });
+        }
+
+    }
+
+
+}
+
+
+$('.dashboard-menu .dashboard-stat2').on("click", function (e) {
+    var url = $('.dashboard-menu .dashboard-stat2').attr("data-url");
+    window.location.replace(url);
+});
+
+$('.btnNoteDzd').click(function () {
+    var parent = this.parentNode;
+    var des = parent.getElementsByClassName("col-md-6 col-sm-6 whatDinhzadi");
+    des[0].setAttribute("style", "display:block;");
+});
+function showWhatDinhzadi(bt) {
+    $(".whatDinhzadi").css("display", "none");
+    var parent = bt.parentNode;
+    var des = parent.getElementsByClassName("col-md-6 col-sm-6 whatDinhzadi");
+    des[0].setAttribute("style", "display:block;");
+}
+function checkPremium() {
+
+    if (waitLiked !== null) {
+        clearTimeout(waitLiked);
+    }
+    waitLiked = setTimeout(function () {
+        messageBox2("<a href='/goi-thanh-vien'>Bạn phải nâng cấp tài khoản để xem tính năng này!</a>");
+    }, 200);
+
+}
+
+
+$(".search-dashboard #dropListBuyRent_SearchBox").change(function () {
+
+
+    //var index = $('option:selected', $(this).index());
+    var valueSelected = $(this).find(":selected").val();
+
+
+    if (valueSelected === "2" || valueSelected === "1") {
+
+        $("select[name*='type']").hide();
+        $("select[name*='beds']").hide();
+        $(".filter").css("display", "none");
+
+    }
+    else {
+
+        $("select[name*='type']").show();
+        $("select[name*='beds']").show();
+        $(".filter").css("display", "none");
+    }
+
+
+
+});
+
+
+
+var searchDashboard = $('.search-dashboard');
+var issearchDashboard = searchDashboard[0];
+if (typeof issearchDashboard !== "undefined") {
+    $("select[name*='type']").hide();
+    $("select[name*='beds']").hide();
+    $(".filter").css("display", "none");
+}
+$("#registerBasic,#btPricingShowSignUp").click(function () {
+
+    $("#login").modal("show");
+    $('#login-login-box').hide();
+    $('#sign-login-box').show(500);
+
+});
+$(".showSignUpBox").click(function () {
+    $('#login-login-box').hide();
+    $('#sign-login-box').show(500);
+});
+
+var formHorizontal = $('.form-horizontal');
+var isformHorizontal = formHorizontal[0];
+if (typeof isformHorizontal !== "undefined") {
+    showEditor2('propDescription');
+}
+
+
+var trackingListing = $('.detail-property');
+var istrackingListing = trackingListing[0];
+if (typeof istrackingListing !== "undefined") {
+    var sID = $('#squeryID').val();
+
+    $.ajax({
+        url: '/Home/funTrackingListing',
+        type: "POST",
+        data: { ID: sID, typeID: '2', groupID: 'view' },
+        dataType: "json",
+        error: function (error) {
+            //alert(error);
+        },
+        success: function (data) {
+            if (data.message === "ok") {
+                //alert(activityName);
+            } else {
+                //alert("errorr");
+            }
+        }
+    });
+
+
+}
+
+function trackingMess(bt) {
+    var messageID = $(bt).attr("data-id");
+    $.ajax({
+        url: '/Home/CheckOpenLinkMessage',
+        type: "POST",
+        data: { id: messageID },
+        dataType: "json",
+        error: function (error) {
+            //alert(error);
+        },
+        success: function (data) {
+
+        }
+    });
+}
+
+
+function chosseTabSearch(valueS) {
+
+    $("#group").val(valueS).change();
+    if (valueS === 1) {
+        $("#box-DzdInfo").show();
+    }
+    else {
+        $("#box-DzdInfo").hide();
+    }
+}
+function slideClick(bt) {
+
+    var base = $('#boxDA');
+    if ($(bt).hasClass("owl-next")) {
+        base.next();
+    } else {
+        base.prev();
+    }
+}
+
+$(".focus-searchbox").click(function () {
+    var base = $('#txtPlaces_dinhzadi');
+    base.focus();
+    $("#popupMainSearchBarDzd.note-box-wrap").css("display", "block");
+    $("#popupMainSearchBarDzd .remove-box").click(function () {
+
+        $("#popupMainSearchBarDzd.note-box-wrap").css("display", "none");
+    });
+
+});
+//var campaignT = $('.campaignT');
+//var iscampaignT = campaignT[0];
+//if (typeof iscampaignT !== "undefined") {
+
+function closePopup1() {
+
+    $.ajax({
+        url: '/Home/funTriggerActivity',
+        type: "POST",
+        data: { typeID: '18', name: '' },
+        dataType: "json",
+        error: function (error) {
+            //alert(error);
+        },
+        success: function (data) {
+            if (data.message === "ok") {
+                //alert("ok");
+            } else {
+                //alert("errorr");
+            }
+
+        }
+    });
+}
+function closePopupLogin1() {
+    var date = new Date();
+    var minutes = 1440;
+    date.setTime(date.getTime() + (minutes * 60 * 1000));
+    date.setDate(date.getDate() + 7);
+    $.cookie("polo", -1, { expires: date, path: '/' });
+}
+function loginByPopup1() {
+
+    $.ajax({
+        url: '/Home/funTriggerActivity',
+        type: "POST",
+        data: { typeID: '19', name: '' },
+        dataType: "json",
+        error: function (error) {
+            //alert(error);
+        },
+        success: function (data) {
+            if (data.message === "ok") {
+                //alert("ok");
+            } else {
+                //alert("errorr");
+            }
+
+        }
+    });
+}
+
+function signupByPopup1() {
+
+    $.ajax({
+        url: '/Home/funTriggerActivity',
+        type: "POST",
+        data: { typeID: '20', name: '' },
+        dataType: "json",
+        error: function (error) {
+            //alert(error);
+        },
+        success: function (data) {
+            if (data.message === "ok") {
+                //alert("ok");
+            } else {
+                //alert("errorr");
+            }
+
+        }
+    });
+}
+//function downloadFile() {
+
+//    //setTimeout(function () {
+//    $("#showLoading").css("opacity", "0.2").css("background-color", "none");
+//    $("#loader").css("display", "block");
+//    //}, 4000);
+//    alert("ok");
+//}
+
+//}
+function closeBox() {
+    $('#search-map-upsell').hide();
+    var dnow = new Date();
+    dnow.setTime(dnow.getTime() + (1 * 24 * 60 * 60 * 1000));
+    var expires = "expires=" + dnow.toGMTString();
+    if ($.cookie("_newfun") !== null) {
+        document.cookie = "_newfun" + "=1" + "; " + expires + "; path=/";
+    }
+    else {
+        document.cookie = "_newfun" + "=0" + "; " + expires + "; path=/";
+    }
+}
+var showNewFuntion = $('#search-map-upsell');
+var isshowNewFuntion = showNewFuntion[0];
+if (typeof isshowNewFuntion !== "undefined") {
+    $("#bt-newReport").click();
+    if ($.cookie("_newfun") !== null) {
+        var cookieNewFuntion = getCookie("_newfun");
+        if (cookieNewFuntion === "1") {
+            showNewFuntion.hide();
+        }
+    }
+}
+//$(".home").click(function () {    
+//    var boxSearchHome = $('#popupMainSearchBarContainer');
+//    var isboxSearchHome = boxSearchHome[0];
+//    if (typeof isboxSearchHome !== "undefined") {
+//        if (jQuery("#popupMainSearchBarContainer").hasClass("focusBox") && jQuery("#popupMainSearchBarContainer").cl) {
+//            jQuery("#popupMainSearchBarContainer").removeClass("focusBox");
+//        }
+//    }
+//});
+//$("#popupMainSearchBarContainer").click(function () {   
+//    //jQuery("#popupMainSearchBarContainer").addClass("focusBox");
+//});
+$(".home").click(function (e) {
+    var boxSearchHome = $('#popupMainSearchBarContainer');
+    var isboxSearchHome = boxSearchHome[0];
+    if (typeof isboxSearchHome !== "undefined") {
+        var here = $(e.target);
+        if (here.hasClass("targeted-search") || here.parents(".targeted-search").length || here.hasClass("EnterSearch") || here.parents(".EnterSearch").length) {
+            jQuery("#popupMainSearchBarContainer").addClass("focusBox");
+        } else {
+            jQuery("#popupMainSearchBarContainer").removeClass("focusBox");
+        }
+    }
+});
+$(".triggerMenu-parent a").hover(function () {
+    $(".showTriggerMenu").hide();
+    var cookieTrigmenu = getCookie("_trigmenu");
+    if (cookieTrigmenu === "1") {
+        var dnow = new Date();
+        dnow.setTime(dnow.getTime() + (100 * 24 * 60 * 60 * 1000));
+        var expires = "expires=" + dnow.toGMTString();
+        document.cookie = "_trigmenu" + "=0" + "; " + expires + "; path=/";
+    }
+});
+
+var showTrigmenu = $('.showTriggerMenu');
+var isTrigmenu = showTrigmenu[0];
+if (typeof isTrigmenu !== "undefined") {
+    if ($.cookie("_trigmenu") !== null) {
+        var cookieTrigmenu = getCookie("_trigmenu");
+        if (cookieTrigmenu === "0") {
+            showTrigmenu.hide();
+        }
+        else {
+            showTrigmenu.show();
+        }
+    }
+    else {
+        var dnow = new Date();
+        dnow.setTime(dnow.getTime() + (100 * 24 * 60 * 60 * 1000));
+        var expires = "expires=" + dnow.toGMTString();
+        document.cookie = "_trigmenu" + "=1" + "; " + expires + "; path=/";
+        showTrigmenu.show();
+    }
+}
+
+
+$(".rollover").mouseenter(function () {
+    //$(this).animate({
+    //    height: "300"
+    //});
+    var here = $(this);
+    setTimeout(function () {
+        here.css("color", "#444");
+
+        here.addClass("rollover-anim");
+    }, 300);
+}).mouseleave(function () {
+    //$(this).animate({
+    //    height: boxHeight
+    //});
+
+    var here = $(this);
+    setTimeout(function () {
+        here.css("color", "#DA282D");
+        here.removeClass("rollover-anim");
+    }, 300);
+
+});
+
+
+$(".home").click(function (e) {
+    var boxSearchHome = $('#popupMainSearchBarContainer');
+    var isboxSearchHome = boxSearchHome[0];
+    if (typeof isboxSearchHome !== "undefined") {
+        var here = $(e.target);
+        if (here.hasClass("targeted-search") || here.parents(".targeted-search").length || here.hasClass("EnterSearch") || here.parents(".EnterSearch").length) {
+            jQuery("#popupMainSearchBarContainer").addClass("focusBox");
+            var value = $("#dropListBuyRent_SearchBox , #dropListBuyRent_Header , #group").val();
+            $(".promoContainer").load("/Home/DataBoxSearch/" + value);
+        } else {
+            jQuery("#popupMainSearchBarContainer").removeClass("focusBox");
+            $(".promoContainer").empty();
+        }
+    }
+});
+
+$(".home").click(function (e) {
+    var inputDZDSearch = $('#txtPlaces_dinhzadi');
+    var isinputDZDSearch = inputDZDSearch[0];
+    if (typeof isinputDZDSearch !== "undefined") {
+        var here = $(e.target);
+        if (here.hasClass("EnterSearch") || here.parents(".EnterSearch").length) {
+            jQuery(".site-search-module-inside").addClass("focusBox");
+        } else {
+            jQuery(".site-search-module-inside").removeClass("focusBox");
+
+        }
+    }
+});
+
+function hideWord($word) {
+    var nextWord = takeNext($word);
+    switchWord($word, nextWord);
+    showWord(nextWord);
+}
+function showWord($word, $duration) {
+    setTimeout(function () { hideWord($word) }, 2000);
+}
+function takeNext($word) {
+    return (!$word.is(':last-child')) ? $word.next() : $word.parent().children().eq(0);
+}
+
+function takePrev($word) {
+    return (!$word.is(':first-child')) ? $word.prev() : $word.parent().children().last();
+}
+
+function switchWord($oldWord, $newWord) {
+    $oldWord.removeClass('is-visible').addClass('is-hidden');
+    $newWord.removeClass('is-hidden').addClass('is-visible');
+    showInputDZD.attr('placeholder', $newWord[0].innerText);
+}
+
+var showInputDZD = $('#txtPlaces_dinhzadi');
+var isInputDZD = showInputDZD[0];
+if (typeof isInputDZD !== "undefined") {
+    var headline = $('#placeholderDZD');
+    setTimeout(function () { hideWord(headline.find('.is-visible').eq(0)) }, 2500);
+
+}
+//if (typeof isInputDZD !== "undefined") {
+
+//    function takeNextText($word) {
+//        return (!$word.is(':last-child')) ? $word.next() : $word.parent().children().eq(0);
+//    }
+
+//    function switchWordText($oldWord, $newWord) {
+//        $oldWord.removeClass('is-visible').addClass('is-hidden');
+//        $newWord.removeClass('is-hidden').addClass('is-visible');
+//    }
+//    //arrPlaceText = ["1", "2", "3"];
+//    //for (var i = 0; i < arrPlaceText.length; i++) {
+//    //    var PlaceText = arrPlaceText[i];
+//    //    setTimeout(function () {
+//    //        showInputDZD.attr('placeholder', PlaceText );
+//    //    }, 20000);
+//    //}
+
+//    var arrPlaceText = $('#placeholderDZD').find('b');
+
+//    var offset = 0;
+//    var arrow = 1;
+//    arrPlaceText.each(function () {
+//        var word = $(this),
+
+//            selected = word.hasClass('is-visible');
+//        setTimeout(function () {
+//            showInputDZD.attr('placeholder', word.context.innerText);
+
+//            }, 5000 + offset);
+//        offset += 5000;
+
+
+
+//    });
+//    //do {
+//        //(arrPlaceText).forReach(function (PlaceText.in) {
+
+//        //    setTimeout(function () {
+//        //        showInputDZD.attr('placeholder', PlaceText);
+
+//        //    }, 5000 + offset);
+//        //    offset += 5000;
+//        //    i++;
+//        //    if (i === arrPlaceText.length) {
+//        //    }
+//        //});
+//    //} while (true);
+
+//}

@@ -1,0 +1,42 @@
+@font-face {
+    font-family: roboto;
+    font-style: normal;
+    font-weight: normal;
+    src: url('/Content/css/fonts/roboto-regular-webfont.woff') format('truetype');
+}
+
+@font-face {
+    font-family: roboto;
+    font-style: normal;
+    font-weight: bold;
+    src: url('/Content/css/fonts/roboto-bold-webfont.woff') format('truetype');
+}
+
+@font-face {
+    font-family: linotte-semiBold;
+    font-style: normal;
+    font-weight: normal;
+    src: url('/Content/css/fonts/LinotteSemiBold.eot');
+      src: url('/Content/css/fonts/LinotteSemiBold.eot') format('embedded-opentype'),
+           url('/Content/css/fonts/LinotteSemiBold.woff') format('woff'),
+          url('/Content/css/fonts/LinotteSemiBold.ttf') format('truetype')
+}
+
+@font-face {
+    font-family: linotte-bold;
+    font-style: normal;
+    font-weight: normal;
+    src: url('/Content/css/fonts/LinotteBold.eot');
+      src: url('/Content/css/fonts/LinotteBold.eot') format('embedded-opentype'),
+           url('/Content/css/fonts/LinotteBold.woff') format('woff'),
+          url('/Content/css/fonts/LinotteBold.ttf') format('truetype')
+}
+@font-face {
+    font-family: linotte;
+    font-style: normal;
+    font-weight: normal;
+    src: url('/Content/css/fonts/LinotteRegular.eot');
+      src: url('/Content/css/fonts/LinotteRegular.eot') format('embedded-opentype'),
+           url('/Content/css/fonts/LinotteRegular.woff') format('woff'),
+          url('/Content/css/fonts/LinotteRegular.ttf') format('truetype')
+}
