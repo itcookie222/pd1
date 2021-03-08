@@ -1,0 +1,1817 @@
+﻿var otpJSTemplate = "/DesktopModules/MVC/VIB.MVC.Common/Template/OTPJSTemplate2.html?v=1";
+var commonJSTemplate = "/DesktopModules/MVC/VIB.MVC.Common/Template/CommonJSTemplate.html?v=1";
+
+var SubTab = {
+    Account: "1",
+    Phone: "2",
+    CardNumber: "3",
+    IBA: "4",
+    Bulk: "5"
+}
+
+var transferVIB = {
+    activeTab: null,
+    accountForTransfer: [],
+    //Danh bạ
+    benId: null,
+    moduleStr: null,
+    currentStep: 1,
+    isClosePopupDefault: true,
+    Init: function (moduleId) {
+        var deferred = $.Deferred();
+        $.when(
+            $.get(otpJSTemplate, function (templates) {
+                $('body').append(templates);
+            }),
+            $.get(commonJSTemplate, function (templates) {
+                $('body').append(templates);
+            })
+        ).then(function () {
+            transferService.Init(moduleId);
+            transferVIB.benId = Util.GetQueryString('id');
+            transferVIB.moduleStr = Util.GetQueryString('module');
+            var renderData = {
+                IsBenTransfer: transferVIB.benId && transferVIB.moduleStr
+            }
+            $("#tranferVIBTemplate").tmpl(renderData).appendTo($("#rightContent"));
+            if (transferVIB.benId && transferVIB.moduleStr === BenModule.VIBA) {
+                transferVIB.ShowTransferViaAccount();
+            } else if (transferVIB.benId && transferVIB.moduleStr === BenModule.VIBCARD) {
+                transferVIB.ShowTransferViaCardNumber();
+            } else {
+                transferVIB.ShowTransferViaAccount();
+            }
+
+            $("#btnNext").click(function () {
+                if (rbSkinPageV2.WarningRegisterOnline()) {
+                    return false;
+                }
+                switch (transferVIB.activeTab) {
+                    case SubTab.Account:
+                    case SubTab.Phone:
+                    case SubTab.CardNumber:
+                        if (transferVIB.currentStep === 1) {
+                            transferVIB.TransferVIBContinueStep1();
+                        } else if (transferVIB.currentStep === 2) {
+                            transferVIB.TransferVIBContinueStep2();
+                        } else {
+                            transferVIB.TransferVIBSubmit();
+                        }
+                        break;
+                    case SubTab.Bulk:
+                        if (transferVIB.currentStep === 1) {
+                            transferVIBBulk.ContinueBulk();
+                        } else {
+                            transferVIBBulk.SubmitBulk();
+                        }
+                        break;
+                    default:
+                }
+                Util.ScrollTop();
+            });
+            $("#btnPrev").click(function () {
+                switch (transferVIB.activeTab) {
+                    case SubTab.Account:
+                        if (transferVIB.currentStep === 2 && transferVIB.benId) {
+                            window.location.href = VIB.LocalizeString.URL_TRANSFER_BENLIST;
+                            return;
+                        }
+                        transferVIB.ShowHideConfirmationContent();
+                        transferVIB.currentStep = 2;
+                        break;
+                    case SubTab.Phone:
+                        transferVIB.ShowHideConfirmationContent();
+                        transferVIB.currentStep = 2;
+                        break;
+                    case SubTab.CardNumber:
+                        if (transferVIB.currentStep === 2 && transferVIB.benId) {
+                            window.location.href = VIB.LocalizeString.URL_TRANSFER_BENLIST;
+                            return;
+                        }
+                        transferVIB.ShowHideConfirmationContent();
+                        transferVIB.currentStep = 2;
+                        break;
+                    case SubTab.Bulk:
+                        transferVIBBulk.BackBulk();
+                        break;
+                        break;
+                    default:
+                }
+                scrollViewport();
+            });
+            $("#btnComplete").click(function () {
+                window.location.href = VIB.LocalizeString.URL_TRANSFER_BENLIST;
+            });
+            scrollViewport();
+            slidePanel();
+            deferred.resolve();
+            // Check user dang ky online va co HM = 0
+            if (rbSkinPageV2.WarningRegisterOnline()) {
+                // disable all control
+                disableControl();
+                return;
+            }
+        });
+        return deferred.promise();
+    },
+    ShowTransferViaAccount: function () {
+        transferVIB.ClearContentForm();
+        transferVIB.activeTab = SubTab.Account;
+        $("#tooltip").hide();
+        transferVIB.currentStep = 1;
+        if (transferVIB.benId && transferVIB.moduleStr) {
+            transferVIB.currentStep = 2;
+            var accountInfo = transferService.GetVIBAAccount("", true, transferVIB.benId);
+            var accountForTransfer = transferService.GetAccountForTransfer(Module.VIBA);
+            $.when(accountInfo, accountForTransfer).done(function (accountInfoResult, accountForTransferResult) {
+                if (accountInfoResult && accountInfoResult.STATUSCODE !== StatusCode.Successed && accountInfoResult.MESSAGE) {
+                    Util.ShowErrorMessage(accountInfoResult.MESSAGE);
+                    return;
+                }
+                if (accountForTransferResult && accountForTransferResult.STATUSCODE !== StatusCode.Successed && accountForTransferResult.MESSAGE) {
+                    Util.ShowErrorMessage(accountForTransferResult.MESSAGE);
+                    return;
+                }
+                var renderData = {
+                    AcctName: accountInfoResult.DATA.AcctName,
+                    AcctNo: accountInfoResult.DATA.AcctNo
+                }
+
+                $("#transferViaVIBBenTemplate").tmpl(renderData).appendTo($("#transferVIBContent"));
+                transferVIB.RegisterTransferVIBDetailEvent(accountForTransferResult);
+            });
+            return;
+        }
+
+        $("#transferViaVIBTemplate").tmpl().appendTo($("#transferVIBContent"));
+        transferVIB.RegistertxtNoEvent();
+        // Check user dang ky online va co HM = 0
+        if (rbSkinPageV2.WarningRegisterOnline()) {
+            // disable all control
+            disableControl();
+            return;
+        }
+    },
+    ShowTransferViaPhone: function () {
+        transferVIB.ClearContentForm();
+        transferVIB.activeTab = SubTab.Phone;
+        transferVIB.currentStep = 1;
+        $("#tooltip").hide();
+        $("#transferViaVIBTemplate").tmpl().appendTo($("#transferVIBContent"));
+        transferVIB.RegistertxtNoEvent();
+        // Check user dang ky online va co HM = 0
+        if (rbSkinPageV2.WarningRegisterOnline()) {
+            // disable all control
+            disableControl();
+            return;
+        }
+    },
+    ShowTransferViaCardNumber: function () {
+        transferVIB.ClearContentForm();
+        transferVIB.activeTab = SubTab.CardNumber;
+        $("#tooltip").hide();
+        transferVIB.currentStep = 1;
+        if (transferVIB.benId && transferVIB.moduleStr) {
+            transferVIB.currentStep = 2;
+            var accountInfo = transferService.GetVIBCardInfo("", true, transferVIB.benId);
+            var accountForTransfer = transferService.GetAccountForTransfer(Module.VIBCARD);
+            $.when(accountInfo, accountForTransfer).done(function (accountInfoResult, accountForTransferResult) {
+                if (accountInfoResult && accountInfoResult.STATUSCODE !== StatusCode.Successed && accountInfoResult.MESSAGE) {
+                    Util.ShowErrorMessage(accountInfoResult.MESSAGE);
+                    return;
+                }
+                if (accountForTransferResult && accountForTransferResult.STATUSCODE !== StatusCode.Successed && accountForTransferResult.MESSAGE) {
+                    Util.ShowErrorMessage(accountForTransferResult.MESSAGE);
+                    return;
+                }
+                var renderData = {
+                    AcctName: accountInfoResult.DATA.CardName,
+                    AcctNo: accountInfoResult.DATA.CardNo
+                }
+
+                $("#transferViaVIBBenTemplate").tmpl(renderData).appendTo($("#transferVIBContent"));
+                transferVIB.RegisterTransferVIBDetailEvent(accountForTransferResult);
+            });
+            return;
+        }
+        $("#transferViaVIBTemplate").tmpl().appendTo($("#transferVIBContent"));
+        transferVIB.RegistertxtNoEvent();
+        // Check user dang ky online va co HM = 0
+        if (rbSkinPageV2.WarningRegisterOnline()) {
+            // disable all control
+            disableControl();
+            return;
+        }
+    },
+    ShowTransferViaBulk: function () {
+        addRowListData = [];
+        transferVIB.ClearContentForm();
+        transferVIB.activeTab = SubTab.Bulk;
+        $("#tooltip").show();
+        transferVIB.currentStep = 1;
+        transferService.GetEbankLimit().done(function (res) {
+            if (res.STATUSCODE === StatusCode.Successed) {
+                $("#tooltipText").html(VIB.LocalizeString.LimitOfDay +
+                    " " +
+                    res.DATA.Default +
+                    " <br/> " +
+                    VIB.LocalizeString.LimitRemain +
+                    " " +
+                    res.DATA.Remain +
+                    " <br/> " +
+                    VIB.LocalizeString.Fee +
+                    " " +
+                    VIB.LocalizeString.Free);
+            } else {
+                Util.ShowErrorMessage(res.MESSAGE);
+            }
+        });
+
+        transferService.GetAccountForTransfer("VIBABULK").done(function (accountForTransferResult) {
+            if (accountForTransferResult.STATUSCODE === StatusCode.Successed) {
+                //renderData.LocalizeString = VIB.LocalizeString;
+                $("#inputBulkVIBTemplate").tmpl().appendTo($("#transferVIBContent"));
+                Util.InitAccountListControl("fromAcc", accountForTransferResult, "fromAccGroup");
+                //Util.SetAmountFormat("amountPayoff");
+                //Util.InitAmountControlEvent("amountPayoff","fromAcc","amountPayoffCCY")
+                scrollViewport();
+                slidePanel();
+                eventBulkVIB();
+                $("#fromAccGroup .list .item1").first().click();
+            } else {
+                Util.ShowErrorMessage(accountForTransferResult.MESSAGE);
+            }
+        });
+        // Check user dang ky online va co HM = 0
+        if (rbSkinPageV2.WarningRegisterOnline()) {
+            // disable all control
+            disableControl();
+            return;
+        }
+    },
+    ClearContentForm: function () {
+        $("#transferVIBContent").empty();
+        clearAccountForTransferData();
+    },
+    OnBlurInput: function (e) {
+        if ($(e).val().length > 0) {
+            $(e).prev().addClass('formTop')
+        } else {
+            $(e).prev().removeClass('formTop')
+        }
+    },
+    OnFocus: function (event) {
+        $(event).prev().addClass('formTop');
+    },
+    RegistertxtNoEvent: function () {
+        $("#txtNo").blur(function (e) {
+            if ($(this).val().length > 0) {
+                $(this).prev().addClass('formTop');
+            } else {
+                $(this).prev().removeClass('formTop');
+            }
+        });
+        $("#txtNo").change(function () {
+            switch (transferVIB.activeTab) {
+                case SubTab.Account:
+                    transferVIB.TransferVIBContinueStep1();
+                    break;
+                case SubTab.Phone:
+                    transferVIB.TransferVIBContinueStep1();
+                    break;
+                case SubTab.CardNumber:
+                    transferVIB.TransferVIBContinueStep1();
+                    break;
+                default:
+                    break;
+            }
+        });
+        $("#txtNo").on("input",
+            function (e) {
+                var self = $(this);
+                self.val(self.val().replace(/[^0-9]/g, ''));
+                if ((e.which != 46 || self.val().indexOf('.') != -1) && (e.which < 48 || e.which > 57)) {
+                    e.preventDefault();
+                }
+            });
+    },
+    TransferVIBContinueStep1: function () {
+        var no = $("#txtNo").val().trim();
+        if (no) {
+            $('#lblErrortxtNo').css('display', 'none');
+            var accountInfo = "";
+            var accountForTransferModule = "";
+            if (transferVIB.activeTab === SubTab.Account) {
+                accountInfo = transferService.GetVIBAAccount(no);
+                accountForTransferModule = Module.VIBA;
+            } else if (transferVIB.activeTab === SubTab.Phone) {
+                accountInfo = transferService.GetMobileAccountInfo(no);
+                accountForTransferModule = Module.VIBMOBILE;
+            } else if (transferVIB.activeTab === SubTab.CardNumber) {
+                accountInfo = transferService.GetVIBCardInfo(no);
+                accountForTransferModule = Module.VIBCARD;
+            }
+            $.when(accountInfo).done(function (accountInfoResult) {
+                if (accountInfoResult.STATUSCODE === StatusCode.Successed) {
+                    transferService.GetAccountForTransfer(accountForTransferModule).done(
+                        function (accountForTransferResult) {
+                            if (accountForTransferResult.STATUSCODE === StatusCode.Successed) {
+                                $("#transferViaVIBDetail").empty();
+                                $("#transferViaVIBDetailTemplate").tmpl(accountInfoResult).appendTo($("#transferViaVIBDetail"));
+                                transferVIB.RegisterTransferVIBDetailEvent(accountForTransferResult);
+
+                                transferVIB.ValidtxtNo();
+                            } else {
+                                Util.ShowErrorMessage(accountForTransferResult.MESSAGE);
+                            }
+                        });
+                    transferVIB.currentStep = 2;
+                } else {
+                    $("#transferViaVIBDetail").empty();
+                    Util.ShowErrorMessage(accountInfoResult.MESSAGE);
+                }
+            });
+        } else {
+            $("#txtNo").addClass("field-error");
+            $('#lblErrortxtNo').css('display', 'block');
+        }
+    },
+    TransferVIBContinueStep2: function () {
+        if (transferVIB.ValidateStep1()) {
+            $("#otpContent").empty();
+            var no = $("#txtNo").val().trim() || $("#txtNo").html();
+            if (no === $("#fromAcc div.selected").attr("data-display-text")) {
+                Util.ShowErrorMessage(VIB.LocalizeString.SameDebitAccount);
+                return null;
+            }
+            var fromAcc = $("#fromAcc div.selected").attr("data-value");
+            var amount = $("#txtAmount").autoNumeric("get");
+            var description = $("#txtDescription").val();
+            var isAddBen = $("#addben").prop('checked');
+
+            var scheduleType = $("input[name=transfer-option2]:checked").attr("data-value");
+            var scheduleDate = "", scheduleRegularFreq = "", scheduleRegularEndType = "", scheduleRegularEndValue = "";
+
+            if (scheduleType === ScheduleType.Later) {
+                scheduleDate = $("#endDate").text();
+                if (!scheduleDate) {
+                    Util.ShowErrorMessage(VIB.LocalizeString.InvalidSelectedDate);
+                    return null;
+                }
+            }
+
+            if (scheduleType === ScheduleType.Scheduled) {
+                scheduleRegularFreq = $("#scheduleRegularFreq .item1.selected").attr("data-value");
+                if (!scheduleRegularFreq) {
+                    Util.ShowErrorMessage(VIB.LocalizeString.InvalidScheduleRegularFreq);
+                    return null;
+                }
+                scheduleRegularEndType = $("#dropdownPopup .list .item1.selected").attr("data-value");
+                if (!scheduleRegularEndType) {
+                    Util.ShowErrorMessage(VIB.LocalizeString.InvalidScheduleRegularEndType);
+                    return null;
+                }
+
+                if (scheduleRegularEndType !== ScheduleRegularEndType.NoEnd) {
+                    if (scheduleRegularEndType === ScheduleRegularEndType.EndAfter) {
+                        scheduleRegularEndValue = $("#endTransferTime").val();
+                        if (!scheduleRegularEndValue) {
+                            Util.ShowErrorMessage(VIB.LocalizeString.InvalidEndAfterNumber);
+                            return null;
+                        }
+                    } else if (scheduleRegularEndType === ScheduleRegularEndType.EndOn) {
+                        scheduleRegularEndValue = $("#loopAfterDatePicker").val();
+                        if (!scheduleRegularEndValue) {
+                            Util.ShowErrorMessage(VIB.LocalizeString.InvalidSelectedDate);
+                            return null;
+                        }
+                        if (!DateTimeUtil.IsValidDate(scheduleRegularEndValue)) {
+                            Util.ShowErrorMessage(VIB.LocalizeString.InValidDate);
+                            return null;
+                        }
+                        if (moment(scheduleRegularEndValue, "DD/MM/YYYY") < moment(dtnow, "DD/MM/YYYY")) {
+                            Util.ShowErrorMessage(VIB.LocalizeString.InvalidPastDate);
+                            return null;
+                        }
+                    }
+                }
+                scheduleDate = $("#startDate").val();
+                if (!scheduleDate) {
+                    Util.ShowErrorMessage(VIB.LocalizeString.InvalidSelectedDate);
+                    return null;
+                }
+            }
+
+            if (scheduleDate && !DateTimeUtil.IsValidDate(scheduleDate)) {
+                Util.ShowErrorMessage(VIB.LocalizeString.InValidDate);
+                return null;
+            }
+
+            if (moment(scheduleDate, "DD/MM/YYYY") < moment(dtnow, "DD/MM/YYYY")) {
+                Util.ShowErrorMessage(VIB.LocalizeString.InvalidPastDate);
+                return null;
+            }
+
+            var validateRequest = "";
+            if (transferVIB.activeTab === SubTab.Account) {
+                validateRequest = transferService.ValidateAccountTransferViaVIBA(fromAcc,
+                    no,
+                    amount,
+                    description,
+                    isAddBen,
+                    scheduleType,
+                    scheduleDate,
+                    scheduleRegularFreq,
+                    scheduleRegularEndType,
+                    scheduleRegularEndValue);
+            } else if (transferVIB.activeTab === SubTab.Phone) {
+                validateRequest = transferService.ValidateMobileTransferViaVIBA(fromAcc,
+                    no,
+                    amount,
+                    description,
+                    isAddBen,
+                    scheduleType,
+                    scheduleDate,
+                    scheduleRegularFreq,
+                    scheduleRegularEndType,
+                    scheduleRegularEndValue);
+            } else if (transferVIB.activeTab === SubTab.CardNumber) {
+                validateRequest = transferService.ValidateCardTransferViaVIBA(fromAcc,
+                    no,
+                    amount,
+                    description,
+                    isAddBen,
+                    scheduleType,
+                    scheduleDate,
+                    scheduleRegularFreq,
+                    scheduleRegularEndType,
+                    scheduleRegularEndValue,
+                    (transferVIB.benId != null && transferVIB.moduleStr != null),
+                    transferVIB.benId);
+            }
+
+            $.when(validateRequest).done(function (result) {
+                if (result.STATUSCODE !== StatusCode.Successed) {
+                    Util.ShowErrorMessage(result.MESSAGE);
+                    return null;
+                }
+                $("#btnPrev").show();
+                transferVIB.DisplayConfirmationContent(no, result, scheduleType);
+                scrollViewport();
+                transferVIB.currentStep = 3;
+            });
+        }
+    },
+    TransferVIBSubmit: function () {
+        if (!transferVIB.ValidateStep1()) {
+            return;
+        }
+        var otp = $("#txtOtp1").val() +
+            $("#txtOtp2").val() +
+            $("#txtOtp3").val() +
+            $("#txtOtp4").val() +
+            $("#txtOtp5").val() +
+            $("#txtOtp6").val();
+        if (otp.length !== 6) {
+            Util.SetOTPErrorMessage(true, VIB.LocalizeString.EmptyOTP);
+            return;
+        }
+        var submitRequest = "";
+        if (transferVIB.activeTab === SubTab.Account) {
+            submitRequest = transferService.SubmitVIBAccount(otp);
+        } else if (transferVIB.activeTab === SubTab.Phone) {
+            submitRequest = transferService.SubmitVIBMobile(otp);
+        } else if (transferVIB.activeTab === SubTab.CardNumber) {
+            submitRequest = transferService.SubmitVIBCard(otp);
+        }
+
+        $.when(submitRequest).done(function (result) {
+            if (result.STATUSCODE !== StatusCode.Successed) {
+                if (result.ALLOWRETRYOTP) {
+                    Util.SetOTPErrorMessage(true, result.MESSAGE);
+                    return null;
+                } else {
+                    transferVIB.DisplayTransferResultContent(result, true);
+                    return null;
+                }
+                // Util.ShowErrorMessage(result.MESSAGE);
+                // return null;
+            }
+            transferVIB.DisplayTransferResultContent(result);
+        });
+    },
+    ValidateStep1: function () {
+        var v1 = transferVIB.ValidtxtNo();
+        var v2 = transferVIB.ValidateAmount();
+        var v3 = transferVIB.ValidateDesc();
+        return v1 && v2 && v3;
+    },
+    ExchangeRate: function () {
+        if ($("#fromAcc div.selected").attr("data-Ccy") !== "VND") {
+            $("#txtExchangeAmount").html("");
+            $("#txtExchangeRate").html("");
+            var fromAcctNo = $("#fromAcc div.selected").attr("data-value");
+            var toAcctNo = $("#txtNo").val() || $("#txtNo").html();
+            var amount = $("#txtAmount").autoNumeric("get");
+            if (fromAcctNo && toAcctNo && amount > 0) {
+                transferService.GetExchangeRate(fromAcctNo, toAcctNo, amount).done(function (result) {
+                    if (result.DATA) {
+                        $("#txtExchangeAmount").html(result.DATA.ToAmount);
+                        $("#txtExchangeRate").html(result.DATA.ExchangeRate);
+                    }
+                    $("#exchangeRateContent").show();
+                });
+            }
+        } else {
+            $("#exchangeRateContent").hide();
+        }
+    },
+    ValidtxtNo: function () {
+        if (!$("#txtNo").val() && !transferVIB.benId) {
+            if (transferVIB.activeTab === SubTab.Account) {
+                Util.SetFieldErrorMessage('txtNo', VIB.LocalizeString.EmptyAccountNo);
+            } else if (transferVIB.activeTab === SubTab.Phone) {
+                Util.SetFieldErrorMessage('txtNo', VIB.LocalizeString.PhoneRequired);
+            } else if (transferVIB.activeTab === SubTab.CardNumber) {
+                Util.SetFieldErrorMessage('txtNo', VIB.LocalizeString.EmptyCardNo);
+            }
+
+            return false;
+        }
+        Util.SetFieldErrorMessage('txtNo');
+        return true;
+    },
+    ValidateAmount: function () {
+        if (!$("#txtAmount").val()) {
+            Util.SetFieldErrorMessage('txtAmount', VIB.LocalizeString.AmountRequire);
+            return false;
+        //} else if ($("#txtAmount").autoNumeric("get") > 300000000) {
+        //    Util.SetFieldErrorMessage('txtAmount', VIB.LocalizeString.LimitTransferAmount);
+        //    return null;
+        }
+
+        Util.SetFieldErrorMessage('txtAmount');
+        return true;
+    },
+    ValidateDesc: function () {
+        var description = $("#txtDescription").val();
+        if (description !== "") {
+            if (checkSpecialDescriptionCharacter(description)) {
+                Util.SetFieldErrorMessage('txtDescription', VIB.LocalizeString.InvalidDescription);
+                return false;
+            }
+        }
+        Util.SetFieldErrorMessage('txtDescription');
+        return true;
+    },
+    DisplayConfirmationContent: function (toAcctNo, validateResult, scheduleType) {
+        transferVIB.ShowHideConfirmationContent(true);
+
+        var fromAccValue = $("#fromAcc div.selected").attr("data-value");
+        var fromAccText = $("#fromAcc div.selected").attr("data-display-text");
+        var toAcctName = $("#toAcctName").text().trim();
+
+        if (transferVIB.activeTab === SubTab.Account) {
+            toAcctName = toAcctName + " - " + toAcctNo;
+        }
+
+        var renderData = {
+            FromAcctNo: fromAccText,
+            ToAcctNo: transferVIB.activeTab === SubTab.CardNumber ? validateResult.DATA.ToCardNo : toAcctNo,
+            ToAcctName: toAcctName,
+            Amount: $("#txtAmount").val(),
+            Fee: validateResult.DATA.Fee,
+            TotalAmount: validateResult.DATA.TotalAmount,
+            Description: validateResult.DATA.Description,
+            When: scheduleType === ScheduleType.Scheduled ? "" : validateResult.DATA.When,
+            Ccy: validateResult.DATA.Ccy,
+        };
+
+        $("#confirmationVIBContent").empty();
+        $("#scheduleResult").hide();
+        $("#transferViaVIBConfirmTemplate").tmpl(renderData).appendTo($("#confirmationVIBContent"));
+
+        var otpData = {
+            IsPopup: false,
+            TransactionSigning: validateResult.DATA.TransactionSigning,
+            TransactionId: validateResult.DATA.TransactionId
+        }
+
+        $('#otpContent').empty();
+        $("#otpTemplate").tmpl(otpData).appendTo($("#otpContent"));
+        Util.RegisterOTPEvent();
+        $('#btnGetOTP').click(function () {
+            transferService.GetOTP().done(function () {
+                $("#txtOtp1").focus();
+            });
+        });
+
+        if (scheduleType === ScheduleType.Scheduled) {
+            $("#scheduleResult").show();
+            if (validateResult.DATA.Schedule.Frequency) {
+                $(".scheduleFrequency").show();
+                $("#scheduleFrequency").html(validateResult.DATA.Schedule.Frequency);
+            } else {
+                $(".scheduleFrequency").hide();
+            }
+            if (validateResult.DATA.Schedule.StartDate) {
+                $(".scheduleStartDate").show();
+                $("#scheduleStartDate").html(validateResult.DATA.Schedule.StartDate);
+            } else {
+                $(".scheduleStartDate").hide();
+            }
+            if (validateResult.DATA.Schedule.EndDate) {
+                $(".scheduleEndDate").show();
+                $("#scheduleEndDate").html(validateResult.DATA.Schedule.EndDate);
+            } else {
+                $(".scheduleEndDate").hide();
+            }
+            if (Number(validateResult.DATA.Schedule.Remain) > 0) {
+                $(".scheduleRemain").show();
+                $("#scheduleRemain").html(validateResult.DATA.Schedule.Remain);
+            } else {
+                $(".scheduleRemain").hide();
+            }
+            if (validateResult.DATA.Schedule.NextDate) {
+                $(".scheduleNextDate").show();
+                $("#scheduleNextDate").html(validateResult.DATA.Schedule.NextDate);
+            } else {
+                $(".scheduleNextDate").hide();
+            }
+        }
+    },
+    DisplayTransferResultContent: function (result, isFailed) {
+        if (result.DATA && result.DATA.TRANSNUM) {
+            $("#lblTranNum").html(result.DATA.TRANSNUM);
+        }
+        $(".transfer-confirm").hide();
+        if (isFailed) {
+            $("#errorMessage").html(result.MESSAGE);
+            $(".transfer-result-error").show();
+            $("#btnPrev").hide();
+            $("#btnNext").hide();
+            $("#btnComplete").show();
+        } else {
+            var scheduleType = $("input[name=transfer-option]:checked").attr("data-value");
+            if (scheduleType === ScheduleType.Later || scheduleType === ScheduleType.Scheduled) {
+                $("#successMesage").html(VIB.LocalizeString.ScheduleSuccess);
+            }
+            $(".transfer-result").show();
+            $("#btnPrev").hide();
+            $("#btnNext").hide();
+            $("#btnComplete").show();
+        }
+        $("html, body").animate({ scrollTop: 0 }, "slow");
+    },
+    ShowHideConfirmationContent: function (isDisplay) {
+        if (isDisplay) {
+            $("#leftContent").hide();
+            $(".input-session").hide();
+            $(".verify-section").show();
+            $("#btnPrev").show();
+        } else {
+            $("#leftContent").show();
+            $(".input-session").show();
+            $(".verify-section").hide();
+            if (!transferVIB.benId && !transferVIB.moduleStr) {
+                $("#btnPrev").hide();
+            }
+        }
+    },
+    RegisterTransferVIBDetailEvent: function (accountForTransferResult) {
+        // Amount
+        Util.SetAmountFormat("txtAmount");
+        Util.InitAmountControlEvent("txtAmount", "fromAcc", "txtAmountCCY");
+
+        // From account
+        Util.InitAccountListControl("fromAcc", accountForTransferResult, "fromAccGroup");
+        $('#fromAcc .item1').on('click', function () {
+            var text = $(this).clone().children("p").remove().end().text();
+            var ccy = $(this).attr("data-display-ccy");
+            transferVIB.ExchangeRate();
+            Util.SetAmountFormat("txtAmount", ccy);
+        });
+        $("#fromAcc .item1").first().click();
+
+        $("#txtAmount").on("change", function () {
+            transferVIB.ExchangeRate();
+            transferVIB.ValidateAmount();
+        });
+        $("#txtDescription").on("change", function () {
+            transferVIB.ValidateDesc(true);
+        });
+
+        // Event for Schedule
+        $('.row.options input.radio-custom').each(function () {
+            //if ($(this).is(":checked")) {
+            //    $(this).parents('.daily').find('.datepicker-apply').show();
+            //} else {
+            //    $(this).parents('.daily').find('.datepicker-apply').hide();
+            //}
+            $(this).parents('.daily').find('.datepicker-apply').hide();
+        });
+
+        $('.row.options input.radio-custom').each(function () {
+            $(this).click(function (e) {
+                $(this).parents('.row.options').find('.datepicker-apply').hide();
+                $("#endDate").text('');
+                $("#datepickermy").datepicker("setDate", null);
+                $("#scheduleRegularFreqGroup .caption").text('');
+                $("#scheduleRegularFreqGroup .item1").removeClass('selected');
+                $('.modal').find('.formLabel').removeClass('formTop');
+                $('.modal').find('input').val('');
+                $("#dropdownPopup .caption").text('');
+                $("#dropdownPopup .item1").removeClass('selected');
+                $('.sub-transf').hide();
+                $('input.datepicker-vs3').datepicker("setDate", null);
+                transferVIB.isClosePopupDefault = true;
+            });
+
+        });
+
+        $("#scheduleRegularFreqGroup .caption,#dropdownPopup .caption").on('click', function () {
+            if ($(this).parent().hasClass("open")) {
+                $(this).parent().removeClass("open");
+                return;
+            }
+            $(this).parent().addClass('open');
+        });
+
+        $('#scheduleRegularFreq .item1').on('click', function () {
+            $(this).parent().find(".item1").removeClass('selected');
+            var $dropParent = $(this).addClass('selected').parent().parent();
+            var text = $(this).clone().children("p").remove().end().text();
+            $dropParent.removeClass('open').children('.caption').text(text);
+            $dropParent.parent().children('.formLabel').addClass('formTop');
+            //$("#scheduleRegularFreqText").html(text);
+            $("#scheduleRegularFreqTextNoApply").val(text);
+            //$("#scheduleRegularFreqText").parents('.daily').find('.datepicker-apply').show();
+            Util.SetFieldErrorMessage("scheduleRegularFreq");
+        });
+        //$("#scheduleRegularFreq .item1").first().click();
+
+        $('#dropdownPopup .item1').on('click', function () {
+            $(this).parent().find(".item1").removeClass('selected');
+            var $dropParent = $(this).addClass('selected').parent().parent();
+            var text = $(this).clone().children("p").remove().end().text();
+            $dropParent.removeClass('open').children('.caption').text(text);
+            $dropParent.parent().children('.formLabel').addClass('formTop');
+            Util.SetFieldErrorMessage("dropdownPopup");
+            var scheduleRegularEndType = $(this).attr("data-value");
+            if (scheduleRegularEndType === ScheduleRegularEndType.NoEnd) {
+                //$("#loopEndText").html("");
+                //$("#loopEndText").html($(this).text());
+                $("#loopEndTextNoApply").val("");
+                $("#loopEndTextNoApply").val($(this).text());
+            } else if (scheduleRegularEndType === ScheduleRegularEndType.EndAfter) {
+                //$("#loopEndText").html("");
+                $("#loopEndTextNoApply").val("");
+                var endTransferTime = $("#endTransferTime").val();
+                if (endTransferTime) {
+                    //$("#loopEndText")
+                    //    .html(VIB.LocalizeString.EndAfterTemplate.replace("{times}",
+                    //        endTransferTime));
+                    $("#loopEndTextNoApply").val(VIB.LocalizeString.EndAfterTemplate.replace("{times}",
+                        endTransferTime));
+                }
+                $("#endTransferTime").focus();
+            } else {
+                if ($("#loopAfterDatePicker").val()) {
+                    //$("#loopEndText").html($("#loopAfterDatePicker").val());
+                    $("#loopEndTextNoApply").val($("#loopAfterDatePicker").val());
+                } else {
+                    //$("#loopEndText").html("");
+                    $("#loopEndTextNoApply").val("");
+                }
+            }
+        });
+        //$('#dropdownPopup .item1').first().click();
+        // End transfer Time
+        $("#endTransferTime").on("input", function (e) {
+            var self = $(this);
+            self.val(self.val().replace(/[^0-9]/g, ''));
+            if ((e.which != 46 || self.val().indexOf('.') != -1) &&
+                (e.which < 48 || e.which > 57)) {
+                e.preventDefault();
+            }
+        });
+
+        $("#endTransferTime").on("change", function () {
+            if ($(this).val()) {
+                Util.SetFieldErrorMessage("endTransferTime");
+            }
+            //$("#loopEndText").html(VIB.LocalizeString.EndAfterTemplate.replace("{times}", $(this).val()));
+            $("#loopEndTextNoApply").val(VIB.LocalizeString.EndAfterTemplate.replace("{times}", $(this).val()));
+        });
+        // DatePicker
+        $('input.datepicker-vs3').each(function () {
+            var $thisElem = $(this);
+            var $container = $(this).parents('.form-group');
+            $thisElem.datepicker({
+                orientation: "top",
+                format: "dd/mm/yyyy",
+                startDate: dtnow,
+                autoclose: true,
+                todayHighlight: true,
+                container: $container,
+                weekStart: 1
+            });
+        });
+
+        $("#startDate").on("change", function () {
+            var value = $(this).val();
+            //$("#startDateText").html(value);
+            $("#startDateTextNoApply").val(value);
+            if (value.length > 0) {
+                $(this).next().addClass('formTop');
+            } else {
+                $(this).next().removeClass('formTop');
+            }
+            if (value) {
+                Util.SetFieldErrorMessage("startDate");
+            }
+        });
+
+        $("#loopAfterDatePicker").on("change", function () {
+            var value = $(this).val();
+            //$("#loopEndText").html(value);
+            $("#loopEndTextNoApply").val(value);
+            if (value.length > 0) {
+                $(this).next().addClass('formTop');
+            } else {
+                $(this).next().removeClass('formTop');
+            }
+            if (value) {
+                Util.SetFieldErrorMessage("loopAfterDatePicker");
+            }
+        });
+    }
+}
+
+//Sub function
+function formatDate(date) {
+    var d = new Date(date),
+        month = '' + (d.getMonth() + 1),
+        day = '' + d.getDate(),
+        year = d.getFullYear();
+    if (month.length < 2)
+        month = '0' + month;
+    if (day.length < 2)
+        day = '0' + day;
+    return [day, month, year].join('/');
+}
+
+function getDaySelectedByDatepicker() {
+    $("#datepickermy").on('changeDate', function (ev) {
+            //$("#endDate").parents('.daily').find('.datepicker-apply').show();
+            if (ev.date) {
+                var dateSelected = formatDate(ev.date);
+                $("#endDateNoApply").val(dateSelected);
+            }
+    });
+}
+
+function openModal(event) {
+    $('.daily').find(".dropdown-modal").hide();
+    $('.dropdown').removeClass('open');
+    // closed autocomplete search
+    $('.form-group.search-autocomplete').each(function () {
+        $(this).find('.dropdown-menu').hide();
+        if ($.trim($(this).find('input').val()).length == 0) {
+            $(this).find('.formLabel').removeClass('formTop');
+        }
+    });
+    $(event.currentTarget).parents('.daily').find(".dropdown-modal").show();
+    $(event.currentTarget).parents('.daily').find('.datepickermy').datepicker({
+        orientation: "top",
+        format: "dd/mm/yyyy",
+        startDate: moment(dtnow, "DD/MM/YYYY").format('DD/MM/YYYY'),
+        autoclose: true,
+        todayHighlight: true,
+        weekStart: 1
+    });
+    $(event.currentTarget).parents('.daily').find('#datepickermy').datepicker({
+        orientation: "top",
+        format: "dd/mm/yyyy",
+        startDate: moment(dtnow, "DD/MM/YYYY").format('DD/MM/YYYY'),
+        autoclose: true,
+        todayHighlight: true,
+        weekStart: 1
+    });
+    getDaySelectedByDatepicker();
+    $(event.currentTarget).parents('.daily').find('.datepicker-apply .datepicker-edit').hide();
+    event.stopPropagation();
+}
+
+function closedModal(event) {
+
+    if (event.currentTarget.className != 'close') {
+        var checkError = false;
+        var scheduleType = $("input[name=transfer-option2]:checked").attr("data-value");
+        var scheduleDate = "", scheduleRegularFreq = "", scheduleRegularEndType = "", scheduleRegularEndValue = "";
+
+        if (scheduleType === ScheduleType.Scheduled) {
+            scheduleRegularFreq = $("#scheduleRegularFreq .item1.selected").attr("data-value");
+            if (!scheduleRegularFreq) {
+                Util.SetFieldErrorMessage("scheduleRegularFreq", VIB.LocalizeString.InvalidScheduleRegularFreq);
+                checkError = true;
+            }
+            else {
+                Util.SetFieldErrorMessage("scheduleRegularFreq");
+                checkError = false;
+            }
+            scheduleDate = $("#startDate").val();
+            if (!scheduleDate) {
+                Util.SetFieldErrorMessage("startDate", VIB.LocalizeString.InvalidSelectedDate);
+                checkError = true;
+            }
+            else if (scheduleDate && !DateTimeUtil.IsValidDate(scheduleDate)) {
+                Util.SetFieldErrorMessage("startDate", VIB.LocalizeString.InValidDate);
+                checkError = true;
+            }
+            else {
+                Util.SetFieldErrorMessage("startDate");
+                checkError = false;
+            }
+            scheduleRegularEndType = $("#dropdownPopup .list .item1.selected").attr("data-value");
+            if (!scheduleRegularEndType) {
+                Util.SetFieldErrorMessage("dropdownPopup", VIB.LocalizeString.InvalidScheduleRegularEndType);
+                checkError = true;
+            }
+            else {
+                Util.SetFieldErrorMessage("dropdownPopup");
+                checkError = false;
+            }
+
+            if (scheduleRegularEndType !== ScheduleRegularEndType.NoEnd) {
+                if (scheduleRegularEndType === ScheduleRegularEndType.EndAfter) {
+                    scheduleRegularEndValue = $("#endTransferTime").val();
+                    if (!scheduleRegularEndValue) {
+                        Util.SetFieldErrorMessage("endTransferTime", VIB.LocalizeString.InvalidEndAfterNumber);
+                        checkError = true;
+                    }
+                    else {
+                        Util.SetFieldErrorMessage("endTransferTime");
+                        checkError = false;
+                    }
+                } else if (scheduleRegularEndType === ScheduleRegularEndType.EndOn) {
+                    scheduleRegularEndValue = $("#loopAfterDatePicker").val();
+                    if (!scheduleRegularEndValue) {
+                        Util.SetFieldErrorMessage("loopAfterDatePicker", VIB.LocalizeString.InvalidSelectedDate);
+                        checkError = true;
+                    }
+                    else if (!DateTimeUtil.IsValidDate(scheduleRegularEndValue)) {
+                        Util.SetFieldErrorMessage("loopAfterDatePicker", VIB.LocalizeString.InValidDate);
+                        checkError = true;
+                    }
+                    else if (moment(scheduleRegularEndValue, "DD/MM/YYYY") < moment(dtnow, "DD/MM/YYYY")) {
+                        Util.SetFieldErrorMessage("loopAfterDatePicker", VIB.LocalizeString.InvalidPastDate);
+                        checkError = true;
+                    }
+                    else {
+                        Util.SetFieldErrorMessage("loopAfterDatePicker");
+                        checkError = false;
+                    }
+                }
+            }
+        }
+        if (!checkError) {
+
+            var $noApplyList = $(event.currentTarget).parents('.daily').find('.noApply');
+            for (var i = 0; i < $noApplyList.length; i++) {
+                var $noApply = $($noApplyList[i]);
+                var $applyInputID = $noApply.data('id');
+                $('#' + $applyInputID).text($noApply.val());
+            }
+            $(event.currentTarget).parents('.daily').find('.datepicker-apply').show();
+            $(event.currentTarget).parents('.daily').find('.datepicker-apply .datepicker-edit').show();
+            $(event.currentTarget).parents('.dropdown-modal').hide();
+        }
+        transferVIB.isClosePopupDefault = false;
+    }
+    else {
+        if (transferVIB.isClosePopupDefault) {
+            var lstradio = $("input[type=radio][name=transfer-option2]");
+            lstradio[0].checked = true;
+            $("#datepickermy").datepicker("setDate", null);
+            $('input.datepicker-vs3').datepicker("setDate", null);
+            $('.datepicker-apply').hide();
+            $("#endDate").text('');
+            $("#scheduleRegularFreqGroup .caption").text('');
+            $("#scheduleRegularFreqGroup .item1").removeClass('selected');
+            $('.modal').find('.formLabel').removeClass('formTop');
+            $('.modal').find('input').val('');
+            $("#dropdownPopup .caption").text('');
+            $("#dropdownPopup .item1").removeClass('selected');
+            $('.sub-transf').hide();
+        }
+        else {
+            $(event.currentTarget).parents('.daily').find('.datepicker-apply').show();
+            $(event.currentTarget).parents('.daily').find('.datepicker-apply .datepicker-edit').show();
+            var endDate = $("#endDate").text();
+            $("#datepickermy").datepicker("setDate", endDate);
+            var startDate = $("#startDateText").text();
+            $("#startDate").datepicker("setDate", startDate);
+            var loopAfterDatePicker = $("#loopEndText").text();
+            $("#loopAfterDatePicker").datepicker("setDate", loopAfterDatePicker);
+        }
+        $(event.currentTarget).parents('.dropdown-modal').hide();
+
+    }
+}
+
+function closedDropModal() {
+    $('.dropdown-modal').hide();
+    $('.row.options input.radio-custom').each(function () {
+        if ($(this).is(":checked")) {
+            $(this).parents('.daily').find('.datepicker-apply .datepicker-edit').show();
+        } else {
+            $(this).parents('.daily').find('.datepicker-apply .datepicker-edit').hide();
+        }
+    });
+}
+
+var transferVIBBulk = {
+    ContinueBulk: function () {
+        var AcctNo = $("#fromAcc div.selected").attr("data-display-text");
+        var fromAcctNo = $("#fromAcc div.selected").attr("data-value");
+        if (!fromAcctNo) {
+            Util.ShowErrorMessage(VIB.LocalizeString.CheckAcct);
+            return;
+        }
+        var type = $('input[type=radio]:checked').val();
+
+        if (type == 'ListExcel') {
+            if ($(uploadFile).val().length > 0) {
+                $("#divupload").removeClass("field-error");
+                $('#divuploadError').css('display', 'none');
+                transferService.SubmitBulkVIB(fromAcctNo).done(function (res) {
+                    if (res.STATUSCODE === StatusCode.Successed) {
+                        $("#leftContent").hide();
+                        $('#btnPrev').show();
+                        res.DATA.LocalizeString = VIB.LocalizeString;
+                        res.DATA.Amount = resulfUploadFile.TotalAmount;
+                        res.DATA.Total = resulfUploadFile.ALL;
+                        res.DATA.TotalInvalid = resulfUploadFile.InValid;
+                        res.DATA.TotalValid = resulfUploadFile.Valid;
+                        res.DATA.FromAcctNo = AcctNo;
+                        resulfValidate.DATA = res.DATA;
+                        resulfValidate.ShowFilter = false;
+                        if (resulfUploadFile.InValid != 0 && resulfUploadFile.Valid != 0) {
+                            resulfUploadFile.ShowFilter = true;
+                        }
+
+                        $('#tooltip').hide();
+                        $('#contentInputBulk').hide();
+                        $('#tabNavigation').hide();
+                        $("#reviewBulk").html('');
+                        $("#bulkReviewTemplate").tmpl(res.DATA).appendTo($("#reviewBulk"));
+                        $('#reviewBulk').show();
+                        $("#otpTemplate").tmpl(res.DATA).appendTo($("#otpContentBulk"));
+                        scrollViewport();
+                        Util.RegisterOTPEvent();
+                        $('#btnGetOTP').click(function () {
+                            transferService.GetOTPBulkVIB().done(function (res) {
+                                Util.ShowSuccessMessage(res);
+                            });
+                        });
+                        transferVIB.currentStep = 2;
+                    } else {
+                        Util.ShowErrorMessage(res.MESSAGE);
+                    }
+                });
+            } else {
+                $("#divupload").addClass("field-error");
+                $('#divuploadError').css('display', 'block');
+                return;
+            }
+        } else {
+            if (addRowListData.length === 0) {
+                Util.ShowErrorMessage(VIB.LocalizeString.InputListOnline);
+                return;
+            } else if (addRowListData.length < 2) {
+                Util.ShowErrorMessage(VIB.LocalizeString.InputListOnline1);
+                return;
+            } else {
+                transferService.AddAccountBulkVIB(fromAcctNo, coverAddRowListData(addRowListData)).done(function (res) {
+                    if (res.STATUSCODE === StatusCode.Successed) {
+                        res.DATA.FromAcctNo = AcctNo;
+                        resulfValidate.DATA = res.DATA;
+
+                        $('#tooltip').hide();
+                        $('#contentInputBulk').hide();
+                        $('#tabNavigation').hide();
+                        $("#reviewBulk").html('');
+                        $('#btnPrev').show();
+                        $("#leftContent").hide();
+                        $("#reviewContentBulkListOnlineTemplate").tmpl(res.DATA).appendTo($("#reviewBulk"));
+                        $('#reviewBulk').show();
+                        $("#otpTemplate").tmpl(res.DATA).appendTo($("#otpContentBulk"));
+                        scrollViewport();
+                        Util.RegisterOTPEvent();
+                        $('#btnGetOTP').click(function () {
+                            transferService.GetOTPBulkVIB().done(function (res) {
+                                $("#txtOt1").focus();
+                            });
+                        });
+                        transferVIB.currentStep = 2;
+                    } else {
+                        Util.ShowErrorMessage(res.MESSAGE);
+                    }
+                });
+            }
+        }
+    },
+    SubmitBulk: function () {
+        var otp = $("#txtOtp1").val() +
+            $("#txtOtp2").val() +
+            $("#txtOtp3").val() +
+            $("#txtOtp4").val() +
+            $("#txtOtp5").val() +
+            $("#txtOtp6").val();
+        if (otp.length !== 6) {
+            Util.SetOTPErrorMessage(true, VIB.LocalizeString.EmptyOTP);
+            return;
+        }
+        transferService.ConfirmOTPBulkVIB(otp).done(function (result) {
+            if (result.STATUSCODE === StatusCode.Successed) {
+                displayTransferResultContent(result);
+            } else {
+                if (result.ALLOWRETRYOTP) {
+                    Util.ShowErrorMessage(result.MESSAGE);
+                    return null;
+                } else {
+                    displayTransferResultContent(result, true);
+                }
+            }
+        });
+    },
+    BackBulk: function () {
+        transferVIB.currentStep = 1;
+        $("#leftContent").show();
+        $('#detailSlide').show();
+        $('#reviewBulk').hide();
+        $('#tabNavigation').show();
+        $('#contentInputBulk').show();
+        $('#btnPrev').hide();
+        $('#btnSubmitBulk').hide();
+
+        $('#tooltip').show();
+        scrollViewport();
+    },
+    FilterActive: function () {
+        var key = $('input[name="name2"]:checked').val();
+        $("#listReciverFile").html('');
+        var RESULT = { DATA: {} };
+        if (key == "all") {
+            RESULT.DATA.DATAFILTER = resulfUploadFile.DATA.ListAll;
+        } else if (key == "valid") {
+            RESULT.DATA.DATAFILTER = resulfUploadFile.DATA.ListValid;
+        } else {
+            RESULT.DATA.DATAFILTER = resulfUploadFile.DATA.ListInValid;
+        }
+
+        $("#listReciverFileTemplate").tmpl(RESULT).appendTo($("#listReciverFile"));
+        $('.dropdown-menu').on("click", function (e) {
+            e.stopPropagation();
+        });
+    }
+
+}
+
+var isUploadSuccess = false;
+var resulfUploadFile = {
+
+};
+var resulfValidate = {
+};
+var addRowListData = [];
+
+function uploadFileClick(_this, event) {
+    $("#divupload").removeClass("field-error");
+    $('#divuploadError').css('display', 'none');
+
+    $(".Uploadbtn .file-name").css('display', 'none');
+    $(".txtUpload").css('display', 'block');
+    $(_this).val('');
+    event.stopPropagation();
+    $(_this).next().next().val("");
+    $("#resultUpload").html('');
+    // $('#btnContinueBulk').attr('disabled', false);
+    if ($("#focusOut"))
+        $("#focusOut").focus();
+}
+
+function uploadFileChange(_this) {
+
+    if ($(_this).val().length > 0) {
+        //$(_this).next().addClass('formTop');
+    } else {
+        //$(_this).next().removeClass('formTop');
+        $(".Uploadbtn .file-name").css('display', 'none');
+        $("#txtUpload").css('display', 'block');
+
+        $("#divupload").addClass("field-error");
+        $('#divuploadError').css('display', 'block');
+        return;
+    }
+    $(_this).next().next().val(_this.value.substring(_this.value.lastIndexOf('/') + 1, _this.value.length)
+        .substring(_this.value.lastIndexOf('\\') + 1, _this.value.length));
+
+    var file = $('#uploadFile')[0].files[0];
+    $("#resultUpload").html('');
+
+    if (file) {
+        elapsedTime = 0;
+        uploadCompleted = false;
+        $("#lbProgressLoad").text("0%");
+        $("#progressLoad").css("width", "0%");
+        $("#popupload").modal();
+        uploadInterval = setInterval(function () {
+            uploadTimer();
+        }, 500);
+        transferService.UploadfileBulkVIB(file).done(function (res) {
+            if (res.STATUSCODE === StatusCode.Successed) {
+                resetPopupLoad();
+                resulfUploadFile.DATA = res.DATA;
+                resulfUploadFile.ALL = res.DATA.ListAll.length;
+                resulfUploadFile.InValid = res.DATA.ListInValid.length;
+                resulfUploadFile.Valid = res.DATA.ListValid.length;
+                resulfUploadFile.TotalAmount = resulfUploadFile.DATA.TotalAmount;
+                resulfUploadFile.ShowFilter = false;
+                if (resulfUploadFile.InValid != 0 && resulfUploadFile.Valid != 0) {
+                    resulfUploadFile.ShowFilter = true;
+                }
+                $("#resultUploadTemplate").tmpl(resulfUploadFile).appendTo($("#resultUpload"));
+
+
+                // $("#lblTextUpload").text(VIB.LocalizeString.DsTkExcel);
+                isUploadSuccess = true;
+                slidePanel();
+                //checkContinueStep();
+            } else {
+                resetPopupLoad();
+                Util.ShowErrorMessage(res.MESSAGE);
+                return;
+            }
+        });
+    }
+}
+
+function deleteFile() {
+    $("#resultUpload").html('');
+    // $('#btnContinueBulk').attr('disabled', false);
+    if ($("#focusOut"))
+        $("#focusOut").focus();
+}
+
+function exportExcel() {
+    var wb = XLSX.utils.book_new();
+    wb.Props = {
+        Title: "",
+        Subject: "",
+        Author: "VIB",
+        CreatedDate: new Date()
+    };
+    wb.SheetNames.push("Sheet1");
+    var exportData = [];
+    resulfUploadFile.DATA.ListAll.map(function (element, index) {
+        var attribute = {};
+        attribute[VIB.LocalizeString.Stt] = String(Number(index) + 1);
+        attribute[VIB.LocalizeString.ToAcct] = element.ToAcctId;
+        attribute[VIB.LocalizeString.ToAcctName] = element.ToAcctName;
+        attribute[VIB.LocalizeString.Amount] = element.Amount;
+        attribute[VIB.LocalizeString.Status] =
+            element.Status === "000000" ? VIB.LocalizeString.Valid : VIB.LocalizeString.Invalid;
+        attribute[VIB.LocalizeString.Description] = element.Description
+
+        exportData.push(attribute);
+    });
+
+    var ws = XLSX.utils.json_to_sheet(exportData, { startRowNo: 1, raw: true });
+    wb.Sheets["Sheet1"] = ws;
+    var wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+    saveAs(new Blob([s2ab(wbout)], { type: "application/octet-stream" }), 'Overview_Data.xlsx');
+}
+
+function exportExcel2PopupDetails(mode) {
+    var wb = XLSX.utils.book_new();
+    wb.Props = {
+        Title: "",
+        Subject: "",
+        Author: "VIB",
+        CreatedDate: new Date()
+    };
+    wb.SheetNames.push("Sheet1");
+    var exportData = [];
+    var listAll = [];
+    if (mode === "VALID") {
+        listAll = resulfValidate.DATA.ListAll.filter(function (item) { return item.Status = "000000" });
+    } else {
+        listAll = resulfValidate.DATA.ListAll;
+    }
+
+    listAll.map(function (element, index) {
+        var atrribute = {};
+        atrribute[VIB.LocalizeString.Stt] = index + 1;
+        atrribute[VIB.LocalizeString.ToAcct] = element.ToAcctId;
+        atrribute[VIB.LocalizeString.ToAcctName] = element.ToAcctName;
+        atrribute[VIB.LocalizeString.Amount] = element.Amount;
+        atrribute[VIB.LocalizeString.Status] = element.Status === "000000" ? VIB.LocalizeString.Valid : VIB.LocalizeString.Invalid;
+        atrribute[VIB.LocalizeString.Description] = element.Description;
+
+        exportData.push(atrribute);
+    });
+    var ws = XLSX.utils.json_to_sheet(exportData, { startRowNo: 1, raw: true });
+    var wscols = [
+        { wch: 4  },
+        { wch: 20 },
+        { wch: 15 },
+        { wch: 10 },
+        { wch: 10 },
+        { wch: 80 }
+    ];
+
+    ws['!cols'] = wscols;
+    wb.Sheets["Sheet1"] = ws;
+    var wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+    saveAs(new Blob([s2ab(wbout)], { type: "application/octet-stream" }), 'Overview.xlsx');
+}
+
+function exportExcelPopupDetails() {
+    var wb = XLSX.utils.book_new();
+    wb.Props = {
+        Title: "",
+        Subject: "",
+        Author: "VIB",
+        CreatedDate: new Date()
+    };
+    wb.SheetNames.push("Sheet1");
+    var exportData = [];
+    resulfUploadFile.DATA.ListAll.map(function (element, index) {
+        var atrribute = {};
+        atrribute[VIB.LocalizeString.Stt] = index + 1;
+        atrribute[VIB.LocalizeString.ToAcct] = element.ToAcctId;
+        atrribute[VIB.LocalizeString.ToAcctName] = element.ToAcctName;
+        atrribute[VIB.LocalizeString.Amount] = element.Amount;
+        atrribute[VIB.LocalizeString.Status] = element.Status === "000000" ? VIB.LocalizeString.Valid : VIB.LocalizeString.Invalid;
+        atrribute[VIB.LocalizeString.Description] = element.Description;
+
+        exportData.push(atrribute);
+    });
+    var ws = XLSX.utils.json_to_sheet(exportData, { startRowNo: 1, raw: true });
+    wb.Sheets["Sheet1"] = ws;
+    var wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+    saveAs(new Blob([s2ab(wbout)], { type: "application/octet-stream" }), 'Overview.xlsx');
+}
+
+function checkContinueStep() {
+    var type = $('input[type=radio]:checked').val()
+    var fromAcctNo = $("#fromAcc div.selected").attr("data-value");
+    var file = $('#uploadFile')[0].files[0];
+    if (type == 'ListExcel') {
+        if (fromAcctNo && file && isUploadSuccess && ($("#btnContinueBulk").attr("data-isregisteronline") !== "Y")) {
+            $('#btnContinueBulk').removeAttr('disabled');
+            $('.Uploadbtn .file-name .del').click();
+            $(uploadFile).val('');
+        } else {
+            // $('#btnContinueBulk').attr('disabled', false);
+        }
+    } else {
+        if (addRowListData.length >= 2 &&
+            addRowListData.length <= 1000 &&
+            fromAcctNo &&
+            ($("#btnContinueBulk").attr("data-isregisteronline") !== "Y")) {
+            $('#btnContinueBulk').removeAttr('disabled');
+        }
+    }
+};
+
+function displayTransferResultContent(result, isFailed) {
+    $('#otpContentBulk').hide();
+    $('#btnPrev').hide();
+    $("#btnNext").hide();
+    $("#btnSubmitBulk").hide();
+    $('#btnComplete').show();
+    $('#btnLinkManagerBulk').show();
+    if (isFailed) {
+        Util.ShowErrorMessage(result.MESSAGE);
+        $(".transfer-confirm").hide();
+        $(".transfer-result").show();
+        $(".transfer-result-titile").hide();
+        $(".transfer-error-titile").show();
+    } else {
+        $("#lblTranNum").html(result.DATA.Transnum);
+        $("#lbltotalSuccess").html(result.DATA.ListSuccess.length);
+        $(".transfer-confirm").hide();
+        $(".transfer-result").show();
+        $(".transfer-result-titile").show();
+        $(".transfer-error-titile").hide();
+    }
+}
+
+function backViewDetail() {
+    closeSlidePanel();
+    scrollViewport();
+}
+
+function viewDetail(el) {
+    $("#detailSlide").html('');
+    $("#viewDetailBulkVIBTemplate").tmpl(resulfUploadFile).appendTo($("#detailSlide"));
+    eventListOnline();
+    $('.dropdown-menu').on("click", function (e) {
+        e.stopPropagation();
+    });
+
+    openSlidePanel(el);
+    scrollViewport();
+}
+
+function backViewDetail2() {
+    $("#leftContent").hide();
+    $('#btnSubmitBulk').css('display', 'inline-block');
+    $('#btnBack').css('display', 'inline-block');
+    closeSlidePanel();
+    scrollViewport();
+}
+
+function viewDetail2(el) {
+    $("#leftContent").hide();
+    $("#detailSlide2").html('');
+    var renderData = {
+        DATA: [],
+        //Mode: "VALID"
+    };
+    if (resulfValidate.DATA && resulfValidate.DATA.ListAll) {
+        //renderData.DATA = resulfValidate.DATA.ListAll.filter(function (item) { return item.Status === "000000" });
+        renderData.DATA = resulfValidate.DATA.ListAll;
+    }
+    $("#viewDetail2BulkVIBTemplate").tmpl(renderData).appendTo($("#detailSlide2"));
+    eventListOnline();
+    openSlidePanel(el);
+    scrollViewport();
+}
+
+function resetErrorPopupADD() {
+
+    $("#txtAcctNo").removeClass("field-error");
+    $('#txtAcctNoError').css('display', 'none');
+    $("#txtAmount").removeClass("field-error");
+    $('#txtAmountError').css('display', 'none');
+}
+
+function checkContinueAdd(id) {
+    var elementName = id.toString();
+    resetErrorPopupADD();
+    var no = $("#txtAcctNo" + elementName).val();
+    var amount = $("#txtAmount" + elementName).val();
+    if (!(no && no != "")) {
+        Util.SetFieldErrorMessage('txtAcctNo', VIB.LocalizeString.InputAcct);
+        return false;
+    } else if (!(amount && amount != "")) {
+        $("#txtAmount").addClass("field-error");
+        $('#txtAmountError').css('display', 'block');
+        return false;
+    }
+    if ($("#txtContentError:visible").length > 0) {
+        return false;
+    }
+    return true;
+
+}
+
+function formatAmountInput(e) {
+    if (e) {
+        var patern = ",";
+        $(e).val(function (index, value) {
+            if (/^0/.test(value)) {
+                return '';
+            }
+            return value
+                .replace(/\D/g, "")
+                .replace(/\B(?=(\d{3})+(?!\d))/g, patern);
+        });
+    }
+}
+
+function txtAmountChange(id) {
+    checkContinueAdd(id);
+}
+
+function resetHtmlAddRow(elementName) {
+    $("#txtAcctNo" + elementName).val("");
+    $("#txtAcctName" + elementName).val("");
+    $("#txtAcctId" + elementName).val("");
+    $("#txtContent" + elementName).val("");
+    $('#btnEdit').attr('disabled', false);
+    $('.hide-input-popup').css('display', 'none');
+}
+
+function closePopupResetValid(elementName) {
+    $("#txtContent").removeClass("field-error");
+    $('#txtContentError').css('display', 'none');
+    $("#txtContent").parent().children('.formLabel').removeClass('formTop');
+    $("#txtAmount").removeClass("field-error");
+    $('#txtAmountError').css('display', 'none');
+}
+
+function txtContentChange(elementName) {
+    $("#txtContent").removeClass("field-error");
+    $('#txtContentError').css('display', 'none');
+    var content = $("#txtContent" + elementName).val();
+    if (checkSpecialDescriptionCharacter(content)) {
+        $("#txtContent").addClass("field-error");
+        $('#txtContentError').css('display', 'block');
+        return false;
+    }
+    checkContinueAdd(elementName);
+}
+
+function loadDataToPopup(elementName) {
+    var indexOfArr = addRowListData.findIndex(function (i) { return i.ToAcct === elementName });
+    if (indexOfArr > -1) {
+
+        $("#txtAcctNo").val(addRowListData[indexOfArr].ToAcct);
+        $("#txtAcctName").text(addRowListData[indexOfArr].ToAcctName);
+        $("#txtAmount").val(addRowListData[indexOfArr].Amount);
+        $("#txtContent").val(addRowListData[indexOfArr].Content);
+        $("#txtAcctId").val(addRowListData[indexOfArr].ToAcctId);
+    }
+}
+
+var idDelete = "";
+var idEdit = "";
+
+function clickEdit(id) {
+    resetErrorPopupADD();
+    $("#btnaddRowList").hide();
+    $("#btnEdit").show();
+    $("#acctLb").addClass("formTop");
+    loadDataToPopup(id);
+    if ($.trim($("#txtAmount").val()).length == 0) {
+        $("#txtAmount").parent().children('.formLabel').removeClass('formTop');
+        $("#txtAmount").parent().children('.currency').hide();
+        $("#txtAmount").parent().children('.hideLabel').show();
+    } else if ($("#txtAmount").hasClass('currency-right')) {
+        $("#txtAmount").parent().children('.currency').show().css({ "left": "auto", 'right': 0 });
+        $("#txtAmount").css('padding-right', '13px');
+    } else {
+        $("#txtAmount").parent().children('.currency').show().css('left', $("#txtAmount").getTextSize()[0]);
+    }
+
+    $(".hide-input-popup").css('display', 'block');
+    $("#popupAdd").modal();
+    idEdit = id;
+    $('#btnEdit').attr('disabled', false);
+}
+
+function clickDelete(id) {
+    idDelete = id;
+    $("#popupDelete").modal("toggle");
+}
+
+function deleteRowList() {
+    var elementName = idDelete.toString();
+    var render = {};
+    render.Data = addRowListData;
+    var indexOfArr = addRowListData.findIndex(function (i) { return i.ToAcct === elementName });
+    if (indexOfArr > -1) {
+        addRowListData.splice(indexOfArr, 1);
+    }
+    $("#rowListOnline").html('');
+    $("#rowListOnlineTemplate").tmpl(render).appendTo($("#rowListOnline"));
+    eventListOnline();
+    checkContinueStep();
+}
+
+var inputAddNewRow = {};
+
+function getInputAddNewRow(id) {
+    var elementName = id.toString();
+    inputAddNewRow.ToAcct = $("#txtAcctNo" + elementName).val();
+    inputAddNewRow.ToAcctName = $("#txtAcctName" + elementName).text();
+    inputAddNewRow.Amount = $("#txtAmount" + elementName).val();
+    inputAddNewRow.Content = $("#txtContent" + elementName).val();
+    inputAddNewRow.ToAcctId = $("#txtAcctId" + elementName).val();
+
+}
+
+function addAction() {
+    $("#popupAdd").modal();
+    $("#btnaddRowList").show();
+    $("#btnEdit").hide();
+    Util.InitInputTable()
+    $("#txtAmount").val("");
+    $(".currency").hide();
+    $("#currencyLb").removeClass("formTop");
+    resetHtmlAddRow("");
+    Util.SetFieldErrorMessage('txtAcctNo');
+    $("#txtAcctNo").on("input",
+        function (e) {
+            var self = $(this);
+            self.val(self.val().replace(/[^0-9]/g, ''));
+            if ((e.which != 46 || self.val().indexOf('.') != -1) && (e.which < 48 || e.which > 57)) {
+                e.preventDefault();
+            }
+        });
+}
+
+function addRowListBulk() {
+    var validate = checkContinueAdd("");
+    if (validate) {
+        getInputAddNewRow("");
+        $("#btnSubmit").attr("disabled", true);
+        var render = {};
+        addRowListData.push({
+            "ToAcct": inputAddNewRow.ToAcct,
+            "ToAcctName": inputAddNewRow.ToAcctName,
+            "Amount": inputAddNewRow.Amount,
+            "Content": inputAddNewRow.Content,
+            "ToAcctId": inputAddNewRow.ToAcctId
+        });
+        render.Data = addRowListData;
+        $("#rowListOnline").html('');
+        $("#rowListOnlineTemplate").tmpl(render).appendTo($("#rowListOnline"));
+        resetHtmlAddRow("");
+        // $("#btnaddRowList").attr("disabled", "disabled");
+        eventListOnline();
+        checkContinueStep();
+        $("#popupAdd").modal("toggle");
+    } else {
+        $("#popupAdd").modal();
+        return;
+    }
+}
+
+function coverAddRowListData(data) {
+    var dataRes = [];
+    for (i = 0; i < data.length; i++) {
+        dataRes.push({
+            "acctid": data[i].ToAcctId,
+            "amount": parseFloat(data[i].Amount.replace(new RegExp(",", 'g'), "")),
+            "description": data[i].Content
+        });
+    }
+    return dataRes;
+}
+
+function editRowList(id) {
+    var validate = checkContinueAdd("");
+    if (validate) {
+        getInputAddNewRow(id);
+        var elementName = idEdit;
+        var render = {};
+        render.Data = addRowListData;
+        var indexOfArr = addRowListData.findIndex(function (i) { return i.ToAcct === elementName });
+        if (indexOfArr > -1) {
+            addRowListData[indexOfArr].ToAcct = inputAddNewRow.ToAcct
+            addRowListData[indexOfArr].ToAcctName = inputAddNewRow.ToAcctName
+            addRowListData[indexOfArr].Amount = inputAddNewRow.Amount
+            addRowListData[indexOfArr].Content = inputAddNewRow.Content
+            addRowListData[indexOfArr].ToAcctId = inputAddNewRow.ToAcctId
+        }
+        $("#rowListOnline").html('');
+        $("#" + elementName).removeClass("open");
+        $("#rowListOnlineTemplate").tmpl(render).appendTo($("#rowListOnline"));
+        eventListOnline();
+        checkContinueStep();
+        $('#btnEdit' + elementName).attr('disabled', false);
+        checkContinueAdd(id);
+        $("#popupAdd").modal("toggle");
+    } else {
+        $("#popupAdd").modal();
+        return;
+    }
+}
+
+function destroyRowList() {
+    var render = {};
+    render.Data = addRowListData;
+    $("#rowListOnline").html('');
+    $("#rowListOnlineTemplate").tmpl(render).appendTo($("#rowListOnline"));
+    $("#openDialog").removeClass("open");
+
+    resetInputAddNewRow();
+    checkContinueAdd("");
+    checkContinueStep();
+
+}
+
+function acctNoChangeBulk(id) {
+    Util.SetFieldErrorMessage('txtAcctNo');
+    $("#txtAmount").val("");
+    $(".currency").hide();
+    $("#currencyLb").removeClass("formTop");
+    $("#txtContent").val("");
+    resetHtmlAddRow();
+    var elementName = id.toString();
+    var no = $("#txtAcctNo" + elementName).val();
+    var AcctNo = $("#fromAcc div.selected").attr("data-display").split("-")[0].trim();
+    if (no == "") {
+        Util.SetFieldErrorMessage('txtAcctNo', VIB.LocalizeString.InputAcct);
+        return;
+    }
+    no = no.trim();
+    if (AcctNo === no) {
+        // Util.ShowErrorMessage(VIB.LocalizeString.TrungTkCt);
+        // $("#txtAcctNo" + elementName).val("");
+        Util.SetFieldErrorMessage('txtAcctNo', VIB.LocalizeString.TrungTkCt);
+        $("#txtAcctName" + elementName).val("");
+        return;
+    }
+    var indexOfArr = addRowListData.findIndex(function (i) { return i.ToAcct === no });
+    if (indexOfArr > -1) {
+        // Util.ShowErrorMessage(VIB.LocalizeString.TrungTk);
+        Util.SetFieldErrorMessage('txtAcctNo', VIB.LocalizeString.TrungTk);
+        // $("#txtAcctNo" + elementName).val("");
+        $("#txtAcctName" + elementName).val("");
+        return;
+    } else {
+        transferService.GetVIBAAccount(no).done(function (result) {
+            if (result.STATUSCODE === StatusCode.Successed) {
+                var acctName = result.DATA.AcctName;
+                $("#txtAcctId" + elementName).val(result.DATA.AcctId);
+                $("#txtAcctNo" + elementName).val(no);
+                $("#txtAcctName" + elementName).text(acctName);
+                // $("#btnEdit" + elementName).removeAttr('disabled');
+                // $("#lbAcctName").addClass('formTop');
+                $('.hide-input-popup').css('display', 'block');
+                $("#txtAcctNo").removeClass("field-error");
+                $('#txtAcctNoError').css('display', 'none');
+                closePopupResetValid(elementName);
+            } else {
+                // Util.ShowErrorMessage(result.MESSAGE);
+                Util.SetFieldErrorMessage('txtAcctNo', result.MESSAGE);
+                // resetHtmlAddRow(elementName);
+            }
+            //checkContinueAdd(id);
+        });
+
+    }
+}
+
+function eventListOnline() {
+    $('tr[data-toggle="toggle-border"]').click(function () {
+        if ($(this).hasClass("toogle-style2")) {
+            $(this).closest('.infomation-transaction').siblings().find('.hide').hide();
+            $(this).closest(".infomation-transaction").siblings().removeClass("toogle-border");
+            $(this).parents(".labels").show();
+            $(this).parents(".labels").toggleClass("toogle-style2-active");
+            $('tr[data-toggle="toggle-border"]').not(this).parents(".labels").removeClass("toogle-style2-active");
+        } else {
+            $(this).parents(".labels").toggle();
+        }
+        $(this).parents().next('.hide').toggle();
+        $(this).closest(".infomation-transaction").toggleClass("toogle-border");
+    });
+}
+
+function eventBulkVIB() {
+    $('.dropdown > .list > .item1').on('click',
+        function () {
+            // $("#btnContinueBulk").attr("disabled", "disabled");
+            checkContinueStep();
+        });
+
+    // get input file name
+    $('.Uploadbtn input[type=file]').on('change',
+        function (event) {
+            var parent = $(this).parents('.Uploadbtn');
+            var x = $($(this).val().match(/([^\/\\]+)$/)).get(1);
+            // file not choosed
+            if (typeof x === 'undefined') {
+                return false;
+            } else {
+                $(this).parents('.Uploadbtn').children('.file-name').show();
+                $(this).parents('.Uploadbtn').children('.file-name').find('p').html(x);
+                $(this).parents('.Uploadbtn').children('.attach-upload').find('.txtUpload').hide();
+            }
+        });
+    //remove file
+    $('.file-name .del').click(function () {
+        $(this).parents('.Uploadbtn').children('.file-name').hide();
+        $(this).parents('.Uploadbtn').children('.file-name').find('p').html("");
+        $(this).parents('.Uploadbtn').children('.attach-upload').find('.txtUpload').show();
+    });
+}
+
+function AccountInfo(evt) {
+    var no = evt.value;
+    if (no == "") {
+        return;
+    }
+    $("#spAcctName").text("");
+    transferService.GetVIBAAccount(no).done(function (result) {
+        if (result.STATUSCODE === StatusCode.Successed) {
+            var acctName = result.DATA.AcctName;
+            $("#spAcctName").text(acctName);
+        } else {
+            Util.ShowErrorMessage(result.MESSAGE);
+        }
+    });
+}
+
+function ResetWhenChangeRadio() {
+    $("#rowListOnline").empty();
+    addRowListData = [];
+}

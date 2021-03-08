@@ -1,0 +1,1428 @@
+﻿var accountSubMenuTemplate = "/DesktopModules/MVC/VIB.MVC.AccountInformation2/Views/Shared/Template/AccountSubMenuTemplate.html?v=1";
+var myAccountTemplate = "/DesktopModules/MVC/VIB.MVC.AccountInformation2/Views/Shared/Template/MyAccountTemplate.html?v=1";
+var otpJSTemplate = "/DesktopModules/MVC/VIB.MVC.Common/Template/OTPJSTemplate2.html?v=1";
+var commonJSTemplate = "/DesktopModules/MVC/VIB.MVC.Common/Template/CommonJSTemplate.html?v=1";
+
+var ProductType = {
+    CurrentAccount: "CA",
+    SaveAccount: "TD",
+    Card: "CARD",
+    Loan: "LOAN"
+}
+var TimeType = {
+    All: "all",
+    Month: "month",
+    Year: "year",
+    ChoseDate: "choosedate"
+};
+
+var accIdGetMoreMoney = "";
+var accTypeGetMoreMoney = "";
+var dataPostFilter = {};
+var savingData = {};
+
+var account = {
+    totalRecordDataFilter: 0,
+    totalResultDataFilter: [],
+    me: null,
+    Init: function (moduleId) {
+        me = account;
+        var deferred = $.Deferred();
+        $.when(
+            $.get(accountSubMenuTemplate, function (templates) {
+                $('body').append(templates);
+            }),
+            $.get(myAccountTemplate, function (templates) {
+                $('body').append(templates);
+            })
+        ).then(function () {
+            accountInformation2Service.Init(moduleId);
+            // Submenu
+            accountInformation2Service.GetAccountList().done(function (accountListResult) {
+                $("#accountSubMenuTemplate").tmpl(accountListResult,
+                    {
+                        isEmptyList: function (productType) {
+                            return accountListResult.DATA.filter(function (item) { return item.producttype === productType }).length === 0;
+                        },
+                        buildProductTitle: function (producttitle, acctid) {
+                            return producttitle + "..." + acctid.substr(-4, 4);
+                        }
+                    }).appendTo($("#leftContent"));
+                // Load account detail
+                var acctId = Util.GetQueryString("acctno");
+                var firstElement = "";
+                if (acctId) {
+                    firstElement = $("#leftContent .detail-value-number li[data-accid='" + acctId + "']").first();
+                } else {
+                    firstElement = $("#leftContent .detail-value-number li").first();
+                }
+
+                if (firstElement) {
+                    var accId = $(firstElement).attr("data-accid"),
+                        productType = $(firstElement).attr("data-producttype");
+
+                    if (accId && productType) {
+                        $(firstElement).addClass("active");
+                        loadDetailInformation(accId, productType, firstElement);
+                        initAccountListEvent();
+                    }
+                }
+                deferred.resolve();
+            }).fail(function (error) {
+                deferred.resolve();
+            });
+
+            // popup sms
+            if (VIB.TokenType === TokenType.SMS) {
+                if (sessionStorage.getItem("6T9WH8RDRO") !== "Y") {
+                $("#smsFeeWarning").modal();
+                    sessionStorage.setItem("6T9WH8RDRO", "Y");
+                }
+            }
+            showModalOldVersion();
+            $(document).on("click", function (e) {
+                if ($(e.target).parents('#notice-version').length < 1) {
+                    $("#notice-version").hide();
+                }
+         
+            })
+
+        });
+        return deferred.promise();
+    },
+    RedirectToCard: function (serNo) {
+        if (serNo && VIB.LocalizeString.CardDetailTabId) {
+            window.location.href = VIB.LocalizeString.CardDetailTabId + "?id=" + serNo;
+        }
+    },
+    RedirectToCloseAcct: function () {
+        var selectedAcctInfo = getCurrentAccInfo();
+        if (selectedAcctInfo && VIB.LocalizeString.CloseAcctTabId) {
+            window.location.href = VIB.LocalizeString.CloseAcctTabId + "?id=" + selectedAcctInfo.accId + "&type=" + selectedAcctInfo.accType;
+        }
+    },
+    ShowTransHistoryDetail: function (el) {
+        if ($(el).parents(".labels").hasClass("toogle-style2-active") || $("#transactionHistoryDetail_" + $(el).attr("data-tranid"))[0].hasChildNodes()) {
+            if ($(el).hasClass("toogle-style2")) {
+                $(el).closest('.infomation-transaction').siblings().find('.hide').hide();
+                $(el).closest(".infomation-transaction").siblings().removeClass("toogle-border");
+                $(el).parents(".labels").show();
+                $(el).parents(".labels").toggleClass("toogle-style2-active");
+                $('tr[data-toggle="toggle-border"]').not($(el)).parents(".labels").removeClass("toogle-style2-active");
+            } else {
+                $(el).parents(".labels").toggle();
+            }
+            $(el).parents().next('.hide').toggle();
+            $(el).closest(".infomation-transaction").toggleClass("toogle-border");
+            return;
+        }
+
+        var accInfo = getCurrentAccInfo();
+        var acctid = accInfo.accId,
+            accttype = accInfo.serviceType || "CARD",
+            trantype = $(el).attr("data-trantype"),
+            tranmode = $(el).attr("data-tranmode"),
+            trandate = $(el).attr("data-trandate"),
+            tranno = $(el).attr("data-tranid"),
+            refid = "",
+            ccy = $(el).attr("data-ccy");
+
+        accountInformation2Service.GetTransactionHistoryDetail(acctid, accttype, trantype, tranmode, trandate, tranno, refid, ccy).done(function (transHistoryDetailResult) {
+            $("#transactionHistoryDetail_" + tranno).empty();
+            transHistoryDetailResult.DATA.TranMode = tranmode;
+            transHistoryDetailResult.DATA.TranType = trantype;
+            $("#transactionHistoryDetailTemplate").tmpl(transHistoryDetailResult.DATA,
+                {
+                    getCurrentProductType: getCurrentProductType
+                }).appendTo($("#transactionHistoryDetail_" + tranno));
+
+            if ($(el).hasClass("toogle-style2")) {
+                $(el).closest('.infomation-transaction').siblings().find('.hide').hide();
+                $(el).closest(".infomation-transaction").siblings().removeClass("toogle-border");
+                $(el).parents(".labels").show();
+                $(el).parents(".labels").toggleClass("toogle-style2-active");
+                $('tr[data-toggle="toggle-border"]').not($(el)).parents(".labels").removeClass("toogle-style2-active");
+            } else {
+                $(el).parents(".labels").toggle();
+            }
+            $(el).parents().next('.hide').toggle();
+            $(el).closest(".infomation-transaction").toggleClass("toogle-border");
+        });
+    },
+    OnTransHistoryFilterActive: function () {
+        var deferred = $.Deferred();
+        Util.SetFieldErrorMessage("filterdFrom");
+        Util.SetFieldErrorMessage("filterdTo");
+        if (!account.ValidSearchDate()) {
+            return;
+        }
+        var dFrom = $("#filterdFrom").val();
+        var dTo = $("#filterdTo").val();
+        $("#transHistoryFilterMessage").html(VIB.LocalizeString.FilterByDateMessage.replace("{0}", dFrom).replace("{1}", dTo));
+        $("#exportDateLabel").html(VIB.LocalizeString.ExportTransDate.replace("{a}", dFrom).replace("{b}", dTo));
+        var acctInfo = getCurrentAccInfo();
+        loadTransHistory(acctInfo.accId, acctInfo.serviceType, TimeType.ChoseDate, dFrom, dTo, 0).done(function () {
+            $("#btnFilterTransHistory").parents(".dropdown-keep-open").find(".btn-filter-blue").addClass('btn-filter-blue-active');
+            $("#btnFilterTransHistory").parents(".transaction-history").find(".average-result .col-list-month, .average-result .col-average").hide();
+            $("#btnFilterTransHistory").parents(".transaction-history").find(".average-result .col-filter-result").show();
+            $('.dropdown-keep-open.show').find('button.dropdown-toggle').dropdown('toggle');
+            deferred.resolve();
+        });
+
+        return deferred.promise();
+    },
+    OnTransHistoryFilterDelete: function () {
+        var acctInfo = getCurrentAccInfo();
+        $("#btnClearTransHistory").parents(".transaction-history").find(".average-result .col-filter-result").hide();
+        $("#btnClearTransHistory").parents(".transaction-history").find(".average-result .col-list-month, .average-result .col-average").show();
+        $("#btnClearTransHistory").parents(".transaction-history").find(".btn-filter-blue").removeClass('btn-filter-blue-active');
+        $("#filterdFrom").val("").trigger("change");
+        $("#filterdTo").val("").trigger("change");
+        var dFrom = getSelectedMonth();
+        var timeType = "";
+        if (dFrom.indexOf("/") > -1) {
+            var dFromLabel = dFrom;
+            if (Util.GetCurrentLang() === Lang_EN) {
+                dFromLabel = moment(dFrom, "MM/YYYY").format('MMM YYYY');
+            }
+            $("#exportDateLabel").html(VIB.LocalizeString.Month + dFromLabel);
+            dFrom = dFrom.replace("/", "-");
+            timeType = TimeType.Month;
+        } else {
+            timeType = TimeType.Year;
+        }
+
+        loadTransHistory(acctInfo.accId, acctInfo.serviceType, timeType, dFrom, "", 0);
+    },
+    ValidSearchDate: function (isValidDFormOnly) {
+        var dFrom = $("#filterdFrom").val();
+        var dTo = $("#filterdTo").val();
+        Util.SetFieldErrorMessage("filterdFrom");
+        if (!DateTimeUtil.IsValidDate(dFrom)) {
+            Util.SetFieldErrorMessage("filterdFrom", VIB.LocalizeString.InvalidSearchDate);
+            if (dTo) {
+                return false
+            }
+        }
+        if (isValidDFormOnly) {
+            return true;
+        }
+        Util.SetFieldErrorMessage("filterdTo");
+        if (!DateTimeUtil.IsValidDate(dTo)) {
+            Util.SetFieldErrorMessage("filterdTo", VIB.LocalizeString.InvalidSearchDate);
+            return false;
+        }
+        if (moment(dFrom, "DD/MM/YYYY") > moment(dTo, "DD/MM/YYYY")) {
+            Util.SetFieldErrorMessage("filterdTo", VIB.LocalizeString.InvalidSearchDate);
+            return false;
+        }
+        if (moment(dTo, "DD/MM/YYYY").diff(moment(dFrom, "DD/MM/YYYY"), "days") > 90) {
+            Util.SetFieldErrorMessage("filterdTo", VIB.LocalizeString.InvalidSearchDateRange.replace("{{days}}", 90));
+            return false;
+        }
+        return true;
+    },
+    ExportCAStatementData: function (fileType) {
+        var accInfo = getCurrentAccInfo();
+        if (accInfo) {
+            var selectedMonth = getSelectedMonth();
+            var dtFrom = "";
+            var dtTo = "";
+            if (selectedMonth) {
+                dtFrom = moment(selectedMonth, "MM/YYYY").startOf('month').format('DD/MM/YYYY');
+                dtTo = moment(selectedMonth, "MM/YYYY").endOf('month').format('DD/MM/YYYY');
+            } else {
+                dtFrom = $("#filterdFrom").val();
+                dtTo = $("#filterdTo").val();
+            }
+
+            //if (!validateDateFromAndTo(from, to)) return null;
+            window.open('/DesktopModules/VIB.Modules.WB.Reports/ReportViewer.aspx?key=VIB_RB_CAStatement_NEW&acctid=' + accInfo.accId + "&from=" + dtFrom.replace(new RegExp("/", "g"), "-") + "&to=" + dtTo.replace(new RegExp("/", "g"), "-") + "&export=" + fileType);
+        }
+    },
+    ExportTransactionListToExcel: function () {
+        var dtFrom, dtTo = "", isNewFilter = true;
+        dtFrom = $("#filterdFrom").val();
+        dtTo = $("#filterdTo").val();
+
+        if (!dtFrom || !dtTo) {
+            var selectedMonth = getSelectedMonth();
+            if (selectedMonth) {
+                dtFrom = moment(selectedMonth, "MM/YYYY").startOf('month').format('DD/MM/YYYY');
+                dtTo = moment(selectedMonth, "MM/YYYY").endOf('month').format('DD/MM/YYYY');
+                isNewFilter = false;
+            }
+        }
+        if (!dtFrom || !dtTo) {
+            Util.ShowErrorMessage(VIB.LocalizeString.InvalidSearchDate);
+            return;
+        }
+
+        exportToExcel(dtFrom, dtTo);
+
+        //if (isNewFilter) {
+        //    $("#filterdFrom").datepicker("update", dtFrom);
+        //    $("#filterdTo").datepicker("update", dtTo);
+        //    account.OnTransHistoryFilterActive().done(function () {
+        //        exportToExcel(dtFrom, dtTo);
+        //    });
+        //} else {
+        //    exportToExcel(dtFrom, dtTo);
+        //}
+    },
+    PrintSaving: function() {
+        //Creating new page
+        var width = screen.availWidth -200;
+        var height = screen.availHeight - 200;
+        if (width < 1000 || height < 900) {
+            width = 800;
+            height = 600;
+        }
+        var pp = window.open('', '', `left=100,top=100,width=${width},height=${height},toolbar=1,scrollbars=1,status=0`);
+        var renderData = savingData.DATA;
+        renderData.ProductTitle_En = savingData.PRINTSAVINGINFO.ProductTitle_En;
+        renderData.GlobalId = savingData.PRINTSAVINGINFO.GlobalId;
+        renderData.GlobalIssueDate = savingData.PRINTSAVINGINFO.GlobalIssueDate;
+        renderData.Rollover = savingData.PRINTSAVINGINFO.Rollover;
+        renderData.Rollover_En = savingData.PRINTSAVINGINFO.Rollover_En;
+        renderData.AmountStr = savingData.PRINTSAVINGINFO.AmountStr;
+        renderData.AmountStr_En = savingData.PRINTSAVINGINFO.AmountStr_En;
+        renderData.Country = savingData.PRINTSAVINGINFO.Country;
+        renderData.ResidentStatus = savingData.PRINTSAVINGINFO.ResidentStatus;
+        renderData.DebitAccount = savingData.PRINTSAVINGINFO.DebitAccount;
+        renderData.SettleAccount = savingData.PRINTSAVINGINFO.SettleAccount;
+        
+
+        var data = JSON.parse(sessionStorage.getItem('UserInfo'));
+        if (data) {
+            renderData.Fullname = data.CUSTOMNERNAME;
+        }
+        var tmpl = $.template("#printSavingTemplate");
+        var strings = tmpl($, { data: renderData });
+        var html = strings.join(''); // single string
+        pp.document.writeln(html);
+        pp.document.writeln("<script type='text/javascript'>window.addEventListener('load', (event) => {setTimeout(function(){ window.print() }, 1500);});</script>");
+        pp.document.close();
+    }
+}
+
+var closeAccount = {
+    Init: function (moduleId) {
+        var deferred = $.Deferred();
+        $.when(
+            $.get(otpJSTemplate, function (templates) {
+                $('body').append(templates);
+            })
+        ).then(function () {
+            accountInformation2Service.Init(moduleId);
+            var acctId = $("#AccId").val(),
+                accType = $("#AccType").val();
+            accountInformation2Service.CheckAccountClose(acctId, accType).done(function (result) {
+                if (result.STATUSCODE !== "000000") {
+                    Util.ShowInfoMessage(result.MESSAGE);
+                    return null;
+                }
+
+                accountInformation2Service.GetCloseAccountInfo(acctId).done(function (closeAccountInfoResult) {
+                    closeAccountInfoResult.accttype_Old = accType;
+                    $("#confirmTemplate").tmpl(closeAccountInfoResult).appendTo($("#rightContent"));
+                    scrollViewport();
+                    $("#otpTemplate").tmpl({}).appendTo($("#otpContent"));
+                    Util.RegisterOTPEvent();
+
+                    $("#btnGetOTP").on('click', function () {
+                        accountInformation2Service.GetOTP();
+                    });
+
+                    $('.form-group .dropdown > .caption').on('click', function () {
+                        $('.dropdown').removeClass('open');
+                        $(this).parent().toggleClass('open');
+                    });
+
+                    $('.form-group .dropdown > .list > .item1').on('click', function () {
+                        $('.dropdown > .list > .item1').removeClass('selected');
+                        $(this).addClass('selected').parent().parent().removeClass('open').children('.caption').text($(this).attr("data-display")).attr("data-value", $(this).attr("data-value"));
+                        $(this).parents().children('.formLabel').addClass('formTop');
+                    });
+                    if (closeAccountInfoResult.DATA.defaultsettacct) {
+                        $("#settleAccount .item1[data-acctname='" + closeAccountInfoResult.DATA.defaultsettacct + "']").click();
+                    }
+
+                    deferred.resolve();
+                });
+            });
+        });
+
+        return deferred.promise();
+    },
+    CloseAccConfirmClicked: function () {
+        var otp = $("#txtOtp1").val() + $("#txtOtp2").val() + $("#txtOtp3").val() + $("#txtOtp4").val() + $("#txtOtp5").val() + $("#txtOtp6").val();
+        if (otp.length !== 6) {
+            Util.ShowErrorMessage(VIB.LocalizeString.EmptyOTP);
+            return;
+        }
+
+        var settleAccountId = $("#settleAccount .caption").attr("data-value");
+        if (!settleAccountId) {
+            Util.ShowErrorMessage(VIB.LocalizeString.EmptyTarget);
+            return;
+        }
+
+        var acctId = $("#AccId").val();
+        if (acctId) {
+            accountInformation2Service.SubmitCloseAcct(acctId, otp, settleAccountId).done(function (result) {
+                if (result.STATUSCODE === "000000") {
+                    $("#settlementAcc").html($("#settleAccount .item1.selected").attr("data-acctname"));
+                    $(".success-block-hide").hide();
+                    $(".success-block").show();
+                } else {
+                    Util.ShowErrorMessage(result.MESSAGE);
+                }
+            });
+        }
+    },
+};
+
+function loadDetailInformation(accId, productType, selectedElement) {
+    var deferred = $.Deferred();
+    var cardList = accountInformation2Service.GetCardList();
+    var accountDetail = accountInformation2Service.GetAccountDetail(accId, productType);
+    $.when(cardList, accountDetail).done(function (cardListResult, accountDetailResult) {
+        accIdGetMoreMoney = accountDetailResult.DATA.acctid;
+        accTypeGetMoreMoney = accountDetailResult.DATA.producttitle;
+        accountDetailResult.productType = productType;
+        $("#rightContent").empty();
+        if (productType === ProductType.SaveAccount) {
+            accountDetailResult.ListMonth = DateTimeUtil.GetListLastCalendarItem(2, 'years', 'YYYY');
+        } else {
+            accountDetailResult.ListMonth = DateTimeUtil.GetListLastCalendarItem(6, 'months', 'MM/YYYY');
+        }
+        accountDetailResult.isExportStatement = productType === ProductType.CurrentAccount;
+        accountDetailResult.isExportExcel = productType === ProductType.CurrentAccount || productType === ProductType.Card;
+        accountDetailResult.isFilterByDate = productType !== ProductType.SaveAccount;
+        if (productType === ProductType.CurrentAccount) {
+            accountDetailResult.InActiveDebitCardCount = 0;
+            if (cardListResult && cardListResult.length > 0) {
+                var cardInfo = null;
+                if (productType === ProductType.CurrentAccount) {
+                    cardInfo = cardListResult.filter(function (item) { return item.acctno === accId && item.status === "NEW" && item.isatm });
+                }
+                if (cardInfo) {
+                    accountDetailResult.InActiveDebitCardCount = cardInfo.length;
+                }
+            }
+        }
+        if (productType === ProductType.SaveAccount) {
+            savingData = accountDetailResult;
+        }
+        $("#accountDetailTemplate").tmpl(accountDetailResult,
+            {
+                isAllowRedirectToCard: function () {
+                    if (cardListResult && cardListResult.length > 0) {
+                        var cardInfo = null;
+                        if (productType === ProductType.Card) {
+                            cardInfo = cardListResult.filter(function (item) { return item.serno === accId && !item.isatm });
+                        }
+                        if (productType === ProductType.CurrentAccount) {
+                            cardInfo = cardListResult.filter(function (item) { return item.acctno === accId && item.isatm });
+                        }
+                        if (cardInfo && cardInfo.length > 0) {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                },
+                getCardId: function () {
+                    if (cardListResult && cardListResult.length > 0) {
+                        var cardInfo = [];
+                        if (productType === ProductType.Card) {
+                            cardInfo = cardListResult.filter(function (item) { return item.serno === accId && !item.isatm });
+                        }
+                        if (productType === ProductType.CurrentAccount) {
+                            cardInfo = cardListResult.filter(function (item) { return item.acctno === accId && item.isatm });
+                        }
+                        if (cardInfo.length === 0) {
+                            return "";
+                        }
+
+                        if (cardInfo.length === 1) {
+                            return cardInfo[0].serno;
+                        } else {
+                            var newCard = cardInfo.filter(function (item) { return item.status === "NEW" });
+                            if (newCard.length > 0) {
+                                return newCard[0].serno;
+                            } else {
+                                return cardInfo[0].serno;
+                            }
+                        }
+                    }
+                    return "";
+                }
+            }).appendTo($("#rightContent"));
+        $("#redirectOpenAccount").click(function() {
+            window.location.href = VIB.LocalizeString.OpenAccountTabId;
+        });
+        if (selectedElement) {
+            if (accountDetailResult.SERVICETYPE) {
+                $(selectedElement).attr("data-servicetype", accountDetailResult.SERVICETYPE);
+            }
+            if (accountDetailResult.DATA.accttype) {
+                $(selectedElement).attr("data-accttype", accountDetailResult.DATA.accttype);
+            }
+            if (accountDetailResult.DATA.acctid) {
+                $(selectedElement).attr("data-accno", accountDetailResult.DATA.acctid);
+            }
+            if (productType === ProductType.Loan) {
+                accountDetailResult.LOAN.AccNo = accountDetailResult.DATA.acctid;
+                $(selectedElement).attr("data-loan", JSON.stringify(accountDetailResult.LOAN));
+            }
+            if (productType === ProductType.SaveAccount) {
+                $(selectedElement).attr("data-goalinfo", JSON.stringify(accountDetailResult.GOALINFO));
+            }
+            $(selectedElement).attr("data-showtranshist", accountDetailResult.DATA.isshowtranshist);
+        }
+        initAccountDetailEvent();
+        // Selected first item
+        if (productType === ProductType.Loan && accountDetailResult.LOAN) {
+            $('#loanDisbursement .list .item1').first().click();
+        } else {
+            $(".col-list-month .list .item1").first().click();
+        }
+        deferred.resolve();
+    }).fail(function (error) {
+        if (error && error.MESSAGE) {
+            Util.ShowErrorMessage(error.MESSAGE);
+        }
+    });
+    return deferred.promise();
+}
+
+function loadTransHistory(accId, serviceType, timeType, dfrom, dto, pageIndex, isLoadMore) {
+    var deferred = $.Deferred();
+    $("#averageBalance").html("");
+    if (timeType === TimeType.Month && !isLoadMore && getCurrentProductType() === ProductType.CurrentAccount) {
+        accountInformation2Service.GetAvgBalance(accId, dfrom).done(function (avgBalanceResult) {
+            if (avgBalanceResult.DATA) {
+                var month = dfrom.split("-")[0];
+                var strAvgBalance = VIB.LocalizeString.AvgBalance;
+                if (strAvgBalance.indexOf('{0}') > -1) {
+                    month = moment().month(Number(month) - 1).format('MMM');
+                    strAvgBalance = strAvgBalance.replace('{0}', '');
+                }
+                $("#averageBalance").html(strAvgBalance + month + ": " + avgBalanceResult.DATA.balance + " " + avgBalanceResult.DATA.ccy);
+            }
+        });
+    }
+
+    serviceType = serviceType || ProductType.Card;
+    var accInfo = getCurrentAccInfo();
+    if ((accInfo.productType !== ProductType.Loan) &&
+        (accInfo.serviceType === "MM" || !accInfo.showTransHist) &&
+        (accInfo.productType !== ProductType.Card)) {
+        $(".transaction-history").empty();
+        $(".transaction-history").prev().hide();
+        return null;
+    }
+
+    if (accInfo.productType === ProductType.Loan) {
+
+    } else {
+        var showEmptyMsg = function () {
+            $("#listTransaction").append("<p class='no-trans mt-3' style='margin-left:30px;'>" + VIB.LocalizeString.EmptyTransactionHistory + "</p>");
+            $("#exportCAPanel").attr("disabled", true);
+        };
+        $("#listTransaction").find("p.no-trans").remove();
+        accountInformation2Service.GetTransactionHistoryList(accId, serviceType, timeType, dfrom, dto, pageIndex, function () {
+            showEmptyMsg();
+        }).done(function (listResult) {
+            account.totalRecordDataFilter = listResult.TotalRecord;
+            dataPostFilter = {
+                accId: accId,
+                serviceType: serviceType,
+                timeType: timeType,
+                dfrom: dfrom,
+                dto: dto,
+                pageIndex: pageIndex
+            };
+            $("#exportCAPanel").attr("disabled", false);
+            var transactionList = JSON.parse($("#transactionList").val());
+            if (!isLoadMore) {
+                $("#transactionHistoryPageIndex").val("0");
+                $("#listTransaction .tbl-mar-30 tbody").first().empty();
+                $("#listTransaction .mt-3").remove();
+                VIB.MaxTransactionHistoryPage = listResult.TotalRecord / listResult.DATA.length;
+                transactionList = listResult.DATA;
+            } else {
+                transactionList = transactionList.concat(listResult.DATA);
+            }
+            $("#transactionList").val(JSON.stringify(transactionList));
+            if (listResult && listResult.DATA && listResult.DATA.length > 0) {
+                $("#transactionHistoryListTemplate").tmpl(listResult).appendTo($("#listTransaction .tbl-mar-30 tbody").first());
+                //add 03/02/2020 quangpv
+                if (isLoadMore) {
+                    loadTransHistory(accId, serviceType, timeType, dfrom, dto, pageIndex + 1, true);
+                    $('.btn-scroll-down').hide();
+                }
+                $("#transactionHistoryPageIndex").val(pageIndex);
+                
+                //end
+            } else if (!isLoadMore) {
+                showEmptyMsg();
+            }
+            btnScrollDown();
+            $(window).trigger("scroll");
+
+            deferred.resolve();
+        });
+    }
+
+    return deferred.promise();
+}
+
+function loadLoanDetail(ddNo) {
+    var acctInfo = getCurrentAccInfo();
+    var loanDetailInfo = {
+        LOAN: acctInfo.loanInfo
+    }
+    loanDetailInfo.ddNo = ddNo;
+    if (!loanDetailInfo.ddNo) {
+        if (loanDetailInfo.LOAN.LOANDISBURSEMENT && loanDetailInfo.LOAN.LOANDISBURSEMENT.length > 0) {
+            loanDetailInfo.ddNo = loanDetailInfo.LOAN.LOANDISBURSEMENT[0].disbno;
+        }
+    }
+
+    $("#loanDetail").empty();
+    $("#loanDetailTemplate").tmpl(loanDetailInfo).appendTo($("#loanDetail"));
+
+    var orgccy = loanDetailInfo.LOAN.LOANDISBURSEMENT.filter(function (i) { return i.disbno === loanDetailInfo.ddNo })[0].orgccy;
+    var ccy = loanDetailInfo.LOAN.LOANDISBURSEMENT.filter(function (i) { return i.disbno === loanDetailInfo.ddNo })[0].ccy;
+    var repaymentHist = accountInformation2Service.GetRepaymentHist(acctInfo.accId, loanDetailInfo.ddNo, orgccy);
+    var repaymentSchedule = accountInformation2Service.GetRepaymentSchedule(acctInfo.accId, loanDetailInfo.ddNo);
+    var loanOverdue = accountInformation2Service.GetLoanOverdue(acctInfo.accId, loanDetailInfo.ddNo);
+    $.when(repaymentSchedule, repaymentHist, loanOverdue).done(function (repaymentScheduleResult, repaymentHistResult, loanOverdueResult) {
+        if (repaymentScheduleResult && repaymentScheduleResult.DATA) {
+            repaymentScheduleResult.TongNo = 0;
+            if (loanOverdueResult.DATA) {
+                repaymentScheduleResult.TongNo = loanOverdueResult.DATA.TongNo;
+            }
+            $("#repaymentSchedule").empty();
+            $("#repaymentScheduleTemplate").tmpl(repaymentScheduleResult).appendTo($("#repaymentSchedule"));
+            for (var propertyName in loanOverdueResult.DATA) {
+                if (propertyName === "SoNgayTL") {
+                    $("#" + propertyName).html(loanOverdueResult.DATA[propertyName]);
+                } else {
+                    $("#" + propertyName).html(loanOverdueResult.DATA[propertyName] + " " + repaymentScheduleResult.DATA.CCY);
+                }
+            }
+        } else {
+            var emptyRepaymentScheduleHTML = '<div class="row  border-0"><div class="col-8">' + VIB.LocalizeString.NoRepaymentScheduleNote + '</div></div>';
+            $("#repaymentSchedule").html(emptyRepaymentScheduleHTML);
+        }
+
+        if (repaymentHistResult.DATA && repaymentHistResult.DATA.length > 0) {
+            $(".list-transaction").empty();
+            repaymentHistResult.CCY = ccy;
+            $("#repaymentHistTemplate").tmpl(repaymentHistResult).appendTo($(".list-transaction"));
+        } else {
+            $(".list-transaction").html("<p class='mt-3' style='margin-left: 30px;'>" + VIB.LocalizeString.NoLoanHistoryNote + "</p>");
+        }
+    });
+}
+
+function initAccountListEvent() {
+    $(window).scroll(function () {
+        var pageIndex = Number($("#transactionHistoryPageIndex").val()) + 1;
+        if ($(window).scrollTop() + $(window).height() === $(document).height() && VIB.MaxTransactionHistoryPage > pageIndex) {
+            var acctInfo = getCurrentAccInfo();
+            var timeType = "", dFrom = "", dTo = "";
+            dFrom = getSelectedMonth();
+            if (dFrom) {
+                if (dFrom.indexOf("/") > -1) {
+                    dFrom = dFrom.replace("/", "-");
+                    timeType = TimeType.Month;
+                } else {
+                    timeType = TimeType.Year;
+                }
+            } else {
+                timeType = TimeType.ChoseDate;
+                dFrom = $("#filterdFrom").val();
+                dTo = $("#filterdTo").val();
+            }
+            loadTransHistory(acctInfo.accId, acctInfo.serviceType, timeType, dFrom, dTo, pageIndex, true).done(function () {
+                // remove 03/02/2020
+                //$("#transactionHistoryPageIndex").val(pageIndex);
+                //end
+            });
+        }
+    });
+    $(document).on('click', function (evt) {
+        if ($(evt.target).closest(".tooltip-parent-click").length === 0) {
+            $(".tooltip-parent-click .tooltip-normal").hide();
+        }
+    });
+
+    // Account list item clicked
+    $('.detail-value-number li').click(function () {
+        var selectedElement = $(this);
+        var accId = selectedElement.attr("data-accid"),
+            productType = selectedElement.attr("data-producttype");
+        if (accId && productType) {
+            $(".detail-value-number li").removeClass("active");
+            selectedElement.addClass("active");
+            loadDetailInformation(accId, productType, selectedElement);
+        }
+    });
+}
+
+function initAccountDetailEvent() {
+    Util.InitDropdownListControl();
+    btnScrollDownAction();
+
+    $("#filterdFrom").datepicker({
+        orientation: "top",
+        format: defaultDateTimeFormat,
+        endDate: new Date(),
+        autoclose: true,
+        todayHighlight: true,
+        container: $("#filterdFrom").parents('.form-group'),
+    }).on('show', function (e) {
+        var datepick = $('.datepicker');
+        if (datepick.height() > 0) {
+            DateHeightViewPort(datepick);
+        }
+    }).on('hide', function (ev) {
+        $('.right-content').attr("style", "");
+    });
+
+    $("#filterdTo").datepicker({
+        orientation: "top",
+        format: defaultDateTimeFormat,
+        endDate: new Date(),
+        autoclose: true,
+        todayHighlight: true,
+        container: $("#filterdTo").parents('.form-group'),
+    }).on('show', function (e) {
+        var datepick = $('.datepicker');
+        if (datepick.height() > 0) {
+            DateHeightViewPort(datepick);
+        }
+    }).on('hide', function (ev) {
+        $('.right-content').attr("style", "");
+    });
+
+    $('#filterdFrom').on('changeDate', function () {
+        $("#filterdTo").val("");
+        var fromDateStr = $(this).val().split('/');
+        var from = new Date(fromDateStr[2], fromDateStr[1] - 1, fromDateStr[0]);
+        var toDate = new Date(fromDateStr[2], fromDateStr[1] - 1, fromDateStr[0]);
+        toDate.setDate(toDate.getDate() + 90);
+        if (toDate > new Date()) {
+            toDate = new Date();
+        }
+
+        $('#filterdTo').datepicker('setStartDate', from);
+        $('#filterdTo').datepicker('setEndDate', toDate);
+        account.ValidSearchDate(true);
+    });
+    $('#filterdTo').on('changeDate', function () {
+        account.ValidSearchDate();
+    });
+
+    $('.dropdown-menu').on("click", function (e) {
+        e.stopPropagation();
+    });
+
+    $('.col-list-month .form-group .dropdown > .list > .item1').on('click', function () {
+        $(this).parent().find('.item1').removeClass('selected');
+        var $dropParent = $(this).addClass('selected').parent().parent();
+        if ($dropParent.hasClass('search')) {
+            $dropParent.removeClass('open').find('input[type=text]').val($(this).text());
+        } else if ($dropParent.hasClass('account-num-money')) {
+            $dropParent.removeClass('open').children('.caption').html($(this).html());
+        } else {
+            $dropParent.removeClass('open').children('.caption').text($(this).text());
+        }
+
+        $(this).parents().children('.formLabel').addClass('formTop');
+        var acctInfo = getCurrentAccInfo();
+        var dFrom = getSelectedMonth();
+        var timeType = "";
+        if (dFrom.indexOf("/") > -1) {
+            var dFromLabel = dFrom;
+            if (Util.GetCurrentLang() === Lang_EN) {
+                dFromLabel = moment(dFrom, "MM/YYYY").format('MMM YYYY');
+            }
+            $("#exportDateLabel").html(VIB.LocalizeString.Month + dFromLabel);
+            dFrom = dFrom.replace("/", "-");
+            timeType = TimeType.Month;
+        } else {
+            timeType = TimeType.Year;
+        }
+        var startDate = moment(dFrom, "MM-YYYY").startOf('month').format('DD/MM/YYYY');
+        var enDate = moment(dFrom, "MM-YYYY").endOf('month').format('DD/MM/YYYY');
+
+        loadTransHistory(acctInfo.accId, acctInfo.serviceType, timeType, dFrom, "", 0);
+        $('.right-content').height('auto');
+    });
+
+    $('#loanDisbursement > .list > .item1').on('click', function () {
+        $(this).parent().find('.item1').removeClass('selected');
+        var $dropParent = $(this).addClass('selected').parent().parent();
+        if ($dropParent.hasClass('search')) {
+            $dropParent.removeClass('open').find('input[type=text]').val($(this).text());
+        } else if ($dropParent.hasClass('account-num-money')) {
+            $dropParent.removeClass('open').children('.caption').html($(this).html());
+        } else {
+            $dropParent.removeClass('open').children('.caption').text($(this).text());
+        }
+        loadLoanDetail($(this).attr("data-value"));
+    });
+
+    $(window).scroll(function () {
+        if ($(window).scrollTop() > 50) {
+            $('.scrollToTop').show();
+        } else {
+            $('.scrollToTop').hide();
+        }
+    });
+    $('.scrollToTop .btn').on("click", function () {
+        $("html, body").animate({ scrollTop: 0 }, "slow");
+    });
+
+    $(".tooltip-parent .tooltip-normal.tooltip--bottom").each(function () {
+        var widhtTooltip = $(this).width();
+        if (widhtTooltip >= 80) {
+            $(this).css({ "white-space": 'normal', "max-width": "90px", "min-width": "90px" });
+        }
+    });
+
+    if ($(window).scrollTop() > 50) {
+        $('.scrollToTop').show();
+    } else {
+        $('.scrollToTop').hide();
+    }
+
+}
+
+function loopGetHistoryTransaction(pageIndex, totalRecord, dtFrom, dtTo) {
+    accountInformation2Service.GetTransactionHistoryList(dataPostFilter.accId, dataPostFilter.serviceType, dataPostFilter.timeType, dataPostFilter.dfrom, dataPostFilter.dto, pageIndex, function () { }).then(function (rs) {
+        if (totalRecord > 0) {
+            rs.DATA.forEach(function (e) {
+                account.totalResultDataFilter.push(e);
+            })
+            pageIndex += 1;
+            totalRecord -= rs.DATA.length;
+            loopGetHistoryTransaction(pageIndex, totalRecord, dtFrom, dtTo);
+        } else {
+    var wb = XLSX.utils.book_new();
+    wb.Props = {
+        Title: "",
+        Subject: "",
+        Author: "VIB",
+        CreatedDate: new Date()
+    };
+    wb.SheetNames.push("Sheet1");
+            var transactionList = account.totalResultDataFilter.reverse();
+    var exportData = [];
+    if (!transactionList.length) {
+        return;
+    }
+    var accInfo = getCurrentAccInfo();
+    var ccy = "VND";
+    transactionList.forEach(function (element) {
+        ccy = element.ORGCCY;
+        var attribute = {};
+        attribute[VIB.LocalizeString.TransactionDate] = element.strDate;
+        if (accInfo.productType !== ProductType.Card) {
+            attribute[VIB.LocalizeString.EffectDate] = element.EffectDate;
+        }
+        attribute[VIB.LocalizeString.TransactionDescription] = element.Desc;
+        attribute[VIB.LocalizeString.Amount] = element.TranType === "Credit" ? Number(element.strAmount.split(",").join("")) : -Number(element.strAmount.split(",").join(""));
+        attribute[VIB.LocalizeString.CCY] = element.CCY;
+        attribute[VIB.LocalizeString.Status] = element.Status === "SUCCESSED"
+            ? VIB.LocalizeString.Successful
+                    : element.Status === "FAIL"
+                ? VIB.LocalizeString.Unsuccessful
+                : VIB.LocalizeString.Revert;
+
+        exportData.push(attribute);
+    });
+
+    var ws = XLSX.utils.json_to_sheet(exportData, { startRowNo: 4, raw: true });
+
+    ws['A1'] = {
+        t: "s",
+        v: VIB.LocalizeString.ExportExcel_Title,
+        s: {
+            font: {
+                        bold: true,
+            },
+            alignment: {
+                horizontal: "center"
+            }
+        }
+    };
+    ws['A2'] = {
+        t: "s",
+                v: (accInfo.productType !== ProductType.Card ? VIB.LocalizeString.ExportAccountNo : VIB.LocalizeString.ExportCardNo) + (accInfo.accNo || $("#cardNoLabel").html()),
+        s: {
+            alignment: {
+                horizontal: "center"
+            }
+        }
+    };
+    ws['A3'] = {
+        t: "s",
+        v: VIB.LocalizeString.From + " " + dtFrom + " " + VIB.LocalizeString.To + " " + dtTo,
+        s: {
+            font: {
+                italic: true
+            },
+            alignment: {
+                horizontal: "center"
+            }
+        }
+    };
+    var headerStyle = {
+        font: {
+                    bold: true,
+        },
+        alignment: {
+            horizontal: "center"
+                },
+    };
+    if (accInfo.productType === ProductType.Card) {
+        ws['A5'].s = headerStyle;
+        ws['B5'].s = headerStyle;
+        ws['C5'].s = headerStyle;
+        ws['D5'].s = headerStyle;
+        ws['E5'].s = headerStyle;
+    } else {
+        ws['A5'].s = headerStyle;
+        ws['B5'].s = headerStyle;
+        ws['C5'].s = headerStyle;
+        ws['D5'].s = headerStyle;
+        ws['E5'].s = headerStyle;
+        ws['F5'].s = headerStyle;
+    }
+
+    var borderStyle = {
+        top: {
+            style: "thin",
+            color: { rgb: "FF000000" }
+        },
+        bottom: {
+            style: "thin",
+            color: { rgb: "FF000000" }
+        },
+        left: {
+            style: "thin",
+            color: { rgb: "FF000000" }
+        },
+        right: {
+            style: "thin",
+            color: { rgb: "FF000000" }
+        }
+    }
+    ws['A5'].s.border = borderStyle;
+
+    var index = 6;
+    while (ws["A" + index]) {
+        ws["A" + index].s = {
+            border: borderStyle
+        }
+        ws["B" + index].s = {
+            border: borderStyle
+        }
+        if (accInfo.productType !== ProductType.Card) {
+            ws["C" + index].s = {
+                border: borderStyle
+            }
+            ws["D" + index].s = {
+                border: borderStyle
+            }
+            ws["D" + index].t = "n";
+            if (ws["E" + index].v === "₫") {
+                ws["D" + index].s = {
+                            numFmt: "#,##0",
+                    border: borderStyle
+                }
+            } else {
+                ws["D" + index].s = {
+                            numFmt: "#,##0.00",
+                    border: borderStyle
+                }
+            }
+            ws["E" + index].s = {
+                border: borderStyle,
+                alignment: {
+                    horizontal: "right"
+                }
+            }
+            ws["F" + index].s = {
+                border: borderStyle
+            }
+        } else {
+            ws["C" + index].t = "n";
+            if (ws["D" + index].v === "₫") {
+                ws["C" + index].s = {
+                            numFmt: "#,##0",
+                    border: borderStyle
+                }
+            } else {
+                ws["C" + index].s = {
+                            numFmt: "#,##0.00",
+                    border: borderStyle
+                }
+            }
+            ws["D" + index].s = {
+                border: borderStyle,
+                alignment: {
+                    horizontal: "right"
+                }
+            }
+            ws["E" + index].s = {
+                border: borderStyle
+            }
+        }
+        index++;
+    }
+
+    // Merge
+    var merge = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 5 } },
+                { s: { r: 1, c: 0 }, e: { r: 1, c: 5 } },
+                { s: { r: 2, c: 0 }, e: { r: 2, c: 5 } }
+    ];
+    ws["!merges"] = merge;
+    // Column 
+    var wscols = [];
+    if (accInfo.productType !== ProductType.Card) {
+        wscols = [
+            { wch: 15 },
+            { wch: 15 },
+            { wch: 50 },
+            { wch: 20 },
+            { wch: 10 },
+            { wch: 15 }
+        ];
+    } else {
+        wscols = [
+            { wch: 15 },
+            { wch: 50 },
+            { wch: 20 },
+            { wch: 10 },
+            { wch: 15 }
+        ];
+    }
+    ws['!cols'] = wscols;
+
+    wb.Sheets["Sheet1"] = ws;
+    var wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+    saveAs(new Blob([s2ab(wbout)], { type: "application/octet-stream" }), 'Transaction_Overview.xlsx');
+        }
+    })
+
+}
+
+function exportToExcel(dtFrom, dtTo) {
+    account.totalResultDataFilter = [];
+    var totalRecord = account.totalRecordDataFilter;
+    loopGetHistoryTransaction(dataPostFilter.pageIndex, totalRecord, dtFrom, dtTo);
+}
+
+function getCurrentAccInfo() {
+    var selectedElement = $("#leftContent .detail-value-number li.active");
+    if (selectedElement) {
+        var accInfo = {
+            accId: $(selectedElement).attr("data-accid") || "",
+            accNo: $(selectedElement).attr("data-accno") || "",
+            accType: $(selectedElement).attr("data-accttype") || "",
+            productType: $(selectedElement).attr("data-producttype") || "",
+            serviceType: $(selectedElement).attr("data-servicetype") || "",
+            showTransHist: $(selectedElement).attr("data-showtranshist") === "true",
+            loanInfo: JSON.parse($(selectedElement).attr("data-loan") || "[]"),
+        }
+        return accInfo;
+    }
+    return "";
+}
+
+function getCurrentProductType() {
+    var accInfo = getCurrentAccInfo();
+    if (accInfo) {
+        return accInfo.productType;
+    }
+    return "";
+}
+
+function getSelectedMonth() {
+    if ($(".col-list-month:visible").length > 0) {
+        return $(".col-list-month .list .item1.selected").html();
+    }
+    return "";
+}
+
+var sendMoreMoney = {
+    currentStep: 1,
+    Init: function (moduleId) {
+        var deferred = $.Deferred();
+        $.when(
+            $.get(otpJSTemplate, function (templates) {
+                $('body').append(templates);
+            }),
+            $.get(commonJSTemplate, function (templates) {
+                $('body').append(templates);
+            })
+        ).then(function () {
+            var accountForTransfer = accountInformation2Service.GetAccountTransferSendMoreMoney();
+            $.when(accountForTransfer).done(function (accountForTransfer) {
+                if (accountForTransfer.STATUSCODE === "000000") {
+                    $("#notice-version").hide();
+                    $("#leftContent").hide();
+                    $("#rightContent").html("");
+                    var renderData = {
+                        acctId: accIdGetMoreMoney,
+                        accType: accTypeGetMoreMoney
+                    }
+                    $("#transferSendMoreMoneyTemplate").tmpl().appendTo($("#rightContent"));
+                    $("#transferSendMoreMoneyStep1Template").tmpl({ DATA: renderData }).appendTo($("#transferSendMoreMoneyStep1"));
+                    sendMoreMoney.RegisterTransferVIBDetailEvent(accountForTransfer);
+                    sendMoreMoney.LoadFooter();
+                    scrollViewport();
+                    slidePanel();
+                    eventBulkVIB();
+                    inputTable();
+                    $("#fromAccGroup .list .item1").first().click();
+                } else {
+                    Util.ShowErrorMessage(accountForTransfer.MESSAGE);
+                }
+            });
+            scrollViewport();
+            slidePanel();
+            deferred.resolve();
+        });
+        return deferred.promise();
+    },
+
+    LoadFooter: function () {
+        $("#btnNext").click(function () {
+            if (sendMoreMoney.currentStep === 1) {
+                sendMoreMoney.TransferContinueStep1();
+            } else {
+                sendMoreMoney.TransferSubmit();
+            }
+            Util.ScrollTop();
+        });
+
+        $("#btnPrev").click(function () {
+            if (sendMoreMoney.currentStep === 1) {
+                window.location.reload();
+            } else if (sendMoreMoney.currentStep === 2) {
+                $("#transferSendMoreMoneyStep1").show();
+                $("#transferSendMoreMoneyConfirm").html("");
+                sendMoreMoney.currentStep = 1;
+            }
+            Util.ScrollTop();
+        });
+
+        $("#btnComplete").click(function () {
+            window.location.reload();
+        });
+    },
+
+    TransferContinueStep1: function () {
+        if (sendMoreMoney.ValidateStep1()) {
+            $("#otpContent").empty();
+            var no = accIdGetMoreMoney;
+            var fromAcc = $("#fromAcc div.selected").attr("data-value");
+            var amount = $("#txtAmount").autoNumeric("get");
+            var description = $("#txtDescription").val();
+            var isAddBen = "";
+
+            var scheduleType = "NOW";
+            var scheduleDate = "", scheduleRegularFreq = "", scheduleRegularEndType = "", scheduleRegularEndValue = "";
+
+            var validateRequest = "";
+            validateRequest = accountInformation2Service.ValidateTransferSendMoreMoney(fromAcc,
+                no,
+                amount,
+                description,
+                isAddBen,
+                scheduleType,
+                scheduleDate,
+                scheduleRegularFreq,
+                scheduleRegularEndType,
+                scheduleRegularEndValue);
+
+            $.when(validateRequest).done(function (result) {
+                if (result.STATUSCODE !== StatusCode.Successed) {
+                    Util.ShowErrorMessage(result.MESSAGE);
+                    return null;
+                }
+                sendMoreMoney.DisplayConfirmationContent(no, result, scheduleType);
+                scrollViewport();
+                sendMoreMoney.currentStep = 2;
+            });
+        }
+    },
+
+    DisplayConfirmationContent: function (toAcctNo, validateResult, scheduleType) {
+        // sendMoreMoney.ShowHideConfirmationContent(true);
+
+        var renderData = {
+            // FromAcctNo: accIdGetMoreMoney,
+            FromAcctNo: $("#fromAccGroup .item1.selected").attr('data-display-text'),
+            ToAcctNo: toAcctNo,
+            Amount: $("#txtAmount").val(),
+            TotalAmount: validateResult.DATA.TotalAmount,
+            Description: validateResult.DATA.Description,
+            When: validateResult.DATA.When,
+            Ccy: validateResult.DATA.Ccy,
+        };
+
+        $("#transferSendMoreMoneyStep1").hide();
+        $("#transferSendMoreMoneyConfirm").show();
+        $("#transferSendMoreMoneyConfirmTemplate").tmpl(renderData).appendTo($("#transferSendMoreMoneyConfirm"));
+
+        var otpData = {
+            IsPopup: false,
+            TransactionSigning: validateResult.DATA.TransactionSigning,
+            TransactionId: validateResult.DATA.TransactionId
+        }
+
+        $('#otpContent').empty();
+        $("#otpTemplate").tmpl(otpData).appendTo($("#otpContent"));
+        Util.RegisterOTPEvent();
+        $('#btnGetOTP').click(function () {
+            accountInformation2Service.GetOTPTransferSendMoreMoney().done(function () {
+                $("#txtOtp1").focus();
+            });
+        });
+    },
+
+    TransferSubmit: function () {
+        if (!sendMoreMoney.ValidateStep1()) {
+            return;
+        }
+        var otp = $("#txtOtp1").val() +
+            $("#txtOtp2").val() +
+            $("#txtOtp3").val() +
+            $("#txtOtp4").val() +
+            $("#txtOtp5").val() +
+            $("#txtOtp6").val();
+        if (otp.length !== 6) {
+            Util.SetOTPErrorMessage(true, VIB.LocalizeString.EmptyOTP);
+            return;
+        }
+        var submitRequest = "";
+        submitRequest = accountInformation2Service.SubmitTransferSendMoreMoney(otp);
+        $.when(submitRequest).done(function (result) {
+            if (result.STATUSCODE !== StatusCode.Successed) {
+                if (result.ALLOWRETRYOTP) {
+                    Util.SetOTPErrorMessage(true, result.MESSAGE);
+                    return null;
+                } else {
+                    Util.ShowErrorMessage(result);
+                    return null;
+                }
+            }
+            sendMoreMoney.DisplayTransferResultContent(result);
+        });
+    },
+
+    DisplayTransferResultContent: function (result) {
+        if (result.DATA && result.DATA.TRANSNUM) {
+            $("#lblTranNum").html(result.DATA.TRANSNUM);
+        }
+        $(".transfer-confirm").hide();
+        $(".transfer-result").show();
+        $("#btnPrev").hide();
+        $("#btnNext").hide();
+        $("#otpContent").hide();
+        $("#btnComplete").show();
+        $("html, body").animate({ scrollTop: 0 }, "slow");
+    },
+
+    ValidateStep1: function () {
+        var v1 = sendMoreMoney.ValidateAmount();
+        var v2 = sendMoreMoney.ValidateDesc();
+        return v1 && v2;
+    },
+
+    RegisterTransferVIBDetailEvent: function (accountForTransfer) {
+        // Amount
+        Util.SetAmountFormat("txtAmount");
+        Util.InitAmountControlEvent("txtAmount", "fromAcc", "txtAmountCCY");
+
+        // From account
+        Util.InitAccountListControl("fromAcc", accountForTransfer, "fromAccGroup");
+        $('#fromAcc .item1').on('click', function () {
+            var text = $(this).clone().children("p").remove().end().text();
+            var ccy = $(this).attr("data-display-ccy");
+            sendMoreMoney.ExchangeRate();
+            Util.SetAmountFormat("txtAmount", ccy);
+        });
+        $("#fromAcc .item1").first().click();
+
+        $("#txtAmount").on("change", function () {
+            sendMoreMoney.ExchangeRate();
+            sendMoreMoney.ValidateAmount();
+        });
+        $("#txtDescription").on("change", function () {
+            sendMoreMoney.ValidateDesc(true);
+        });
+    },
+
+    ExchangeRate: function () {
+        if ($("#fromAcc div.selected").attr("data-Ccy") !== "VND") {
+            $("#txtExchangeAmount").html("");
+            $("#txtExchangeRate").html("");
+            var fromAcctNo = $("#fromAcc div.selected").attr("data-value");
+            var toAcctNo = $("#txtNo").val() || $("#txtNo").html();
+            var amount = $("#txtAmount").autoNumeric("get");
+            if (fromAcctNo && toAcctNo && amount > 0) {
+                transferService.GetExchangeRate(fromAcctNo, toAcctNo, amount).done(function (result) {
+                    if (result.DATA) {
+                        $("#txtExchangeAmount").html(result.DATA.ToAmount);
+                        $("#txtExchangeRate").html(result.DATA.ExchangeRate);
+                    }
+                    $("#exchangeRateContent").show();
+                });
+            }
+        } else {
+            $("#exchangeRateContent").hide();
+        }
+    },
+
+    ValidateAmount: function () {
+        if (!$("#txtAmount").val()) {
+            Util.SetFieldErrorMessage('txtAmount', VIB.LocalizeString.AmountRequire);
+            return false;
+        }
+        //  else if ($("#txtAmount").autoNumeric("get") > 300000000) {
+        //     Util.SetFieldErrorMessage('txtAmount', VIB.LocalizeString.LimitTransferAmount);
+        //     return null;
+        // }
+
+        Util.SetFieldErrorMessage('txtAmount');
+        return true;
+    },
+
+    ValidateDesc: function () {
+        var description = $("#txtDescription").val();
+        if (description !== "") {
+            if (checkSpecialDescriptionCharacter(description)) {
+                Util.SetFieldErrorMessage('txtDescription', VIB.LocalizeString.InvalidDescription);
+                return false;
+            }
+        }
+        Util.SetFieldErrorMessage('txtDescription');
+        return true;
+    },
+
+
+}
+
+function eventBulkVIB() {
+    $('.dropdown > .list > .item1').on('click',
+        function () {
+            // $("#btnContinueBulk").attr("disabled", "disabled");
+            checkContinueStep();
+        });
+
+    // get input file name
+    $('.Uploadbtn input[type=file]').on('change',
+        function (event) {
+            var parent = $(this).parents('.Uploadbtn');
+            var x = $($(this).val().match(/([^\/\\]+)$/)).get(1);
+            // file not choosed
+            if (typeof x === 'undefined') {
+                return false;
+            } else {
+                $(this).parents('.Uploadbtn').children('.file-name').show();
+                $(this).parents('.Uploadbtn').children('.file-name').find('p').html(x);
+                $(this).parents('.Uploadbtn').children('.attach-upload').find('.txtUpload').hide();
+            }
+        });
+    //remove file
+    $('.file-name .del').click(function () {
+        $(this).parents('.Uploadbtn').children('.file-name').hide();
+        $(this).parents('.Uploadbtn').children('.file-name').find('p').html("");
+        $(this).parents('.Uploadbtn').children('.attach-upload').find('.txtUpload').show();
+    });
+}
+
+function checkContinueStep() {
+    var type = $('input[type=radio]:checked').val()
+    var fromAcctNo = $("#fromAcc div.selected").attr("data-value");
+    var file = $('#uploadFile')[0].files[0];
+    if (type == 'ListExcel') {
+        if (fromAcctNo && file && isUploadSuccess && ($("#btnContinueBulk").attr("data-isregisteronline") !== "Y")) {
+            $('#btnContinueBulk').removeAttr('disabled');
+        } else {
+            // $('#btnContinueBulk').attr('disabled', false);
+        }
+    } else {
+        if (addRowListData.length >= 2 &&
+            addRowListData.length <= 1000 &&
+            fromAcctNo &&
+            ($("#btnContinueBulk").attr("data-isregisteronline") !== "Y")) {
+            $('#btnContinueBulk').removeAttr('disabled');
+        }
+    }
+};
+
+function inputTable() {
+    var formInputs = $('input.form-control'),
+        formInputs2 = $('textarea.form-control'),
+        formLabels = $('.formLabel');
+    formCurrency = $('.currency');
+    formLabels.click(function () {
+        $(this).parent().children('.form-control').focus();
+        $(this).parent().children('.form-control').click();
+    });
+    formCurrency.click(function () {
+        $(this).parent().children('.form-control').focus();
+        $(this).parent().children('.form-control').click();
+    });
+    formInputs.focus(function () {
+        $(this).parent().children('.formLabel').addClass('formTop');
+        $(this).parent().children('.currency').hide();
+        if ($(this).hasClass('currency-right')) {
+            $(this).css('padding-right', '0');
+        }
+        $(this).parent().children('.hideLabel').hide();
+    });
+    formInputs.focusout(function () {
+        if ($.trim($(this).val()).length == 0) {
+            $(this).parent().children('.formLabel').removeClass('formTop');
+            $(this).parent().children('.currency').hide();
+            $(this).parent().children('.hideLabel').show();
+        } else if ($(this).hasClass('currency-right')) {
+            $(this).parent().children('.currency').show().css({ "left": "auto", 'right': 0 });
+            $(this).css('padding-right', '13px');
+        } else {
+            $(this).parent().children('.currency').show().css('left', $(this).getTextSize()[0]);
+        }
+    });
+    formInputs2.focus(function () {
+        $(this).parent().children('.formLabel').addClass('formTop');
+    });
+    formInputs2.focusout(function () {
+        if ($.trim($(this).val()).length == 0) {
+            $(this).parent().children('.formLabel').removeClass('formTop');
+            $(this).parent().children('.currency').hide();
+        }
+    });
+    // searchbox
+    $('.search-box').keyup(function (e) {
+        var _value = e.currentTarget.value.trim();
+        if (_value !== '') {
+            $(this).nextAll('.btn-clear').removeClass('d-none');
+        } else {
+            $(this).nextAll('.btn-clear').addClass('d-none');
+        }
+    });
+};

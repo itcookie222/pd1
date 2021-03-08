@@ -1,0 +1,231 @@
+﻿var commonTemplate = "/DesktopModules/MVC/VIB.MVC.Transfer2/Views/Shared/Template/CommonTemplate.html?v=1";
+var SubPage = {
+    TransferViaBen: "1",
+    TransferViaVIB: "2",
+    TransferViaOther: "3",
+    TransferViaInvestment: "4"
+};
+var ScheduleType = {
+    Now: "NOW",
+    Later: "LATER",
+    Scheduled: "SCHEDULED"
+};
+var ScheduleRegularFreq = {
+    Daily: "Daily",
+    Weekly: "Weekly",
+    Monthly: "Monthly",
+    Half_Annually: "Half_Annually",
+    Quarterly: "Quarterly",
+    Yearly: "Yearly"
+}
+var ScheduleRegularEndType = {
+    NoEnd: "NoEnd",
+    EndAfter: "EndAfter",
+    EndOn: "EndOn"
+}
+var Module = {
+    VIBA: "VIBA",
+    VIBCARD: "VIBCARD",
+    VIBMOBILE: "VIBMOBILE",
+    VIBBULK: "VIBABULK",
+    LBABULK: "LBABULK",
+    NAPASCARD: "NAPASCARD",
+    IBA: "IBA",
+};
+var BenModule = {
+    VIBA: "VIBA",
+    VIBCARD: "VIBCARD",
+    VIBMOBILE: "MOBILE",
+    SMLCARD: "SMLCARD",
+    PHNO: "PHNO",
+    IBA: "IBA",
+    SMLACCT: "SMLACCT"
+};
+
+var transferSubMenu = {
+    Init: function() {
+        var deferred = $.Deferred();
+        $.when(
+            $.get(commonTemplate, function(templates) {
+                $('body').append(templates);
+            })
+        ).then(function () {
+            var renderData = {
+                SubPage: getSubPage()
+            };
+            $("#subMenuTemplate").tmpl(renderData).appendTo($("#leftContent"));
+            $('.submenu .detail-value-number li').click(function () {
+                $(".submenu .detail-value-number li").removeClass("active");
+                $(this).addClass("active");
+                var url = $(this).attr("data-url");
+                window.location.href = url;
+            });
+            var _totalBenTransfer = sessionStorage.getItem("TotalBenTransfer");
+            if (_totalBenTransfer) {
+                $("#TOTAL_BEN").text("(" + _totalBenTransfer + ")");
+            }
+            deferred.resolve();
+        });
+        return deferred.promise();
+    }
+}
+
+function getSubPage() {
+    if (Util.GetQueryString("id") && Util.GetQueryString("module")) {
+        return SubPage["TransferViaBen"] || "";
+    }
+    return SubPage[$("#subPageName").val()] || "";
+}
+/* Set disable control */
+function disableControl() {
+
+    $("input").prop("disabled", true);
+    $("input").addClass("disabled");
+};
+
+var elapsedTime = 0;
+var uploadInterval = null;
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+// Custom upload progress
+var uploadCompleted = false;
+function resetPopupLoad(forceClose) {
+    uploadCompleted = true;
+    if (forceClose) {
+        clearInterval(uploadInterval);
+        $("#popupload").modal("toggle");
+    }
+}
+
+function progressbar(percent) {
+    $("#lbProgressLoad").text(percent + "%");
+    $("#progressLoad").css("width", percent + "%");
+}
+
+function uploadTimer() {
+    if (elapsedTime <= 99) {
+        progressbar(elapsedTime);
+    }
+
+    elapsedTime += 1;
+    if (uploadCompleted) {
+        if (elapsedTime < 99) {
+            if (elapsedTime <= 50) {
+                clearInterval(uploadInterval);
+                uploadInterval = setInterval(function () {
+                    uploadTimer();
+                }, 200);
+            }
+            if (elapsedTime <= 60) {
+                clearInterval(uploadInterval);
+                uploadInterval = setInterval(function () {
+                    uploadTimer();
+                }, 150);
+            }
+            if (elapsedTime <= 70) {
+                clearInterval(uploadInterval);
+                uploadInterval = setInterval(function () {
+                    uploadTimer();
+                }, 100);
+            }
+            if (elapsedTime <= 80) {
+                clearInterval(uploadInterval);
+                uploadInterval = setInterval(function () {
+                    uploadTimer();
+                }, 50);
+            }
+            if (elapsedTime <= 90) {
+                clearInterval(uploadInterval);
+                uploadInterval = setInterval(function () {
+                    uploadTimer();
+                }, 10);
+            }
+            if (elapsedTime <= 95) {
+                clearInterval(uploadInterval);
+                uploadInterval = setInterval(function () {
+                    uploadTimer();
+                }, 10);
+            }
+            return;
+        }
+        clearInterval(uploadInterval);
+        $("#popupload").modal("toggle");
+        return;
+    }
+
+    if (elapsedTime === 30) {
+        clearInterval(uploadInterval);
+        uploadInterval = setInterval(function () {
+            uploadTimer();
+        }, 800);
+    }
+    if (elapsedTime === 40) {
+        clearInterval(uploadInterval);
+        uploadInterval = setInterval(function () {
+            uploadTimer();
+        }, 1000);
+    }
+    if (elapsedTime === 50) {
+        clearInterval(uploadInterval);
+        uploadInterval = setInterval(function () {
+            uploadTimer();
+        }, 1500);
+    }
+    if (elapsedTime === 55) {
+        clearInterval(uploadInterval);
+        uploadInterval = setInterval(function () {
+            uploadTimer();
+        }, 2000);
+    }
+    if (elapsedTime === 60) {
+        clearInterval(uploadInterval);
+        uploadInterval = setInterval(function () {
+            uploadTimer();
+        }, 2500);
+    }
+    if (elapsedTime === 65) {
+        clearInterval(uploadInterval);
+        uploadInterval = setInterval(function () {
+            uploadTimer();
+        }, 3000);
+    }
+    if (elapsedTime === 70) {
+        clearInterval(uploadInterval);
+        uploadInterval = setInterval(function () {
+            uploadTimer();
+        }, 3500);
+    }
+    if (elapsedTime === 75) {
+        clearInterval(uploadInterval);
+        uploadInterval = setInterval(function () {
+            uploadTimer();
+        }, 4000);
+    }
+    if (elapsedTime === 80) {
+        clearInterval(uploadInterval);
+        uploadInterval = setInterval(function () {
+            uploadTimer();
+        }, 4500);
+    }
+    if (elapsedTime === 85) {
+        clearInterval(uploadInterval);
+        uploadInterval = setInterval(function () {
+            uploadTimer();
+        }, 5500);
+    }
+    if (elapsedTime === 90) {
+        clearInterval(uploadInterval);
+        uploadInterval = setInterval(function () {
+            uploadTimer();
+        }, 6500);
+    }
+    if (elapsedTime === 95) {
+        clearInterval(uploadInterval);
+        uploadInterval = setInterval(function () {
+            uploadTimer();
+        }, 7500);
+    }
+}

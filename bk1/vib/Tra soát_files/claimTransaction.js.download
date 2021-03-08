@@ -1,0 +1,1298 @@
+﻿var flgHasData = false;
+var typeOfSubmit = {
+    CLAIM: "CLAIM",
+    CLAIMAGAIN: "AGAIN"
+};
+var listDATA = {};
+var listTransDefault = [];
+var claimTrans = {
+    fl: true,
+    defaultStatus: "ALL",
+    isshowpopupreopen: false,
+    Init: function (moduleid) {
+        me = claimTrans;
+        $("#transListClaim").tmpl().appendTo("#rightContent");
+        $(".header-content h1").hide();
+        initAjaxLoading();
+        $.ServicesFramework(moduleid);
+        claimTransactionService.Init(moduleid);
+
+        // ClaimTransaction
+        me.LoadAccountForTransfer();
+        // binder only one the first time
+        me.BindEvenCloseRequest();
+        // bind even delete request
+        me.BindEvenDeleteRequest();
+        // bind even cancel request
+        me.BindEvenCancelRequest();
+        // bind even button claim request
+        me.BindEvenButtonReason();
+
+        //ClaimHistory
+        me.LoadListClaimHistory();
+    },
+
+
+    //tab create claim Transaction
+    LoadAccountForTransfer: function () {
+        var deferred = $.Deferred();
+        claimTransactionService.LoadAccountForTransfer().done(function (result) {
+            $("#accTransList").empty();
+            if (result.STATUSCODE === "000000") {
+                if (result && result.DATA != null && result.DATA.length > 0) {
+                    $("#accountTransTemplate").tmpl(result).appendTo("#accTransList");
+                    $("#transListAccInputSel .form-group .dropdown > .list").each(function () {
+                        var heightDropdown = $(this).find('.item1').length;
+                        if (heightDropdown > 5) {
+                            $(this).addClass("scroller");
+                        }
+                    });
+                    deferred.resolve(result);
+                    me.LoadTransDateList();
+                    me.BindEventSelectDropdown();
+                    var acctno = $("#accTransList").children(".selected").attr("value");
+                    var month = $("#monthTransList").children(".owl-item").children(".selected").find('p').text().trim();
+                    me.LoadClaimList(acctno, month);
+                }
+            } else {
+
+                deferred.reject();
+            }
+        }).fail(function () {
+            $("#accTransList").empty();
+            deferred.reject();
+        });
+        return deferred.promise();
+    },
+
+    LoadClaimList: function (acctno, month) {
+        var deferred = $.Deferred();
+        if (me.fl == false)
+            deferred.reject();
+        claimTransactionService.LoadClaimList(acctno, month).done(function (result) {
+            if (result.STATUSCODE === "000000") {
+                if (result && result.DATA != null && result.DATA.length > 0) {
+                    $("#claimListDataTemplate").tmpl(result).appendTo("#listTransactions > tbody");
+                    $("#sortClaim").removeClass('asc')
+                    $("#sortClaim").removeClass('dsc')
+                } else {
+                    $("#ctrlTblListTransaction").addClass("display-none");
+                    $("#NoDataAlert").removeClass("display-none");
+                    flgHasData = false;
+                }
+                listDATA = result.DATA;
+                listTransDefault = result.DATA;
+                deferred.resolve(result);
+            }
+             else {
+                deferred.reject();
+            }
+        }).fail(function () {
+            deferred.reject();
+        });
+        return deferred.promise();
+    },
+
+    NoSortClaim: function(DATA){
+        sortDefault = DATA.sort(function (a, b) {
+            var dateBefor = a.trandate.split('/').reverse().join(),
+                dateAfter = b.trandate.split('/').reverse().join();
+            return dateBefor > dateAfter ? -1 : (dateBefor < dateAfter ? 1 : 0);
+        })
+        return sortDefault;
+    },
+
+    SortDownClaim: function(DATA){
+        sortDefault = DATA.sort(function (a, b) {
+            var dateBefor = a.trandate.split('/').reverse().join(),
+                dateAfter = b.trandate.split('/').reverse().join();
+            return dateBefor > dateAfter ? -1 : (dateBefor < dateAfter ? 1 : 0);
+        })
+        return sortDefault;
+    },
+
+    SortUpClaim: function(DATA){
+        sortDefault = DATA.sort(function (a, b) {
+            var dateBefor = a.trandate.split('/').reverse().join(),
+                dateAfter = b.trandate.split('/').reverse().join();
+            return dateBefor < dateAfter ? -1 : (dateBefor > dateAfter ? 1 : 0);
+        })
+        return sortDefault;
+    },
+
+    LoadTransDateList: function () {
+        var deferred = $.Deferred();
+        var MMyyyy = null;// get from session of user info
+        var DATA = [];
+        var userInfo = JSON.parse(sessionStorage.getItem('UserInfo'));
+        var svToday = me.Str2Date(userInfo.TODAY);
+        var beforeDate = me.Str2Date(userInfo.TODAY);
+
+        // get berfore 90 day
+        beforeDate.setDate(beforeDate.getDate() - 90);
+
+        var numberOfMonth = (svToday.getMonth() + 1) - (beforeDate.getMonth() + 1);
+        var lastYear = svToday.getFullYear() - 1;
+        if (numberOfMonth >= 3) {
+            for (var i = 0; i < numberOfMonth; i++) {
+                DATA.push(me.CreateItemTime((svToday.getMonth() + 1) - i, svToday.getFullYear()));
+            }
+        } else {
+            DATA.push(me.CreateItemTime((svToday.getMonth() + 1), svToday.getFullYear()));
+            if ((svToday.getMonth() + 1) == 1) {
+                DATA.push(me.CreateItemTime(12, lastYear));
+                DATA.push(me.CreateItemTime(11, lastYear));
+
+                if ((beforeDate.getMonth() + 1) == 10) {
+                    DATA.push(me.CreateItemTime(10, lastYear));
+                }
+            } else if ((svToday.getMonth() + 1) == 2) {
+                DATA.push(me.CreateItemTime(1, svToday.getFullYear()));
+                DATA.push(me.CreateItemTime(12, lastYear));
+                if ((beforeDate.getMonth() + 1) == 11) {
+                    DATA.push(me.CreateItemTime(11, lastYear));
+                }
+            } else if ((svToday.getMonth() + 1) == 3) {
+                DATA.push(me.CreateItemTime(1, svToday.getFullYear()));
+                DATA.push(me.CreateItemTime(2, svToday.getFullYear()));
+                if ((beforeDate.getMonth() + 1) == 12) {
+                    DATA.push(me.CreateItemTime(12, lastYear));
+                }
+            }
+        }
+
+        var timeObj = { DATA: DATA };
+
+        $("#transDateListTemplate").tmpl(timeObj).appendTo($("#monthTransList"));
+        $($("#monthTransList .owl-item .item1")[0]).addClass("selected");
+        $($("#monthTransList .owl-item")[0]).children(".item1").addClass("stay-on");
+        me.BindEventSelectMonth();
+        deferred.resolve();
+        return deferred.promise();
+    },
+
+    Str2Date: function (dateStr) {
+        var arrDate = dateStr.split("/");//DD/MM/YYYY
+        return new Date(parseInt(arrDate[2]), parseInt(arrDate[1]) - 1, parseInt(arrDate[0]));
+    },
+
+    CreateItemTime: function (month, year) {
+        var item = {};
+        var currentMonth = "";
+        if (month < 10)
+            currentMonth = "0".concat(month).concat("/").concat(year);
+        else
+            currentMonth = "".concat(month).concat("/").concat(year);
+        item.date = currentMonth;
+        return item;
+    },
+
+    BindEventSelectMonth: function () {
+        $("#transListMonthInputSel .dropdown").on("click", function (e) {
+            $(this).addClass("open");
+            if($("#transListAccInputSel .dropdown").hasClass("open")){
+                $("#transListAccInputSel .dropdown").removeClass("open");
+            }
+        });
+        $("#monthTransList .owl-item .item1").on("click", function (e) {
+            e.preventDefault();
+            $("#monthTransList .owl-item .item1").removeClass("selected");
+            $("#monthTransList .owl-item .item1").removeClass("blue");
+            $(this).addClass("selected");
+            $(this).addClass("blue");
+            $("#transListMonthInputSel .dropdown .caption").html($(this).clone().remove().end().text());
+            $("#transListMonthInputSel .form-group .dropdown").removeClass("open");
+            e.stopPropagation();
+            // get selected accno
+            // get focus month
+            var acctno = $("#accTransList").children(".selected").attr("value");
+            var month = $("#monthTransList").children(".owl-item").children(".selected").find('p').text().trim();
+            // load list transfer
+            $("#listTransactions > tbody").empty();
+            var listTrans = me.LoadClaimList(acctno, month);
+            $.when(listTrans).done(function (result) {
+                if (result && result.DATA.length > 0) {
+                    
+                    $("#ctrlTblListTransaction").removeClass("display-none");
+                    $("#NoDataAlert").addClass("display-none");
+
+                } else {
+                    // case has not data transfer in  list
+                    // append message no data
+                    $("#ctrlTblListTransaction").addClass("display-none");
+                    $("#NoDataAlert").removeClass("display-none");
+
+                }
+            }).fail(function () {
+                // case has not data transfer in  list
+                // append message no data
+                $("#ctrlTblListTransaction").addClass("display-none");
+                $("#NoDataAlert").removeClass("display-none");
+                return true;
+            });
+        });
+
+        // set default selected the first item
+        $($("#monthTransList .owl-item .item1")[0]).addClass("selected");
+        $("#transListMonthInputSel .form-group .formLabel").addClass("formTop");
+        $("#transListMonthInputSel .dropdown .caption").html($($("#monthTransList .item1")[0]).clone().remove().end().text());
+    },
+
+    BindEventSelectDropdown: function () {
+
+        $("#transListAccInputSel .dropdown").on("click", function (e) {
+            $(this).addClass("open");
+            if($("#transListMonthInputSel .dropdown").hasClass("open")){
+                $("#transListMonthInputSel .dropdown").removeClass("open");
+            }
+        });
+
+        $("#accTransList .item1").on("click", function (e) {
+            e.preventDefault();
+            $("#accTransList .item1").removeClass("selected");
+            $(this).addClass("selected");
+            $("#transListAccInputSel .form-group .formLabel").addClass("formTop");
+            $("#transListAccInputSel .dropdown .caption").html($(this).clone().find('p').remove().end().text());
+            $("#transListAccInputSel .form-group .dropdown").removeClass("open");
+            e.stopPropagation();
+
+            // get selected accno
+            // get focus month
+            var acctno = $("#accTransList").children(".selected").attr("value"); // "1jk24hgk1j3432k43j";
+            var month = $("#monthTransList").children(".owl-item").children(".selected").find('p').text().trim(); //"05/2020";
+            // load list transfer
+            $("#listTransactions > tbody").empty();
+            var listTrans = me.LoadClaimList(acctno, month);
+            $.when(listTrans).done(function (result) {
+                if (result && result.DATA.length > 0) {
+                    $("#ctrlTblListTransaction").removeClass("display-none");
+                    $("#NoDataAlert").addClass("display-none");
+
+                } else {
+                    // case has not data transfer in  list
+                    // append message no data
+                    $("#ctrlTblListTransaction").addClass("display-none");
+                    $("#NoDataAlert").removeClass("display-none");
+
+                }
+            }).fail(function () {
+                // case has not data transfer in  list
+                // append message no data
+                $("#ctrlTblListTransaction").addClass("display-none");
+                $("#NoDataAlert").removeClass("display-none");
+                return true;
+            });
+        });
+
+        // set default selected the first item
+        $($("#accTransList .item1")[0]).addClass("selected");
+        $("#transListAccInputSel .form-group .formLabel").addClass("formTop");
+        $("#transListAccInputSel .dropdown .caption").html($($("#accTransList .item1")[0]).clone().find('p').remove().end().text());
+    },
+
+    IsNullOrWhiteSpace: function (val) {
+        return me.IsNullOrEmpty(val) || val.replace(/\s/g, "") === '';
+    },
+
+    LoadClaimTransDetail: function (id, acctno, transdate) {
+        var deferred = $.Deferred();
+        claimTransactionService.LoadClaimTransDetail(id, acctno, transdate).done(function (result) {
+            if (result.STATUSCODE === "000000") {
+                if (result.DATA != null) {
+                    result.DATA.TRANSACTIONCLAIM = [];
+                    // load reason option
+                    var userInfo = JSON.parse(sessionStorage.getItem('UserInfo'));
+                    if (userInfo != null) {
+                        $.each(userInfo.SETTING.TRANSACTIONCLAIM, function (idx, trs) {
+                            var item = {};
+                            item.IDX = idx;
+                            item.CODE = trs.CODE;
+                            item.NAME = trs.NAME;
+                            if (trs.SHOWPOPUP) {
+                                item.SHOWPOPUP = trs.SHOWPOPUP;
+                            } else {
+                                item.SHOWPOPUP = false;
+                            }
+
+                            result.DATA.TRANSACTIONCLAIM.push(item);
+                        });
+                    }
+                    result.DATA.acctno = acctno;
+                    result.DATA.trandate = transdate;
+                    deferred.resolve(result);
+                } else {
+                    deferred.reject();
+                }
+            } else {
+                deferred.reject();
+            }
+        }).fail(function () {
+            deferred.reject();
+        });
+        return deferred.promise();
+    },
+
+    IsNullOrEmpty: function (val) {
+        switch (val) {
+            case "":
+            case null:
+            case undefined:
+            case typeof this === 'undefined':
+                return true;
+            default: return false;
+        }
+    },
+
+    BindEvenCheckBoxReason: function () {
+        // set default checked
+        $(".form-check-multiline > .position-relative").on('click', function () {
+            // reset all attribute = false
+            $(".radio-custom").attr('checked', false);
+            $(".radio-custom").attr('reason', false);
+
+            // set current attribute = true
+            $(this).children(".radio-custom").attr('checked', true);
+            $(this).children(".radio-custom").attr('reason', true);
+            $(this).children(".radio-custom")[0].click();
+
+            var code = $(this).children(".radio-custom").attr('data-code');
+            var pop = $(this).children(".radio-custom").attr('data-popup');
+                
+            $("#reasonboxinput-claim").addClass("display-none");
+            // show dialog
+            if (pop == 'true') {
+                $("#blockClaimDialog").modal();
+                $("#btnSendClaimRequestPage").addClass("display-none");
+            } else {
+                $("#btnSendClaimRequestPage").removeClass("display-none");
+                // bind even submit request
+                me.BindEvenButtonReason();
+                if (code == 'OTH') {
+                    $("#reasonboxinput-claim").removeClass("display-none");
+                    $("#ReasonTextInput")[0].scrollIntoView();
+                    $("#ReasonTextInput")[0].focus();
+                    $("#ReasonTextInput")[0].click();
+                }
+            }
+            $("#reasonboxinput-claim").click(function(){
+                $(this).find(".formLabel").addClass("formTop")
+            });
+            $("#reasonboxinput-claim").focusout(function(){
+                if ($(this).find("#ReasonTextInput").val() == 0){
+                    $(this).find(".formLabel").removeClass("formTop")
+                }
+            });
+        });
+        me.BindEvenSubmitRequest();
+    },
+
+    BindEvenButtonReason: function () {
+        $("#btnClaimRequestPage").on('click', function (e) {
+            e.preventDefault();
+            $(this).addClass("display-none");
+            $("#btnSendClaimRequestPage").removeClass("display-none");
+            $("#claimReasonBox").removeClass("display-none");
+            // bind even submit request
+        });
+    },
+
+    BindEvenSubmitRequest: function () {
+        $("#btnSendClaimRequestPage").on('click', function (e) {
+            e.preventDefault();
+
+            var id = $("#transid").val();
+            var acctno = $("#accTransList .item1.selected").attr("value");
+            var claimcode = $("input[name=claim-reason]:checked").attr("data-code");
+            var transdate = $("#claimrequest-trandate").val();
+
+            if( claimcode == "OTH"){
+                var claimdesc = $("#ReasonTextInput").val();
+            } else{
+                var claimdesc = $("input[name=claim-reason]:checked").next().html();
+            }
+
+            if( claimdesc == "" ){
+                Util.ShowErrorMessage(`${window.VIB.LocalizeString.ReasonNotificationFail}`);
+                return false;
+            }
+            
+            // vavidate input and submit request
+            if (me.ValidateInputClaim(id, claimcode, claimdesc)) {
+                me.SubmitClaimRequest(acctno, id, claimcode, claimdesc, transdate);
+            }
+        });
+    },
+
+    // validate input for submit claim
+    ValidateInputClaim: function (id, claimcode, claimdes) {
+        // id is invalid
+        if (me.IsNullOrWhiteSpace(id)) {
+            Util.ShowErrorMessage(VIB.LocalizeString.InputInvalid);
+            return false;
+        }
+
+        // code is invalid
+        if (me.IsNullOrWhiteSpace(claimcode)) {
+            Util.ShowErrorMessage(VIB.LocalizeString.InputInvalid);
+            return false;
+        }
+
+        if (claimcode == 'OTH') {
+            // reason is invlaid
+            if (me.IsNullOrWhiteSpace(claimdes)) {
+                Util.ShowErrorMessage(VIB.LocalizeString.OTHReasonInvalid);
+                return false;
+            } else if (Util.CheckSpecialDescriptionCharacter(claimdes)) {
+                Util.ShowErrorMessage(VIB.LocalizeString.OTHReasonRegixInvalid);
+                return false;
+            }
+        }
+        return true;
+    },
+
+    // submit claim request
+    SubmitClaimRequest: function (acctno, id, claimcode, claimdesc, transdate) {
+        var activetypeOfSubmit = $("#allowclaim-type").val();
+        claimTransactionService.SubmitClaimRequest(acctno, id, claimcode, claimdesc, transdate).done(function (result) {
+                if (result.STATUSCODE == "000000") {
+                    result.DATA.claimreason = claimdesc;
+                    if (!$("#request-claim-failed").hasClass('display-none')) {
+                        $("#request-claim-failed").addClass('display-none');
+                    }
+
+                    // hidden old checkbox reason
+                    $(".ReasonClaimLabel").addClass("display-none");
+                    $("#claimReasonBox").addClass("display-none");
+                    $("#claimReasonBoxAgain").addClass("display-none");
+                    $("#btnClaimAgainPage").addClass("display-none");
+                    // set active claimid again
+                    $("#active-claimid").val(result.DATA.id);
+                    if (activetypeOfSubmit == typeOfSubmit.CLAIMAGAIN && (result.DATA.reply == undefined || result.DATA.reply == null)) {
+                        result.DATA.id = id;
+                        result.DATA.claimid = $("#claimReasonCodeActive").val();
+                        result.DATA.reply = {};
+                        result.DATA.reply.content = null;
+                    }
+                    me.LoadResultRequest(result.DATA);
+                    me.LoadListClaimHistory();
+                } else {
+                    if ($("#request-claim-failed").hasClass('display-none')) {
+                        $("#request-claim-failed").removeClass('display-none');
+                    }
+                    $("#send-request-messageSendSuccess").addClass("display-none");
+                    $("#errorMessage").empty();
+                    $("#errorMessage").append(VIB.LocalizeString.SubmitFailure);
+                }
+        }).fail(function (err) {
+            alert(err);
+            return 'F';
+        });
+    },
+
+    LoadResultRequest: function (DATA) {
+        var activetypeOfSubmit = $("#allowclaim-type").val();
+        if (DATA && DATA != null) {
+
+            if (DATA.reply == undefined || DATA.reply == null) {
+                DATA.reply = null;
+            } else {
+                if (me.IsNullOrEmpty(DATA.reply.content))
+                    DATA.reply.content = null;
+            }
+
+            if (me.IsNullOrEmpty(DATA.estimatedate))
+                DATA.estimatedate = null;
+
+
+            // load reason label
+            $.each($(".radio-custom"), function (id, rd) {
+                var isChecked = $(rd).attr('reason');
+                if (isChecked == 'true') {
+                    var claimcode = $(rd).attr('data-code');
+
+                    // case other OTH
+                    if (claimcode == 'OTH') {
+                        DATA.claimreason = $("#ReasonTextInput").val();
+                    } else {
+                        DATA.claimreason = $(rd).next(".radio-custom-label").text().trim();
+                    }
+                }
+            });
+
+            // display claim result message
+            $("#claimTransDetail .request-claim-success").removeClass("display-none");
+            // display claim result title
+            $("#claimTransDetail #request-info-title").removeClass("display-none");
+            $("#btnSendClaimRequestPage").addClass('display-none');
+            $("#btnBackClaimPage").addClass('display-none');
+            $("#btnFinishClaimRequest").removeClass('display-none');
+                      
+
+            // display data
+            $("#request-info-title").removeClass("display-none");
+
+            if (activetypeOfSubmit == typeOfSubmit.CLAIM){
+                $("#TransClaimRequestInfo").empty();
+                $("#TransClaimRequestInfoTemplate").tmpl(DATA).appendTo($("#TransClaimRequestInfo"));
+            }
+            else{
+                DATA.lengthInves = Math.floor($("#length-transclaim").val());
+                $("#TransClaimRequestInfoTemplate3").tmpl(DATA).appendTo($("#claimTransactionAgain"));
+            }
+            $("#TransClaimRequestInfo").removeClass("display-none");
+            $("#titleTransClaimDetail").html(`${window.VIB.LocalizeString.ClaimInformation}`);
+
+            $(".ReasonClaimLabel").addClass('display-none');
+            $("#claimReasonBox").addClass('display-none');
+            $("#btnClaimRequestPage").addClass('display-none');
+            $("#btnClaimAgainPage").addClass('display-none');
+            if (DATA.reply && DATA.reply != null && !me.IsNullOrEmpty(DATA.reply.content)) {
+                $("#messageOpenSuccess").empty();
+                $("#messageOpenSuccess").text(VIB.LocalizeString.SuccesMsg);
+
+                $("#request-info-title").removeClass('display-none');
+            } else {
+                $("#btnFinishClaimRequest").removeClass('display-none');
+            }
+        }
+        Util.ScrollTop();
+    },
+
+    BindEvenViewDetail: function () {
+        $("#btnViewClaimRequestDetail").click(function (e) {
+            var id = $("#active-claimid").val();
+            var transid = $("#transid").val();
+            if (me.IsNullOrWhiteSpace(id))
+                return false;
+            me.LoadDataViewDetailClaim(id, transid);
+            $("#btnClaimRequestPage").addClass('display-none');
+        });
+    },
+    
+    LoadDataViewDetailClaim: function (id, transid) {
+        var deferred = $.Deferred();
+        claimTransactionService.LoadDataViewDetailClaim(id, transid).done(function (result) {
+            if (result.STATUSCODE === "000000") {
+                if (result.DATA != null) {
+                    result.DATA.TRANSACTIONCLAIM = [];
+
+                    if (result.DATA.isshowpopupreopen) {
+                        me.isshowpopupreopen = true;
+                    } else {
+                        me.isshowpopupreopen = false;
+                    }
+                    // hidden claim result label
+                    if (!$("#request-claim-failed").hasClass('display-none')) {
+                        $("#request-claim-failed").addClass('display-none');
+                    }
+
+                    // hidden claim result label
+                    if (!$("#claimTransDetail .request-info-title").hasClass('display-none')) {
+                        $("#claimTransDetail .request-info-title").addClass("display-none");
+                    }
+
+                    // hidden claim result title
+                    if (!$("#claimTransDetail .request-claim-success").hasClass('display-none')) {
+                        $("#claimTransDetail .request-claim-success").addClass("display-none");
+                    }
+
+                    // hidden button send claim request
+                    if (!$("#btnSendClaimRequestPage").hasClass('display-none')) {
+                        $("#btnSendClaimRequestPage").addClass("display-none");
+                    }
+
+                    // hidden button claim agian
+                    if (!$("#btnClaimAgainPage").hasClass("display-none")) {
+                        $("#btnClaimAgainPage").addClass("display-none");
+                    }
+
+                    // hidden button close claim
+                    if (!$("#btnCloseRequest").hasClass("display-none")) {
+                        $("#btnCloseRequest").addClass("display-none");
+                    }
+
+                    // hidden button view detail
+                    $("#btnViewClaimRequestDetail").addClass("display-none");
+
+                    // show button view request
+                    $("#btnViewClaimRequestDetail").addClass("display-none");
+
+                    // hidden button Claim request
+                    if (!$("#btnClaimRequestPage").hasClass("display-none")) {
+                        $("#btnClaimRequestPage").addClass("display-none");
+                    }
+                    if (result.DATA.allowreopen == true) {
+                        // load reason option
+                        var userInfo = JSON.parse(sessionStorage.getItem('UserInfo'));
+                        if (userInfo != null) {
+                            $.each(userInfo.SETTING.TRANSACTIONCLAIMAGAIN, function (idx, trs) {
+                                var item = {};
+                                item.IDX = idx;
+                                item.CODE = trs.CODE;
+                                item.NAME = trs.NAME;
+                                if (trs.SHOWPOPUP) {
+                                    item.SHOWPOPUP = trs.SHOWPOPUP;
+                                } else {
+                                    item.SHOWPOPUP = false;
+                                }
+
+                                result.DATA.TRANSACTIONCLAIM.push(item);
+                            });
+                        }
+                    } else {
+                        // hidden button claim again
+                        if (!$("#btnClaimAgainPage").hasClass("display-none")) {
+                            $("#btnClaimAgainPage").addClass("display-none");
+                        }
+
+                        if (!$("#btnCloseRequest").hasClass("display-none")) {
+                            $("#btnCloseRequest").addClass("display-none");
+                        }
+                        if (!$("#btnSendClaimRequestPage").hasClass("display-none")) {
+                            $("#btnSendClaimRequestPage").addClass("display-none");
+                        }
+                 
+                    }
+                    
+                    // reset view
+                    $("#TransClaimDetail").empty();
+                    if (result.DATA.transactioninfo.bankname == undefined || me.IsNullOrEmpty(result.DATA.transactioninfo.bankname)) {
+                        result.DATA.transactioninfo.bankname = null;
+                    }
+                    // load data to view
+                    $("#transClaimDetailTemplate").tmpl(result.DATA.transactioninfo).appendTo($("#TransClaimDetail"));
+                    $("#ReasonCheckBoxTemlate").tmpl(result.DATA).appendTo($("#claimReasonBoxAgain"));
+                    $("#transid").val(transid);
+                    $("#active-claimid").val(result.DATA.id);
+                    $("#allowclaim-type").val(typeOfSubmit.CLAIMAGAIN);
+                    $("#titleTransClaimDetail").html(`${window.VIB.LocalizeString.ClaimInformation}`);
+                    // load to view list reply from VIB
+                    if (result.DATA.claiminfo && result.DATA.claiminfo != null
+                        && result.DATA.claiminfo.reply && result.DATA.claiminfo.reply.length > 0) {
+                        var REPLY = {};
+                        REPLY.claimid = result.DATA.claiminfo.claimid;
+                        REPLY.duedate = result.DATA.claiminfo.duedate;
+                        REPLY.reply = result.DATA.claiminfo.reply;
+                        var p = 0;
+                        $.each(REPLY.reply, function (idx, rep) {
+                            rep.idx = (REPLY.reply.length - p);
+                            if (me.IsNullOrEmpty(rep.replycontent)) {
+                                rep.replycontent = null;
+                            }
+                            p++;
+                        });
+                        REPLY.VNEN = 1;
+                        var VNEN = document.documentElement.lang == "en-US" ? (REPLY.VNEN = 1) : (REPLY.VNEN = 2);
+                        $("#claimReasonCodeActive").val(result.DATA.claiminfo.claimid);
+                        $.when(me.LoadListReplyVIB(REPLY)).done(function (stt) {
+                            // bind event butotn claim request
+                            if (result.DATA.allowreopen == true) {
+                                $("#btnClaimAgainPage").removeClass("display-none");
+                                me.BindEvenClaimAgain();
+                                $("#btnClaimAgainPage").click(function(){
+                                $("#claimReasonBoxAgain")[0].scrollIntoView();
+                                })
+                                // bind the even check box reason for next time
+                                if (stt == true)
+                                    me.BindEvenCheckBoxReason();
+                            }
+                            if (result.DATA.allowclose == true)
+                                $("#btnCloseRequest").removeClass("display-none");
+                            if (result.DATA.allowdelete == true)
+                                $("#btnDeleteRequest").removeClass("display-none");
+                            if (result.DATA.allowcancel == true)
+                                $("#btnCancelRequest").removeClass("display-none");
+                        });
+                    }
+                }
+                deferred.resolve('success');
+            } else {
+                deferred.reject();
+            }
+        }).fail(function () {
+            deferred.reject();
+        });
+        return deferred.promise();
+    },
+
+    BindEvenClaimAgain: function () {
+        // bind event button
+        $("#btnClaimAgainPage").on('click', function (e) {
+            e.preventDefault();
+            if (me.isshowpopupreopen) {
+                $("#reopenWarningDialog").modal();
+                return "";
+            }
+
+            $("#allowclaim-type").val(typeOfSubmit.CLAIMAGAIN);
+
+            // bind even checkbox claim reason
+            // and check default
+            $("#btnClaimRequestPage").addClass("display-none");
+            $("#btnClaimAgainPage").addClass("display-none");
+            $("#btnSendClaimRequestPage").removeClass("display-none");
+            // sign claim again action
+            $("#btnSendClaimRequestPage").addClass('claimagain-act-sign');
+            // hidden button close claim
+            if (!$("#btnCloseRequest").hasClass("display-none")) {
+                $("#btnCloseRequest").addClass("display-none");
+            }
+            $("#claimReasonBoxAgain").removeClass("display-none");
+        });
+
+    },
+
+    LoadListReplyVIB: function (replyInfo) {
+        var deferred = $.Deferred();
+        if (replyInfo && replyInfo != null && replyInfo.reply && replyInfo.reply.length > 0) {
+            $("#btnSendClaimRequestPage").addClass("display-none");
+            $("#request-info-title").removeClass("display-none");
+            // display data
+            $("#TransClaimRequestInfo").empty();
+            replyInfo.reply.reverse();
+            var lengthReply = replyInfo.reply.length;
+            replyInfo.lengthReply = lengthReply;
+            $.when($("#TransClaimRequestInfoTemplate2").tmpl(replyInfo).appendTo($("#TransClaimRequestInfo"))
+            
+            ).done(function () {
+                $("#TransClaimRequestInfo").removeClass("display-none");
+                deferred.resolve(true);
+            });
+
+        } else {
+            // case no reply set to first element
+            deferred.resolve(true);
+        }
+
+        return deferred.promise();
+    },
+
+    // Bind even close request
+    BindEvenCloseRequest: function () {
+        $("#closeClaimRequestAct").on('click', function (e) {
+            //e.preventDefault();
+            var id = $("#active-claimid").val();
+            var action = "CLOSED";
+            // validate id
+            if (me.IsNullOrWhiteSpace(id)) {
+                Util.ShowErrorMessage(VIB.LocalizeString.InputInvalid);
+                return null;
+            } else {
+                var msgAction = {};
+                msgAction.success = VIB.LocalizeString.CloseSuccess;
+                msgAction.failure = VIB.LocalizeString.CloseFailure;
+                me.UpdateStatus(id, action, msgAction);
+            }
+            $("#btnCloseRequest").addClass("display-none");
+        });
+    },
+    
+    // Bind even close request
+    BindEvenDeleteRequest: function () {
+        $("#deleteClaimRequestAct").on('click', function (e) {
+            //e.preventDefault();
+            var id = $("#active-claimid").val();
+            var action = "DELETED";
+            // validate id
+            if (me.IsNullOrWhiteSpace(id)) {
+                Util.ShowErrorMessage(VIB.LocalizeString.InputInvalid);
+                return null;
+            } else {
+                var msgAction = {};
+                msgAction.success = VIB.LocalizeString.DeleteSuccess;
+                msgAction.failure = VIB.LocalizeString.DeleteFailure;
+                me.UpdateStatus(id, action, msgAction);
+            }
+            $("#btnDeleteRequest").addClass("display-none");
+        });
+    },
+
+    // Bind even close request
+    BindEvenCancelRequest: function () {
+        $("#cancelClaimRequestAct").on('click', function (e) {
+            //e.preventDefault();
+            var id = $("#active-claimid").val();
+            var action = "CANCELED";
+            // validate id
+            if (me.IsNullOrWhiteSpace(id)) {
+                Util.ShowErrorMessage(VIB.LocalizeString.InputInvalid);
+                return null;
+            } else {
+                var msgAction = {};
+                msgAction.success = VIB.LocalizeString.CancelSuccess;
+                msgAction.failure = VIB.LocalizeString.CancelFailure;
+                me.UpdateStatus(id, action, msgAction);
+            }
+            $("#btnCancelRequest").addClass("display-none");
+        });
+    },
+
+    UpdateStatus: function (id, action, msgAction) {
+        var deferred = $.Deferred();
+        
+        claimTransactionService.UpdateStatus(id, action, msgAction).done(function  (result) {
+                if (result.STATUSCODE == "000000") {
+                    // hidden label fail.
+                    if (!$("#request-claim-failed").hasClass('display-none')) {
+                        $("#errorMessage").empty();
+                        $("#request-claim-failed").addClass('display-none');
+                    }
+                    // show Dialog success
+                    Util.ShowSuccessMessage(msgAction.success);
+                    BackFunction();
+                }
+                else {
+                    // show label fail.
+                    $("#request-claim-failed").removeClass('display-none');
+                    $("#errorMessage").text(msgAction.failure);
+                    $("#send-request-messageSendSuccess").addClass('display-none');
+                    deferred.reject();
+                }
+            }).fail (function (err) {
+                alert(err);
+                // show label fail.
+                $("#request-claim-failed").removeClass('display-none');
+                //return 'F';
+                deferred.reject();
+            });
+        return deferred.promise();
+    },
+
+    // tab History claim Transaction
+    LoadListClaimHistory: function () {
+        var deferred = $.Deferred();
+        claimTransactionService.LoadListClaimHistory(claimTrans.defaultStatus).done(function (hisData) {
+            if (hisData.STATUSCODE === "000000") {
+                if (hisData && hisData.DATA != null && hisData.DATA.length > 0) {
+                    // load to view list account transfer
+                    $("#historyTransClaimList > tbody").empty();
+                    $("#historyTransClaimListTemplate").tmpl(hisData).appendTo($("#historyTransClaimList > tbody"));
+                    $("#ctrlTblHisClaimTrans").removeClass("display-none");
+                    $("#HisNoDataAlert").addClass("display-none");
+                } else {
+                    $("#historyTransClaimList > tbody").empty();
+                    $("#ctrlTblHisClaimTrans").addClass("display-none");
+                    $("#HisNoDataAlert").removeClass("display-none");
+                }
+                me.SortTableHis(hisData);
+                hideLoadingMask();
+                initAjaxLoading();
+                deferred.resolve(hisData);
+            } else {
+                deferred.reject();
+            }
+            $("#btnBackClaimHistoryPage").show();
+        }).fail(function(){
+            deferred.reject();
+        });
+        return deferred.promise();
+    },
+
+    SortTableHis: function(hisData) {
+        $('#sortHis').each(function () {
+            $(this).click(function () {
+                var parent = $(this).parent('tr');
+                parent.find('#sortHis').not(this).removeClass('dsc asc');
+                if ($(this).hasClass('asc')) {
+                    $(this).removeClass('asc').addClass('dsc');
+                    me.SortDownHis(hisData);
+                    $("#historyTransClaimList > tbody").empty();
+                    $("#historyTransClaimListTemplate").tmpl({DATA: sortDown}).appendTo($("#historyTransClaimList > tbody"));
+                } else if ($(this).hasClass('dsc')) {
+                    $(this).removeClass('dsc').addClass('asc');
+                    me.SortUpHis(hisData);
+                    $("#historyTransClaimList > tbody").empty();
+                    $("#historyTransClaimListTemplate").tmpl({DATA: sortUp}).appendTo($("#historyTransClaimList > tbody"));
+                } else {
+                    $(this).addClass('dsc');
+                    me.SortDownHis(hisData);
+                    $("#historyTransClaimList > tbody").empty();
+                    $("#historyTransClaimListTemplate").tmpl({DATA: sortDown}).appendTo($("#historyTransClaimList > tbody"));
+                }
+            })
+        });
+    },
+
+
+    SortDownHis: function(hisData){
+        sortDown = hisData.DATA.sort(function (a, b) {
+            var dateBefor = window.VIB.LocalizeString[a.status].toUpperCase();
+                dateAfter = window.VIB.LocalizeString[b.status].toUpperCase();
+            return dateBefor > dateAfter ? 1 : (dateBefor < dateAfter ? -1 : 0);
+        })
+        return sortDown;
+    },
+
+    SortUpHis: function(hisData){
+        sortUp = hisData.DATA.sort(function (a, b) {
+            var dateBefor = window.VIB.LocalizeString[a.status].toUpperCase();
+                dateAfter = window.VIB.LocalizeString[b.status].toUpperCase();
+            return dateBefor > dateAfter ? -1 : (dateBefor < dateAfter ? 1 : 0);
+        })
+        return sortUp;
+    },
+
+    LoadDataViewDetailClaimHistory: function (id) {
+        var deferred = $.Deferred();
+        claimTransactionService.LoadDataViewDetailClaim(id).done(function (result) {
+            if (result.STATUSCODE === "000000") {
+                deferred.resolve(result);
+            } else {
+                deferred.reject();
+            }
+        }).fail(function () {
+            deferred.reject();
+        });
+        return deferred.promise();
+    },
+
+    SubmitClaimRequestAgain: function (acctno, id, claimcode, claimdesc, repetitions) {
+        claimTransactionService.SubmitClaimHistoryRequest(acctno, id, claimcode, claimdesc).done(function (result) {
+                if (result.STATUSCODE == "000000") {
+                    $("#sendhistory-request-messageSendSuccess").removeClass('display-none');
+                    $("#claimReasonBoxHistory").addClass('display-none');
+                    $("#btnFinishClaimHistoryRequest").show();
+                    $("#btnClaimHistoryRequestPage").hide();
+                    $("#btnBackClaimHistoryPage").hide();
+                    me.LoadResultHistoryRequest(result.DATA, repetitions);
+                    $("#btnFinishClaimHistoryRequest").on('click', function(){
+                        $("#claimTransHistoryDetail").addClass('display-none');
+                        $("#request-claim-failed").addClass('display-none');
+                        $(".request-claim-success").addClass('display-none');
+                        $("#btnFinishClaimHistoryRequest").hide();
+                        RestartFunction();
+                        me.LoadListClaimHistory();
+                    });
+                } else {
+                    $("#errorHistoryMessage").empty();
+                    $("#errorHistoryMessage").append(VIB.LocalizeString.SubmitFailure);
+                    $("#request-claimHistory-failed").removeClass('display-none');
+                }
+            }).fail (function (err) {
+                alert(err);
+                return 'F';
+        });
+    },
+
+    LoadResultHistoryRequest: function (DATA, repetitions) {
+        if (DATA && DATA != null) {
+            DATA.lengthHisClaim = Math.floor($("#lengtHisClaim").val());
+            $("#HistoryRequestInfoTemplate").tmpl(DATA).appendTo($("#HistoryRequestInfo"));
+            $("#codeClaim").hide();
+            $(".inforClaimOld").hide();
+            Util.ScrollTop();
+        }
+    },
+
+    UpdateClaimRequest: function(id, action){
+        claimTransactionService.UpdateStatus(id, action).done(function (result) {
+            if (result.STATUSCODE == "000000") {
+                // show Dialog success
+                // back to list
+                if (action === "CLOSED") {
+                    Util.ShowSuccessMessage(VIB.LocalizeString.CloseSuccess);
+                } else if (action === "DELETED") {
+                    Util.ShowSuccessMessage(VIB.LocalizeString.DeleteSuccess);
+                } else if (action === "CANCELED") {
+                    Util.ShowSuccessMessage(VIB.LocalizeString.CancelSuccess);
+                }
+                me.LoadListClaimHistory();
+                RestartFunction();
+            } else {
+                // show label fail.
+                $("#request-claim-failed").removeClass('display-none');
+                if (action === "CLOSED") {
+                    $("#errorMessage").text(VIB.LocalizeString.CloseFailure);
+                } else if (action === "DELETED") {
+                    $("#errorMessage").text(VIB.LocalizeString.DeleteFailure);
+                } else if (action === "CANCELED") {
+                    $("#errorMessage").text(VIB.LocalizeString.CancelFailure);
+                }
+            }
+        }).fail(function () {
+            alert(err);
+            // show label fail.
+            $("#request-claim-failed").removeClass('display-none');
+            return 'F';
+        })
+    },
+
+}
+
+function BindEventClickOnRow(idClaim) {
+    var transdate = null;
+    for(var i = 0; i < listTransDefault.length; i++){
+        if(listTransDefault[i].id == idClaim){
+            transdate = listTransDefault[i].trandatestr
+        }
+    }
+    // get current id of row
+    var id = idClaim;
+    // get transaction detail
+    var acctno = $("#accTransList").children(".selected").attr("value"); // "1jk24hgk1j3432k43j";
+    if (!me.IsNullOrWhiteSpace(acctno) && !me.IsNullOrWhiteSpace(id) && !me.IsNullOrWhiteSpace(transdate)) {
+
+        me.LoadClaimTransDetail(id, acctno, transdate).done(function (result) {
+            if (result && result.DATA != null) {
+                $("#listClaim").addClass("display-none");
+                $("#claimTransDetail").removeClass("display-none");
+
+                // hidden claim result label
+                if (!$("#request-claim-failed").hasClass('display-none')) {
+                    $("#request-claim-failed").addClass('display-none');
+                }
+
+                // hidden claim result label
+                if (!$("#claimTransDetail #request-info-title").hasClass('display-none')) {
+                    $("#claimTransDetail #request-info-title").addClass("display-none");
+                }
+
+                // hidden claim result title
+                if (!$("#claimTransDetail .request-claim-success").hasClass('display-none')) {
+                    $("#claimTransDetail .request-claim-success").addClass("display-none");
+                }
+
+                // hidden button send claim request
+                if (!$("#btnSendClaimRequestPage").hasClass('display-none')) {
+                    $("#btnSendClaimRequestPage").addClass("display-none");
+                }
+
+                // hidden button claim agian
+                if (!$("#btnClaimAgainPage").hasClass("display-none")) {
+                    $("#btnClaimAgainPage").addClass("display-none");
+                }
+
+                // hidden button close claim
+                if (!$("#btnCloseRequest").hasClass("display-none")) {
+                    $("#btnCloseRequest").addClass("display-none");
+                }
+
+                // reset view
+                $("#TransClaimDetail").empty();
+                if (result.DATA.bankname == undefined || me.IsNullOrEmpty(result.DATA.bankname)) {
+                    result.DATA.bankname = null;
+                }
+                $("#transClaimDetailTemplate").tmpl(result.DATA).appendTo($("#TransClaimDetail"));
+                $("#footerClaimTemplate").tmpl().appendTo($("#footer"));
+                scrollViewport();
+
+                $("#ReasonCheckBoxTemlate").tmpl(result.DATA).appendTo("#claimReasonBox");
+                
+                // case: first time claim
+                // bind event butotn claim request
+                // show button create claim
+                // set status allowclaim type
+                if (result.DATA.allowclaim == true) {
+                    
+                    $("#allowclaim-type").val(typeOfSubmit.CLAIM);
+                    // bind the first time
+                    me.BindEvenCheckBoxReason();
+                    // show button claim request
+                    $("#btnClaimRequestPage").removeClass("display-none");
+                    $("#btnClaimRequestPage").click(function(){
+                        $("#claimReasonBox").removeClass("display-none");
+                        $("#claimReasonBox")[0].scrollIntoView();
+                    })
+                    me.BindEvenButtonReason();
+                    if (!$("#btnViewClaimRequestDetail").hasClass("display-none")) {
+                        $("#btnViewClaimRequestDetail").addClass("display-none");
+                    }
+                } else {
+                    // hidden button Claim request
+                    if (!$("#btnClaimRequestPage").hasClass("display-none")) {
+                        $("#btnClaimRequestPage").addClass("display-none");
+                    }
+
+                    // case: view transaction detail
+                    // set status allowclaim type
+                    // binde even choise check box
+                    // show button view claim detail
+                    if (result.DATA.allowviewclaim == true) {
+                        $("#allowclaim-type").val(typeOfSubmit.CLAIMAGAIN);
+                        // bind the first time
+                        // me.BindEvenCheckBoxReason();
+
+                        if ($("#btnViewClaimRequestDetail").hasClass("display-none")) {
+                            $("#btnViewClaimRequestDetail").removeClass("display-none");
+                            me.BindEvenViewDetail();
+                        }
+                    } else {
+                        if (!$("#btnViewClaimRequestDetail").hasClass("display-none")) {
+                            $("#btnViewClaimRequestDetail").addClass("display-none");
+                        }
+                    }
+                }
+            } else {
+                return true;
+            }
+        });
+    } else {
+        Util.ShowErrorMessage(VIB.LocalizeString.DataIsInvalid);
+        return true;
+    }
+}
+
+function BindEventClickOnRowHisrory (id){
+    // $("#historyTransClaimList > tbody > tr").on('click', function () {
+        $("#listClaim").addClass('display-none');
+        $("#claimTransHistoryDetail").removeClass('display-none');
+        // var selectedId = $(this).attr('id');
+        var selectedId = id;
+        if (me.IsNullOrWhiteSpace(selectedId))
+            return false;
+
+        // load detail claim trans data
+        me.LoadDataViewDetailClaimHistory(selectedId).done(function (result) {
+            if (result && result.DATA != null) {
+                if (result.DATA.isshowpopupreopen) {
+                    me.isshowpopupreopen = true;
+                } else {
+                    me.isshowpopupreopen = false;
+                }
+
+                // reset view
+                $("#TransClaimHistoryDetail").empty();
+                // load data to view
+                if(result.DATA.claiminfo.reply ){}
+                result.DATA.claiminfo.reply.reverse();
+                var replyContentLength = result.DATA.claiminfo.reply.length
+                result.DATA.replyContentLength = replyContentLength;
+                $("#histransClaimDetailTemplate").tmpl(result.DATA).appendTo($("#TransClaimHistoryDetail"));
+                $("#footerHistoryTemplate").tmpl().appendTo($("#footer"));
+                scrollViewport();
+                $("#closeClaimHistoryRequestAct").off('click').on('click', function (e) {
+                    //e.preventDefault();
+                    var id = $("#currentClaimId").val();
+                    me.UpdateClaimRequest(id, "CLOSED");
+                });
+                $("#deleteClaimHistoryRequestAct").off('click').on('click', function (e) {
+                    var id = $("#currentClaimId").val();
+                    me.UpdateClaimRequest(id, "DELETED");
+                });
+                $("#cancelClaimHistoryRequestAct").on('click', function (e) {
+                    var id = $("#currentClaimId").val();
+                    me.UpdateClaimRequest(id, "CANCELED");
+                });
+
+                // bind event button
+                $("#btnClaimHistoryAgainPage").off('click').on('click', function () {
+                    if (me.isshowpopupreopen) {
+                        $("#reopenWarningHistoryDialog").modal();
+                        return "";
+                    }
+
+                    var userInfo = JSON.parse(sessionStorage.getItem('UserInfo'));
+                    if (userInfo) {
+                        if (userInfo.SETTING.TRANSACTIONCLAIMAGAIN) {
+                            $("#claimReasonBoxHistory").empty();
+                            $("#claimReasonHistoryTemplate").tmpl({ DATA: userInfo.SETTING.TRANSACTIONCLAIMAGAIN }).appendTo($("#claimReasonBoxHistory"));
+                            $("#claimReasonBoxHistory").removeClass("display-none");
+                            $("#btnClaimHistoryRequestPage").show();
+
+                            $("#btnClaimHistoryAgainPage").hide();
+                            $("#btnCancelHistoryRequest").hide();
+                            $("#btnDeleteHistoryRequest").hide();
+                            $("#btnCloseHistoryRequest").hide();
+
+                            $("#reasonboxOTH").click(function(){
+                                $(this).find(".formLabel").addClass("formTop")
+                            });
+                            $("#reasonboxOTH").focusout(function(){
+                                if ($(this).find("#reasonboxinputhistory").val() == 0){
+                                    $(this).find(".formLabel").removeClass("formTop")
+                                }
+                            });
+
+                            $("#claimReasonBoxHistory .position-relative").click(function (e) {
+                                $(".radio-custom").attr('checked', false);
+                                $(this).children(".radio-custom").attr('checked', true);
+                                var code = $(this).children(".radio-custom").attr('data-code');
+                                if (code == 'OTH') {
+                                    $("#reasonboxOTH").removeClass("display-none");
+                                    $("#reasonboxinputhistory")[0].scrollIntoView();
+                                    $("#reasonboxinputhistory")[0].focus();
+                                    $("#reasonboxinputhistory")[0].click();
+                                } else {
+                                    $("#reasonboxOTH").addClass("display-none");
+                                }
+                            });
+
+                            $("#btnClaimHistoryRequestPage").click(function (e) {
+                                var acctno = "";
+                                var id = $("#currentClaimId").val();
+                                var claimcode = $("input[name=claim-reason]:checked").attr("data-code");
+                                var claimdesc = $("input[name=claim-reason]:checked").next().html();
+                                var repetitions = result.DATA.claiminfo.reply.length + 1;
+                                if (claimcode == 'OTH') {
+                                    claimdesc = $("#reasonboxinputhistory").val();
+                                }
+                                if( claimdesc == "" ){
+                                    Util.ShowErrorMessage(`${window.VIB.LocalizeString.ReasonNotificationFail}`);
+                                    return false;
+                                }
+                                if(me.ValidateInputClaim(id, claimcode, claimdesc)){
+                                    me.SubmitClaimRequestAgain(acctno, id, claimcode, claimdesc, repetitions);
+                                }
+                            });
+                        }
+                    }
+                });
+
+                // hidden button by API
+                result.DATA.allowreopen ? $("#btnClaimHistoryAgainPage").show() : $("#btnClaimHistoryAgainPage").hide();
+                $("#btnClaimHistoryAgainPage").click(function(){
+                    $("#claimReasonBoxHistory")[0].scrollIntoView();
+                })
+                result.DATA.allowcancel ? $("#btnCancelHistoryRequest").show() : $("#btnCancelHistoryRequest").hide();
+                result.DATA.allowdelete ? $("#btnDeleteHistoryRequest").show() : $("#btnDeleteHistoryRequest").hide();
+                result.DATA.allowclose ? $("#btnCloseHistoryRequest").show() : $("#btnCloseHistoryRequest").hide();
+            }
+        });
+    // });
+}
+
+function SortTableClaim() {
+    if ($('#sortClaim').hasClass('asc')) {
+        $('#sortClaim').removeClass('asc').addClass('dsc');
+        me.SortDownClaim(listDATA);
+        $("#listTransactions > tbody").empty();
+        $("#claimListDataTemplate").tmpl({DATA: sortDefault}).appendTo("#listTransactions > tbody");
+    }else if ($('#sortClaim').hasClass('dsc')) {
+        $('#sortClaim').removeClass('dsc').addClass('asc');
+        me.SortUpClaim(listDATA);
+        $("#listTransactions > tbody").empty();
+        $("#claimListDataTemplate").tmpl({DATA: sortDefault}).appendTo("#listTransactions > tbody");
+    }else if($('#sortClaim').not('dsc') && $('#sortClaim').not('asc')){
+        $('#sortClaim').addClass('dsc');
+        me.SortDownClaim(listDATA);
+        $("#listTransactions > tbody").empty();
+        $("#claimListDataTemplate").tmpl({DATA: sortDefault}).appendTo("#listTransactions > tbody");
+    }
+}
+
+function BackFunction() {
+    $("#footer").empty();
+    $("#claimTransDetail").addClass("display-none");
+    $("#listClaim").removeClass("display-none");
+    $("#send-request-messageSendSuccess").addClass("display-none");
+    $("#request-info-title").addClass("display-none");
+    $("#TransClaimRequestInfo").addClass("display-none");
+    $("#request-claim-failed").addClass('display-none');
+    Util.ScrollTop();
+}
+
+function RestartFunction () {
+    $("#footer").empty();
+    $("#listClaim").removeClass('display-none');
+    $("#claimTransHistoryDetail").addClass('display-none');
+    $(".ReasonClaimLabel").addClass('display-none');
+    $("#claimReasonBoxHistory").addClass('display-none');
+    $("#request-info-title").addClass("display-none");
+    $("#TransClaimHistoryDetail").empty();
+    $("#request-claim-failed").addClass('display-none');
+    $("#sendhistory-request-messageSendSuccess").addClass('display-none');
+    Util.ScrollTop();
+}
+function LoadAgainHistory(){
+    me.LoadListClaimHistory();
+}

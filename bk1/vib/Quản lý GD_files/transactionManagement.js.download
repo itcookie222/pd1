@@ -1,0 +1,1989 @@
+﻿var otpJSTemplate = "/DesktopModules/MVC/VIB.MVC.Common/Template/OTPJSTemplate2.html?v=1";
+var commonJSTemplate = "/DesktopModules/MVC/VIB.MVC.Common/Template/CommonJSTemplate.html?v=1";
+var module = "";
+var moduleTransactions = {
+    bulk: "BULK",
+    schedule: "SCHEDULE",
+    payanyone: "PAYANYONE",
+    iba: "IBA"
+}
+var moduleTrans = null;
+var dataDetail = {};
+var listData = {};
+var listDataExelFilter = {};
+var action = "";
+var idDetails = "";
+var order = false;
+var listsSorted = {};
+var listFilter = {};
+var sortModule = "";
+var sortModules = {
+    nameService: "NAMESERVICE",
+    dateTrans: "DATETRANS",
+    quality: "QUALITY",
+    totalAmount: "TOTALAMOUNT",
+    nextTrans: "NEXTTRANS",
+    status: "STATUS",
+    timeSort: "TIMESORT"
+};
+
+var isDelete = false;
+
+var transactionManagement = {
+    Init: function (moduleId) {
+        $.when(
+            $.get(otpJSTemplate, function (templates) {
+                $('body').append(templates);
+            }),
+            $.get(commonJSTemplate, function (templates) {
+                $('body').append(templates);
+            })
+        ).then(function () {
+            initAjaxLoading();
+            transactionManagementService.Init(moduleId);
+            //initialization template
+            $("#transactionNavTabsCommomTemplate").tmpl().appendTo($("#rightContent"));
+            commonFunction.FilterDeleteDateRanger();
+            transactionManagementBulk.ShowListTransactionBulk();
+            uiFunction.ShowDatePicker();
+            uiFunction.DetectDevice();
+        });
+    },
+};
+
+var transactionManagementBulk = {
+    DATA_BULK: [],
+    SortDefaut: [],
+    ShowListTransactionBulk: function () {
+        moduleTrans = "BULK";
+        commonFunction.FilterDeleteDateRanger();
+        uiFunction.ClearContentChangeTab();
+        var listBulk = transactionManagementService.GetListBulk();
+        $("#emptyTransactionManagementTemplate").hide();
+        $.when(listBulk).done(function (result) {
+            if (result.STATUSCODE === "000000" && result.DATA.length > 0) {
+                listData.DATA = result.DATA;
+                transactionManagementBulk.DATA_BULK = transactionManagementBulk.SortListByDateFieldASC(result.DATA);
+                $("#fieldsName").html("");
+                $("#FieldsNameBulk").tmpl().appendTo($("#fieldsName"));
+                $("#transList").empty();
+                $("#TransactionManagementBulkTemplate").tmpl({ DATA: transactionManagementBulk.DATA_BULK }).appendTo($("#transList"));
+                listFilter = transactionManagementBulk.DATA_BULK;
+                transactionManagementBulk.SortTable();
+            } else {
+                $("#fieldsName").html("");
+                $("#FieldsNameBulk").tmpl().appendTo($("#fieldsName"));
+                $("#emptyTransactionManagementTemplate").show();
+            }
+        })
+    },
+
+    ShowDetailTransaction: function (id) {
+        IdDetails = id;
+        var renderData = transactionManagementBulk.DATA_BULK.filter(function (i) { return i.id === id })[0];
+        $("#transactionContent").hide();
+        $('.slide-parent').remove();
+        $("#TransactionManagementBatchDetail").tmpl(renderData).appendTo($("#rightContent"));
+        scrollViewport();
+        uiFunction.SlidePanel();
+        listDataExelFilter = [];
+        transactionManagementService.GetDetailBulk(id).done(function (result) {
+            if (result.STATUSCODE === "000000" && result.DATA) {
+                dataDetail = result.DATA.sort(function (a, b) {
+                    var dateBefor = a.trandate.split('/').reverse().join(),
+                        dateAfter = b.trandate.split('/').reverse().join();
+                    return dateBefor > dateAfter ? -1 : (dateBefor < dateAfter ? 1 : 0);
+                });
+                listDataExelFilter = dataDetail;
+                $(".list-transaction > table > tbody").html('');
+                $("#ListTransDetailBulk").tmpl({ DATA: dataDetail }).appendTo($(".list-transaction > table > tbody"));
+                uiFunction.SlidePanel();
+                uiFunction.ShowDetailTransferBulk();
+            }
+            else {
+                Util.ShowErrorMessage(result.MESSAGE);
+            }
+        });
+    },
+
+    SortTable: function () {
+        $('th.sort').each(function () {
+            $("#nameService").click(function () {
+                return sortModule = "NAMESERVICE";
+            });
+            $("#dateTrans").click(function () {
+                return sortModule = "DATETRANS";
+            });
+            $("#quality").click(function () {
+                return sortModule = "QUALITY";
+            });
+            $("#totalAmount").click(function () {
+                return sortModule = "TOTALAMOUNT";
+            });
+            $(this).click(function () {
+                var parent = $(this).parent('tr');
+                parent.find('th.sort').not(this).removeClass('dsc asc');
+                $("#transList").html("");
+                // if ($(this).hasClass('asc')) {
+                //     $(this).removeClass('asc');
+                //     listsSorted = transactionManagementBulk.SortListByDateFieldASC(listFilter);
+                // } else if ($(this).hasClass('dsc')) {
+                if ($(this).hasClass('dsc')) {
+                    $(this).removeClass('dsc').addClass('asc');
+                    switch (sortModule) {
+                        case sortModules.nameService:
+                            listsSorted = transactionManagementBulk.SortByServiceNameASC(listFilter);
+                            break;
+                        case sortModules.dateTrans:
+                            listsSorted = transactionManagementBulk.SortListByDateFieldDSC(listFilter);
+                            break;
+                        case sortModules.quality:
+                            listsSorted = transactionManagementBulk.SortByQualityASC(listFilter);
+                            break;
+                        case sortModules.totalAmount:
+                            listsSorted = commonFunction.SortByTotalAmountASC(listFilter);
+                            break;
+                    }
+                } else {
+                    $(this).addClass('dsc').removeClass('asc');
+                    switch (sortModule) {
+                        case sortModules.nameService:
+                            listsSorted = transactionManagementBulk.SortByServiceNameDSC(listFilter);
+                            break;
+                        case sortModules.dateTrans:
+                            listsSorted = transactionManagementBulk.SortListByDateFieldASC(listFilter);
+                            break;
+                        case sortModules.quality:
+                            listsSorted = transactionManagementBulk.SortByQualityDSC(listFilter);
+                            break;
+                        case sortModules.totalAmount:
+                            listsSorted = commonFunction.SortByTotalAmountDSC(listFilter);
+                            break;
+                    }
+                }
+                $("#TransactionManagementBulkTemplate").tmpl({ DATA: listsSorted }).appendTo($("#transList"));
+            });
+        });
+    },
+
+    FilterStatus: function (status) {
+        if (status == "success") {
+            var listStatusFiltered = dataDetail.filter(function (i) {
+                return i.statuscode === "000000";
+            });
+            return listStatusFiltered;
+        } else {
+            var listStatusFiltered = dataDetail.filter(function (i) {
+                return i.statuscode != "000000";
+            });
+            return listStatusFiltered;
+        }
+    },
+
+    FilterListByStatus: function () {
+        var status = $("#filterStatus input[type='radio']:checked").attr("data-value");
+        $("#statusFilter").show();
+        var listResult = transactionManagementBulk.FilterStatus(status);
+        listDataExelFilter = listResult;
+        if (status == "success") {
+            $("#statusTrans").text("Thành công");
+        } else {
+            $("#statusTrans").text("Không thành công");
+        }
+        $("#listTransDetail").remove();
+        if (listResult.length > 0) {
+            $("#emptyTransactionDetail").hide();
+            $("#ListTransDetailBulk").tmpl({ DATA: listResult }).appendTo($(".list-transaction > table > tbody"));
+        } else {
+            $("#emptyTransactionDetail").show();
+        }
+    },
+
+    FilterDeleteStatus: function () {
+        $("#statusFilter").hide();
+        $("#emptyTransactionDetail").hide();
+        $("#listTransDetail").remove();
+        $("#ListTransDetailBulk").tmpl({ DATA: dataDetail }).appendTo($(".list-transaction > table > tbody"));
+    },
+
+    SortByServiceNameDSC: function (lists) {
+        listsSorted = lists.sort(function (a, b) {
+            var x = a.servicename.toLowerCase(), y = b.servicename.toLowerCase();
+            if (x < y) return -1;
+            if (x > y) return 1;
+            return 0;
+        });
+        return listsSorted;
+    },
+
+    SortByServiceNameASC: function (lists) {
+        listsSorted = lists.sort(function (a, b) {
+            var x = a.servicename.toLowerCase(), y = b.servicename.toLowerCase();
+            if (x < y) return 1;
+            if (x > y) return -1;
+            return 0;
+        });
+        return listsSorted;
+    },
+
+    convertDateTimeEnglish: function (s) {
+
+    },
+
+    SortListByDateFieldASC: function (lists) {
+        listSorted = lists.sort(function (a, b) {
+            var dateBefor = commonFunction.ConvertDateEnglish(a.trandate).split('/').reverse().join(),
+                dateAfter = commonFunction.ConvertDateEnglish(b.trandate).split('/').reverse().join();
+            return dateBefor > dateAfter ? -1 : (dateBefor < dateAfter ? 1 : 0);
+        });
+        return listSorted;
+    },
+    SortListByDateFieldDSC: function (lists) {
+        listSorted = lists.sort(function (a, b) {
+            var dateBefor = commonFunction.ConvertDateEnglish(a.trandate).split('/').reverse().join(),
+                dateAfter = commonFunction.ConvertDateEnglish(b.trandate).split('/').reverse().join();
+            return dateBefor > dateAfter ? 1 : (dateBefor < dateAfter ? -1 : 0);
+        });
+        return listSorted;
+    },
+
+    SortByQualityDSC: function (lists) {
+        listsSorted = lists.sort(function (a, b) {
+            return a.numberoftransaction - b.numberoftransaction;
+        });
+        return listsSorted;
+    },
+
+    SortByQualityASC: function (lists) {
+        listsSorted = lists.sort(function (a, b) {
+            return b.numberoftransaction - a.numberoftransaction;
+        });
+        return listsSorted;
+    },
+};
+
+var transactionManagementSchedule = {
+    DATA_SCHEDULE: [],
+    ShowListTransactionSchedule: function () {
+        moduleTrans = "SCHEDULE";
+        commonFunction.FilterDeleteDateRanger();
+        uiFunction.ClearContentChangeTab();
+        var listSchudule = transactionManagementService.GetListSchedule();
+        $("#emptyTransactionManagementTemplate").hide();
+        $.when(listSchudule).done(function (result) {
+            if (result.STATUSCODE === "000000" && result.DATA.length > 0) {
+                listData.DATA = result.DATA;
+                transactionExp = transactionManagementSchedule.FilterTransactionExp(listData.DATA);
+                transactionManagementSchedule.DATA_SCHEDULE = transactionManagementSchedule.SortListByNextDateTransFieldASC(transactionExp);
+                $("#fieldsName").html("");
+                $("#FieldsNameSchedule").tmpl().appendTo($("#fieldsName"));
+                $("#transList").empty();
+                $("#TransactionManagementSchedule").tmpl({ DATA: transactionManagementSchedule.DATA_SCHEDULE }).appendTo($("#transList"));
+                listFilter = transactionManagementSchedule.DATA_SCHEDULE;
+                transactionManagementSchedule.SortTable();
+            } else {
+                $("#fieldsName").html("");
+                $("#FieldsNameSchedule").tmpl().appendTo($("#fieldsName"));
+                $("#emptyTransactionManagementTemplate").show();
+            }
+        })
+    },
+
+    FilterTransactionExp: function (item) {
+        var arr = [];
+        var formatDate = Util.GetCurrentLang().toLowerCase() === 'vi-vn' ? "DD/MM/YYYY" : "DD-MMM-YYYY";
+        for (var i = 0; i < item.length; i++) {
+            if (item[i].allowedit == true && item[i].nextrundatedate != "") {
+
+                if (moment(item[i].frequency, formatDate, true).isValid()){
+                    item[i].frequency = VIB.LocalizeString.Transferdate;
+                }
+                arr.push(item[i]);
+            }
+        }
+        return arr;
+    },
+
+    SortTable: function () {
+        $('th.sort').each(function () {
+            $("#nextTrans").click(function () {
+                return sortModule = "NEXTTRANS";
+            });
+            $("#totalAmount").click(function () {
+                return sortModule = "TOTALAMOUNT";
+            });
+            $("#timeSort").click(function () {
+                return sortModule = "TIMESORT";
+            });
+            $(this).click(function () {
+                var parent = $(this).parent('tr');
+                parent.find('th.sort').not(this).removeClass('dsc asc');
+                $("#transList").html("");
+                if ($(this).hasClass('dsc')) {
+                    $(this).removeClass('dsc').addClass('asc');
+                    switch (sortModule) {
+                        case sortModules.nextTrans:
+                            listsSorted = transactionManagementSchedule.SortListByNextDateTransFieldDSC(listFilter);
+                            break;
+                        case sortModules.totalAmount:
+                            listsSorted = transactionManagementSchedule.SortByTotalAmountASC(listFilter);
+                            break;
+                        case sortModules.timeSort:
+                            listsSorted = transactionManagementSchedule.SortByTimeASC(listFilter);
+                            break;
+                    }
+                } else {
+                    $(this).addClass('dsc').removeClass('asc');
+                    switch (sortModule) {
+                        case sortModules.nextTrans:
+                            listsSorted = transactionManagementSchedule.SortListByNextDateTransFieldASC(listFilter);
+                            break;
+                        case sortModules.totalAmount:
+                            listsSorted = transactionManagementSchedule.SortByTotalAmountDSC(listFilter);
+                            break;
+                        case sortModules.timeSort:
+                            listsSorted = transactionManagementSchedule.SortByTimeDSC(listFilter);
+                            break;
+                    }
+                }
+                $("#TransactionManagementSchedule").tmpl({ DATA: listsSorted }).appendTo($("#transList"));
+            });
+        });
+    },
+
+    SortByTimeDSC: function (lists) {
+        var regex = RegExp('\d');
+        listSorted = lists.sort(function (a, b) {
+            if (regex.test(a.frequency)) {
+                var dateBefor = commonFunction.ConvertDateEnglish(a.frequency).split('/').reverse().join(),
+                    dateAfter = commonFunction.ConvertDateEnglish(b.frequency).split('/').reverse().join();
+                return dateBefor > dateAfter ? 1 : (dateBefor < dateAfter ? -1 : 0);
+            }
+            var x = a.frequency.toLowerCase(), y = b.frequency.toLowerCase();
+            if (x < y) return 1;
+            if (x > y) return -1;
+            return 0;
+        });
+        return listSorted;
+    },
+
+    SortByTimeASC: function (lists) {
+        var regex = RegExp('\d');
+        listSorted = lists.sort(function (a, b) {
+            if (regex.test(a.frequency)) {
+                var dateBefor = commonFunction.ConvertDateEnglish(a.frequency).split('/').reverse().join(),
+                    dateAfter = commonFunction.ConvertDateEnglish(b.frequency).split('/').reverse().join();
+                return dateBefor > dateAfter ? -1 : (dateBefor < dateAfter ? 1 : 0);
+            }
+            var x = a.frequency.toLowerCase(), y = b.frequency.toLowerCase();
+            if (x < y) return -1;
+            if (x > y) return 1;
+            return 0;
+        });
+        return listSorted;
+    },
+
+    SortListByNextDateTransFieldASC: function (list) {
+        listSorted = list.sort(function (a, b) {
+            var dateBefor = commonFunction.ConvertDateEnglish(a.nextrundatedate).split('/').reverse().join(),
+                dateAfter = commonFunction.ConvertDateEnglish(b.nextrundatedate).split('/').reverse().join();
+            return dateBefor > dateAfter ? -1 : (dateBefor < dateAfter ? 1 : 0);
+        });
+        return listSorted;
+    },
+
+    SortListByNextDateTransFieldDSC: function (list) {
+        listSorted = list.sort(function (a, b) {
+            var dateBefor = commonFunction.ConvertDateEnglish(a.nextrundatedate).split('/').reverse().join(),
+                dateAfter = commonFunction.ConvertDateEnglish(b.nextrundatedate).split('/').reverse().join();
+            return dateBefor > dateAfter ? 1 : (dateBefor < dateAfter ? -1 : 0);
+        });
+        return listSorted;
+    },
+
+    SortByTotalAmountASC: function (lists) {
+        listsSorted = lists.sort(function (a, b) {
+            var x = b.amount.split(" ", 1)[0].split(",").join("");
+            var y = a.amount.split(" ", 1)[0].split(",").join("");
+            return x - y;
+        });
+        return listsSorted;
+    },
+
+    SortByTotalAmountDSC: function (lists) {
+        listsSorted = lists.sort(function (a, b) {
+            var x = a.amount.split(" ", 1)[0].split(",").join("");
+            var y = b.amount.split(" ", 1)[0].split(",").join("");
+            return x - y;
+        });
+        return listsSorted;
+    },
+
+    ShowDetailTransaction: function (id) {
+        // IdDetails = id;
+        var renderData = transactionManagementSchedule.DATA_SCHEDULE.filter(function (i) { return i.id === id })[0];
+        $("#transactionContent").hide();
+        $('.slide-parent').remove();
+        $("#TransactionManagementSchuleDetail").tmpl(renderData).appendTo($("#rightContent"));
+        if (renderData.scheduletype == "LATER") {
+            $('.later_style').hide();
+        }
+        if (renderData.scheduleregularendtype == "NoEnd") {
+            $("#resulfText").html(VIB.LocalizeString.Never);
+        } else if (renderData.scheduleregularendtype == "EndAfter") {
+            var loop = renderData.numberoftransfer;
+            $("#resulfText").html(VIB.LocalizeString.End + " " + VIB.LocalizeString.Endafter + " " + loop + " " + VIB.LocalizeString.Time);
+        } else {
+            var date = $("#loopAfterDatePicker").val();
+            $("#resulfText").html(VIB.LocalizeString.Endafterdate + " " + date);
+            $("#date5").css('display', 'block');
+        }
+        scrollViewport();
+        uiFunction.SlidePanel();
+    },
+    DeleteTransaction: function (id) {
+        isDelete = true;
+        idDelete = id;
+        var userInfo = JSON.parse(sessionStorage.getItem('UserInfo'));
+        if (userInfo) {
+            var otpData = {
+                IsPopup: true,
+            }
+            $("#otp").html('');
+            $("#otpTemplate").tmpl(otpData).appendTo($("#otp"));
+            $("#otpDialog").modal();
+            $("#btnSubmitOTP").attr("disabled", false);
+            Util.RegisterOTPEvent();
+            transactionManagementSchedule.GetOTPDeleteSchedule();
+            $("#btnGetOTP").show();
+            $('#infoMessageModal').on('hidden.bs.modal', function (e) {
+                $("#txtOtp1").focus();
+            });
+        }
+    },
+    GetOTPDeleteSchedule: function () {
+        $('#btnSubmitOTP').click(function () {
+            var otp = $("#txtOtp1").val() + $("#txtOtp2").val() + $("#txtOtp3").val() + $("#txtOtp4").val() + $("#txtOtp5").val() + $("#txtOtp6").val();
+            if (otp.length === 6) {
+                showLoadingMask();
+                transactionManagementService.DeleteSchedule(idDelete, otp).done(function (result) {
+                    if (result.STATUSCODE === "000000") {
+                        $("#otpDialog").modal('toggle');
+                        $("#modelSuccess").modal({ backdrop: 'static', keyboard: false });
+                        $("#btnClose").attr("onclick", "commonFunction.Back();transactionManagementSchedule.ShowListTransactionSchedule()");
+                        $("#resulfTrans").html(VIB.LocalizeString.MessageCancel);
+                        Util.ShowSuccessMessage(result.MESSAGE);
+                    } else {
+                        Util.SetOTPErrorMessage(true, VIB.LocalizeString.IncorrectOTP);
+                    }
+                });
+            } else {
+                Util.SetOTPErrorMessage(true, VIB.LocalizeString.InvalidOTP);
+                return;
+            }
+        });
+        $('.close').click(function () {
+            transactionManagementSchedule.GetOTPDeleteSchedule();
+        });
+        $('#btnGetOTP').click(function () {
+            transactionManagementService.GetOtpSchedule().done(function (result) {
+                $("#btnGetOTP").hide();
+                Util.ShowSuccessMessage(result);
+            });
+        });
+    }
+};
+
+var transactionManagementPayAnyOne = {
+    DATA_PAYANYONE: [],
+    ShowListTransactionPayAnyOne: function () {
+        moduleTrans = "PAYANYONE";
+        commonFunction.FilterDeleteDateRanger();
+        uiFunction.ClearContentChangeTab();
+        var listPayAnyOne = transactionManagementService.GetListPayAnyOne();
+        $("#emptyTransactionManagementTemplate").hide();
+        $.when(listPayAnyOne).done(function (result) {
+            if (result.STATUSCODE === "000000" && result.DATA.length > 0) {
+                listData.DATA = result.DATA;
+                transactionManagementPayAnyOne.DATA_PAYANYONE = transactionManagementPayAnyOne.SortListByDateFieldASC(result.DATA);
+                $("#fieldsName").html("");
+                $("#FieldsNamePayAnyOne").tmpl().appendTo($("#fieldsName"));
+                $("#transList").empty();
+                $("#TransactionManagementPayAnyOne").tmpl({ DATA: transactionManagementPayAnyOne.DATA_PAYANYONE }).appendTo($("#transList"));
+                listFilter = transactionManagementPayAnyOne.DATA_PAYANYONE;
+                transactionManagementPayAnyOne.SortTable();
+            } else {
+                $("#fieldsName").html("");
+                $("#FieldsNamePayAnyOne").tmpl().appendTo($("#fieldsName"));
+                $("#emptyTransactionManagementTemplate").show();
+            }
+        })
+    },
+
+    SortTable: function () {
+        $('th.sort').each(function () {
+            $("#dateTrans").click(function () {
+                return sortModule = "DATETRANS";
+            });
+            $("#status").click(function () {
+                return sortModule = "STATUS";
+            });
+            $("#totalAmount").click(function () {
+                return sortModule = "TOTALAMOUNT";
+            });
+            $(this).click(function () {
+                var parent = $(this).parent('tr');
+                parent.find('th.sort').not(this).removeClass('dsc asc');
+                $("#transList").html("");
+                if ($(this).hasClass('dsc')) {
+                    $(this).removeClass('dsc').addClass('asc');
+                    switch (sortModule) {
+                        case sortModules.dateTrans:
+                            listsSorted = transactionManagementPayAnyOne.SortListByDateFieldDSC(listFilter);
+                            break;
+                        case sortModules.status:
+                            listsSorted = transactionManagementPayAnyOne.SortByStatusASC(listFilter);
+                            break;
+                        case sortModules.totalAmount:
+                            listsSorted = transactionManagementPayAnyOne.SortByTotalAmountASC(listFilter);
+                            break;
+                    }
+                } else {
+                    $(this).addClass('dsc').removeClass('asc');
+                    switch (sortModule) {
+                        case sortModules.dateTrans:
+                            listsSorted = transactionManagementPayAnyOne.SortListByDateFieldASC(listFilter);
+                            break;
+                        case sortModules.status:
+                            listsSorted = transactionManagementPayAnyOne.SortByStatusDSC(listFilter);
+                            break;
+                        case sortModules.totalAmount:
+                            listsSorted = transactionManagementPayAnyOne.SortByTotalAmountDSC(listFilter);
+                            break;
+                    }
+                }
+                $("#TransactionManagementPayAnyOne").tmpl({ DATA: listsSorted }).appendTo($("#transList"));
+
+            });
+        });
+    },
+
+    SortByStatusDSC: function (lists) {
+        listsSorted = lists.sort(function (a, b) {
+            var x = a.status.toLowerCase(), y = b.status.toLowerCase();
+            if (x < y) return -1;
+            if (x > y) return 1;
+            return 0;
+        });
+        return listsSorted;
+    },
+
+    SortByStatusASC: function (lists) {
+        listsSorted = lists.sort(function (a, b) {
+            var x = a.status.toLowerCase(), y = b.status.toLowerCase();
+            if (x < y) return 1;
+            if (x > y) return -1;
+            return 0;
+        });
+        return listsSorted;
+    },
+
+    SortListByDateFieldASC: function (lists) {
+        listSorted = lists.sort(function (a, b) {
+            var dateBefor = commonFunction.ConvertDateEnglish(a.createddate).split('/').reverse().join(),
+                dateAfter = commonFunction.ConvertDateEnglish(b.createddate).split('/').reverse().join();
+            return dateBefor > dateAfter ? -1 : (dateBefor < dateAfter ? 1 : 0);
+        });
+        return listSorted;
+    },
+    SortListByDateFieldDSC: function (lists) {
+        listSorted = lists.sort(function (a, b) {
+            var dateBefor = commonFunction.ConvertDateEnglish(a.createddate).split('/').reverse().join(),
+                dateAfter = commonFunction.ConvertDateEnglish(b.createddate).split('/').reverse().join();
+            return dateBefor > dateAfter ? 1 : (dateBefor < dateAfter ? -1 : 0);
+        });
+        return listSorted;
+    },
+
+    SortByTotalAmountASC: function (lists) {
+        listsSorted = lists.sort(function (a, b) {
+            var x = b.amount.split(" ", 1)[0].split(",").join("");
+            var y = a.amount.split(" ", 1)[0].split(",").join("");
+            return x - y;
+        });
+        return listsSorted;
+    },
+
+    SortByTotalAmountDSC: function (lists) {
+        listsSorted = lists.sort(function (a, b) {
+            var x = a.amount.split(" ", 1)[0].split(",").join("");
+            var y = b.amount.split(" ", 1)[0].split(",").join("");
+            return x - y;
+        });
+        return listsSorted;
+    },
+
+    ShowDetailTransaction: function (id) {
+        idDetails = id;
+        $("#transactionContent").hide();
+        $('.slide-parent').remove();
+        transactionManagementService.GetDetailPayAnyOne(id).done(function (result) {
+            if (result.STATUSCODE === "000000" && result.DATA) {
+                dataDetail.DATA = result.DATA;
+                $("#TransactionManagementPayAnyOneDetail").tmpl(dataDetail.DATA).appendTo($("#rightContent"));
+                scrollViewport();
+                uiFunction.TooltipFunc();
+            }
+            else {
+                Util.ShowErrorMessage(result.MESSAGE);
+            }
+        });
+    },
+
+    ComfirmAction: function (action) {
+        if (action == "DELETE") {
+            $("#modelComfirmDelete").modal();
+        }
+        if (action == "CANCEL") {
+            $("#modelComfirmCancel").modal();
+        }
+    },
+
+    GetOTPUpdate: function () {
+        $('.close').click(function () {
+            transactionManagementPayAnyOne.GetOTPPayAnyOne();
+        });
+        $('#btnGetOTP').click(function () {
+            transactionManagementService.GetOTPPayAnyOne().done(function (result) {
+                $("#btnGetOTP").hide();
+                Util.ShowSuccessMessage(result);
+            });
+        });
+        $('#btnSubmitOTP').click(function () {
+            var otp = $("#txtOtp1").val() + $("#txtOtp2").val() + $("#txtOtp3").val() + $("#txtOtp4").val() + $("#txtOtp5").val() + $("#txtOtp6").val();
+            if (otp.length === 6) {
+                showLoadingMask();
+                transactionManagementService.UpdateStatusPayAnyOne(action, idDetails, otp).done(function (result) {
+                    if (result.STATUSCODE === "000000") {
+                        $("#otpDialog").modal('toggle');
+                        $("#modelSuccess").modal({ backdrop: 'static', keyboard: false });
+                        $("#btnClose").attr("onclick", "commonFunction.Back();");
+                        if (action == "DELETE") {
+                            $("#resulfTrans").html(VIB.LocalizeString.MsgDelete1);
+                        } else {
+                            $("#resulfTrans").html(VIB.LocalizeString.MessageCancel);
+                        }
+                        // Util.ShowSuccessMessage(result.MESSAGE);
+                    } else {
+                        Util.SetOTPErrorMessage(true, VIB.LocalizeString.IncorrectOTP);
+                    }
+                });
+            } else {
+                Util.SetOTPErrorMessage(true, VIB.LocalizeString.InvalidOTP);
+                return;
+            }
+        });
+    },
+
+    UpdateStatus: function (_action) {
+        action = _action;
+        $("#txtOtp1").focus();
+        var otpData = {
+            IsPopup: true,
+        }
+        $("#otp").html('');
+        $("#otpTemplate").tmpl(otpData).appendTo($("#otp"));
+        $("#otpDialog").modal();
+        $("#btnSubmitOTP").attr("disabled", false);
+        Util.RegisterOTPEvent();
+        transactionManagementPayAnyOne.GetOTPUpdate();
+        $("#btnGetOTP").show();
+        $('#infoMessageModal').on('hidden.bs.modal', function (e) {
+            $("#txtOtp1").focus();
+        });
+        // if (_action != "DELETE") {
+        //     var otpData = {
+        //         IsPopup: true,
+        //     }
+        //     $("#otp").html('');
+        //     $("#otpTemplate").tmpl(otpData).appendTo($("#otp"));
+        //     $("#otpDialog").modal();
+        //     $("#btnSubmitOTP").attr("disabled", false);
+        //     Util.RegisterOTPEvent();
+        //     transactionManagementPayAnyOne.GetOTPUpdate();
+        //     $("#btnGetOTP").show();
+        //     $('#infoMessageModal').on('hidden.bs.modal', function (e) {
+        //         $("#txtOtp1").focus();
+        //     });
+        // } else {
+        //     var otp = "";
+        //     transactionManagementService.UpdateStatusPayAnyOne(action, idDetails, otp).done(function (result) {
+        //         if (result.STATUSCODE === "000000") {
+        //             $("#modelSuccess").modal({ backdrop: 'static', keyboard: false });
+        //             $("#btnClose").attr("onclick", "commonFunction.Back();transactionManagementPayAnyOne.ShowListTransactionPayAnyOne()");
+        //             $("#delete").attr("disabled", "true");
+        //             $("#cancel").attr("disabled", "true");
+        //             if (action == "DELETE") {
+        //                 $("#resulfTrans").html(VIB.LocalizeString.MsgDelete1);
+        //             } else {
+        //                 $("#resulfTrans").html(VIB.LocalizeString.MsgCancel);
+        //             }
+        //         } else {
+        //             $("#modelSuccess").modal({ backdrop: 'static', keyboard: false });
+        //             $("#btnClose").attr("onclick", "commonFunction.Back();transactionManagementPayAnyOne.ShowListTransactionPayAnyOne()");
+        //             if (action == "DELETE") {
+        //                 $("#resulfTrans").html(VIB.LocalizeString.ExceptionDelete);
+        //             } else {
+        //                 $("#resulfTrans").html(VIB.LocalizeString.ExceptionCancel1);
+        //             }
+        //         }
+        //     });
+        // }
+    }
+};
+var configDocs = [];
+var transactionManagementIBA = {
+    DATA_IBA: [],
+    ShowListTransactionIBA: function () {
+        moduleTrans = "IBA";
+        commonFunction.FilterDeleteDateRanger();
+        uiFunction.ClearContentChangeTab();
+        var listIBA = transactionManagementService.GetListIBA();
+        $("#emptyTransactionManagementTemplate").hide();
+        $.when(transactionManagementService.GetConfigIBA()).done(function (res) {
+            res.DATA.PURPOSECODE.map(function (item) {
+                var docObj = {};
+                docObj.purposeCode = item.value;
+                docObj.documents = [];
+                res.DATA.DOCUMENT.filter(function (elm) {
+                    var doc = {};
+                    if (item.document && item.document.indexOf(elm.value) > -1) {
+                        doc.name = elm.name;
+                        doc.value = elm.value;
+                        doc.requireExpireDate = item.documentrequireexpireddate &&
+                            item.documentrequireexpireddate.indexOf(elm.value) > -1;
+                        docObj.documents.push(doc);
+                    }
+                });
+                configDocs.push(docObj);
+            });
+        });
+        $.when(listIBA).done(function (result) {
+            if (result.STATUSCODE === "000000" && result.DATA.length > 0) {
+                listData.DATA = result.DATA;
+                transactionManagementIBA.DATA_IBA = transactionManagementIBA.SortListByDateFieldASC(result.DATA);
+                $("#fieldsName").html("");
+                $("#FieldsNameIBA").tmpl().appendTo($("#fieldsName"));
+                $("#transList").empty();
+                $("#TransactionManagementIBA").tmpl({ DATA: transactionManagementIBA.DATA_IBA }).appendTo($("#transList"));
+                listFilter = transactionManagementIBA.DATA_IBA;
+                transactionManagementIBA.SortTable();
+            } else {
+                $("#fieldsName").html("");
+                $("#FieldsNameIBA").tmpl().appendTo($("#fieldsName"));
+                $("#emptyTransactionManagementTemplate").show();
+            }
+        });
+    },
+
+    ShowDetailTransaction: function (id) {
+        idDetails = id;
+        $("#transactionContent").hide();
+        $('.slide-parent').remove();
+        transactionManagementService.GetDetailIBA(id).done(function (result) {
+            if (result.STATUSCODE === "000000" && result.DATA) {
+                dataDetail.DATA = result.DATA;
+                // $("#TransactionManagementIBADetail").tmpl(dataDetail.DATA).appendTo($("#rightContent"));
+                //IBA
+                transDetail.DATA = result.DATA;
+                transDetail.id = id;
+                transDetail.documents = {};
+                transDetail.LocalizeString = VIB.LocalizeString;
+                $("#TransactionManagementIBADetail").tmpl(transDetail).appendTo($("#rightContent"));
+                $('#ssModifyTrans').html('');
+                transDetail.documents = configDocs.filter(function (item) {
+                    return item.purposeCode == transDetail.DATA.purposecode;
+                })[0].documents;
+                transDetail.documents && transDetail.documents.map(function (elm) {
+                    elm.filename = '';
+                    elm.expireddate = '';
+                    elm.url = '';
+                    var apiDoc = transDetail.DATA.documents.filter(function (item) {
+                        return elm.value == item.type
+                    })
+                    if (apiDoc.length > 0) {
+                        elm.filename = apiDoc[0].filename;
+                        elm.expireddate = apiDoc[0].expireddate;
+                        elm.url = apiDoc[0].url;
+                    }
+
+                });
+                $('#modifyTransaction').tmpl(transDetail).appendTo('#ssModifyTrans');
+                $('#ssModifyTrans input.datepicker-vs3').on('change keyup blur focusout', function(){
+                    validDocExpiredDate();
+                });
+                scrollViewport();
+                uiFunction.TooltipFunc();
+                uiFunction.ShowDatePickerExp();
+                uiFunction.UploadFile();
+            }
+            else {
+                Util.ShowErrorMessage(result.MESSAGE);
+            }
+        });
+    },
+
+    GetOTPUpdate: function () {
+        $('.close').click(function () {
+            transactionManagementIBA.GetOTPUpdate();
+        });
+        $('#btnGetOTP').click(function () {
+            transactionManagementService.GetOTPIBA().done(function (result) {
+                $("#btnGetOTP").hide();
+                Util.ShowSuccessMessage(result);
+            });
+        });
+        $('#btnSubmitOTP').click(function () {
+            var otp = $("#txtOtp1").val() + $("#txtOtp2").val() + $("#txtOtp3").val() + $("#txtOtp4").val() + $("#txtOtp5").val() + $("#txtOtp6").val();
+            if (otp == '' || otp.length != 6 || action != 'UPDATE') {
+                return;
+            }
+            $("#otpDialog").modal('toggle');
+            var promiseUpload = [];
+            var promiseUpdate = [];
+            $('input[type=file]').each(function () {
+                var file = $(this)[0].files[0];
+                var id = $(this).attr('id');
+                if (file) {
+                    var formData = new FormData();
+                    formData.append(file.name, file);
+                    formData.append('fileID', id);
+                    formData.append('dateExpiry', $("#expiredDate" + id).val());
+                    promiseUpload.push(transactionManagementService.UploadFileIBA(formData));
+                } else if ($("#hidden" + id).val() != '' && $("#hiddenExpDate" + id).val() != $("#expiredDate" + id).val() && $("#expiredDate" + id).val() != '') {
+                    //var updateData = {
+                    //    fileID: id,
+                    //    dateExpiry: $("#expiredDate" + id).val() || ''
+                    //}
+                    //promiseUpdate.push(transactionManagementService.UpdateFileIBA(updateData));
+                }
+            });
+
+            $.when(promiseUpload).done(function (res1) {
+                $.when(promiseUpdate).done(function (res2) {
+                    transactionManagementService.UpdateFileIBA({ otp: otp, id: transDetail.id, arrDelete: arrDelete }).then(function (res) {
+                        if (res.STATUSCODE === "000000") {
+                            arrDelete = "";
+                            Util.ShowSuccessMessage(VIB.LocalizeString.W_EDITSUCCESS);
+                            // transactionManagementIBA.ShowHideModalEdit(event);
+                            transactionManagementIBA.ShowDetailTransaction(transDetail.id);
+                            hideLoadingMask();
+                        } else {
+                            Util.ShowErrorMessage(res.MESSAGE);
+                        }
+                    }).fail(function (err) {
+                        hideLoadingMask();
+                        Util.ShowErrorMessage(err.MESSAGE);
+                    })
+                }).fail(function (err) {
+                    hideLoadingMask();
+                    $("#otpDialog").modal('toggle');
+                    Util.ShowErrorMessage(err.MESSAGE);
+                })
+            }).fail(function (err) {
+                hideLoadingMask();
+                $("#otpDialog").modal('toggle');
+                Util.ShowErrorMessage('Upload fail');
+            });
+        });
+    },
+
+    ComfirmAction: function (action) {
+        if (action == "DELETE") {
+            $("#modelComfirmDelete").modal();
+        }
+        if (action == "CANCEL") {
+            $("#modelComfirmCancel").modal();
+        }
+    },
+
+    CheckAction: function (act) {
+        action = act;
+        if (action == "CANCEL") {
+            transactionManagementIBA.UpdateTransactionStatus(transDetail.id);
+            return;
+        }
+        if (action == "DELETE") {
+            transactionManagementIBA.DeleteTransaction(transDetail.id);
+            return;
+        }
+    },
+
+    DeleteTransaction: function () {
+        showLoadingMask();
+        transactionManagementService.UpdateStatusIBA({ id: idDetails, action: action }).done(function (result) {
+            if (result.STATUSCODE === "000000") {
+                $("#modelSuccess").modal({ backdrop: 'static', keyboard: false });
+                $("#btnClose").attr("onclick", "commonFunction.Back()");
+                $("#resulfTrans").html(result.MESSAGE);
+                // Util.ShowSuccessMessage(result.MESSAGE);
+            } else {
+                Util.SetOTPErrorMessage(true, "Lỗi xóa");
+            }
+        });
+    },
+
+    UpdateTransactionStatus: function (id) {
+        idDelete = id;
+        var userInfo = JSON.parse(sessionStorage.getItem('UserInfo'));
+        if (userInfo) {
+            var otpData = {
+                IsPopup: true,
+            }
+            $("#otp").html('');
+            $("#otpTemplate").tmpl(otpData).appendTo($("#otp"));
+            $("#otpDialog").modal();
+            $("#btnSubmitOTP").attr("disabled", false);
+            Util.RegisterOTPEvent();
+            transactionManagementIBA.GetOTPIBA();
+            $("#btnGetOTP").show();
+            $('#infoMessageModal').on('hidden.bs.modal', function (e) {
+                $("#txtOtp1").focus();
+            });
+        }
+    },
+
+    GetOTPIBA: function () {
+        $('#btnSubmitOTP').click(function () {
+            var otp = $("#txtOtp1").val() + $("#txtOtp2").val() + $("#txtOtp3").val() + $("#txtOtp4").val() + $("#txtOtp5").val() + $("#txtOtp6").val();
+            if (otp.length === 6) {
+                showLoadingMask();
+                transactionManagementService.UpdateStatusIBA({ id: idDetails, action: action, otp: otp }).then(function (result) {
+                    if (result.STATUSCODE === "000000") {
+                        $("#otpDialog").modal('toggle');
+                        $("#modelSuccess").modal({ backdrop: 'static', keyboard: false });
+                        $("#btnClose").attr("onclick", "commonFunction.Back()");
+                        $("#resulfTrans").html(VIB.LocalizeString.CancleTransSuccess);
+                        // Util.ShowSuccessMessage(result.MESSAGE);
+                    } else {
+                        Util.SetOTPErrorMessage(true, VIB.LocalizeString.IncorrectOTP);
+                    }
+                });
+            } else {
+                Util.SetOTPErrorMessage(true, VIB.LocalizeString.InvalidOTP);
+                return;
+            }
+        });
+        $('.close').click(function () {
+            transactionManagementIBA.GetOTPIBA();
+        });
+        $('#btnGetOTP').click(function () {
+            transactionManagementService.GetOTPIBA().done(function (result) {
+                $("#btnGetOTP").hide();
+                Util.ShowSuccessMessage(result);
+            });
+        });
+    },
+
+    ShowHideModalEdit: function (event) {
+        $('div[data-target="update1"]').toggle();
+        $('div[data-target="update2"]').toggle();
+        $('.modal[data-in="edit-modal"]').toggle();
+        $('.content-modal,.verify-section .in-otp').toggle();
+        $("#btnBack").toggle();
+        $("#btnUpdateTrans").toggle();
+        $("#btnDestroyTrans").toggle();
+        $("#btnSaveUpdateTrans").toggle();
+        $('#infoUpdate').toggle();
+        uiFunction.ShowDatePickerExp();
+        uiFunction.UploadFile();
+        uiFunction.ScrollToEdit();
+    },
+
+    SortTable: function () {
+        $('th.sort').each(function () {
+            $("#dateTrans").click(function () {
+                return sortModule = "DATETRANS";
+            });
+            $("#status").click(function () {
+                return sortModule = "STATUS";
+            });
+            $("#totalAmount").click(function () {
+                return sortModule = "TOTALAMOUNT";
+            });
+            $("#nameService").click(function () {
+                return sortModule = "NAMESERVICE";
+            });
+            $(this).click(function () {
+                var parent = $(this).parent('tr');
+                parent.find('th.sort').not(this).removeClass('dsc asc');
+                $("#transList").html("");
+                if ($(this).hasClass('dsc')) {
+                    $(this).removeClass('dsc').addClass('asc');
+                    switch (sortModule) {
+                        case sortModules.dateTrans:
+                            listsSorted = transactionManagementIBA.SortListByDateFieldDSC(listFilter);
+                            break;
+                        case sortModules.status:
+                            listsSorted = transactionManagementIBA.SortByStatusASC(listFilter);
+                            break;
+                        case sortModules.totalAmount:
+                            listsSorted = transactionManagementIBA.SortByTotalAmountASC(listFilter);
+                            break;
+                        case sortModules.nameService:
+                            listsSorted = transactionManagementIBA.SortByAccNameASC(listFilter);
+                            break;
+                    }
+                } else {
+                    $(this).addClass('dsc').removeClass('asc');
+                    switch (sortModule) {
+                        case sortModules.dateTrans:
+                            listsSorted = transactionManagementIBA.SortListByDateFieldASC(listFilter);
+                            break;
+                        case sortModules.status:
+                            listsSorted = transactionManagementIBA.SortByStatusDSC(listFilter);
+                            break;
+                        case sortModules.totalAmount:
+                            listsSorted = transactionManagementIBA.SortByTotalAmountDSC(listFilter);
+                            break;
+                        case sortModules.nameService:
+                            listsSorted = transactionManagementIBA.SortByAccNameDSC(listFilter);
+                            break;
+                    }
+                }
+                $("#TransactionManagementIBA").tmpl({ DATA: listsSorted }).appendTo($("#transList"));
+            });
+        });
+    },
+
+    SortByStatusDSC: function (lists) {
+        listsSorted = lists.sort(function (a, b) {
+            var x = a.status.toLowerCase(), y = b.status.toLowerCase();
+            if (x < y) return -1;
+            if (x > y) return 1;
+            return 0;
+        });
+        return listsSorted;
+    },
+
+    SortByStatusASC: function (lists) {
+        listsSorted = lists.sort(function (a, b) {
+            var x = a.status.toLowerCase(), y = b.status.toLowerCase();
+            if (x < y) return 1;
+            if (x > y) return -1;
+            return 0;
+        });
+        return listsSorted;
+    },
+
+    SortListByDateFieldASC: function (lists) {
+        listSorted = lists.sort(function (a, b) {
+            var dateBefor = commonFunction.ConvertDateEnglish(a.trandate).split('/').reverse().join(),
+                dateAfter = commonFunction.ConvertDateEnglish(b.trandate).split('/').reverse().join();
+            return dateBefor > dateAfter ? -1 : (dateBefor < dateAfter ? 1 : 0);
+        });
+        return listSorted;
+    },
+    SortListByDateFieldDSC: function (lists) {
+        listSorted = lists.sort(function (a, b) {
+            var dateBefor = commonFunction.ConvertDateEnglish(a.trandate).split('/').reverse().join(),
+                dateAfter = commonFunction.ConvertDateEnglish(b.trandate).split('/').reverse().join();
+            return dateBefor > dateAfter ? 1 : (dateBefor < dateAfter ? -1 : 0);
+        });
+        return listSorted;
+    },
+
+    SortByTotalAmountASC: function (lists) {
+        listsSorted = lists.sort(function (a, b) {
+            var x = b.amount.split(" ", 1)[0].split(",").join("");
+            var y = a.amount.split(" ", 1)[0].split(",").join("");
+            return x - y;
+        });
+        return listsSorted;
+    },
+
+    SortByTotalAmountDSC: function (lists) {
+        listsSorted = lists.sort(function (a, b) {
+            var x = a.amount.split(" ", 1)[0].split(",").join("");
+            var y = b.amount.split(" ", 1)[0].split(",").join("");
+            return x - y;
+        });
+        return listsSorted;
+    },
+
+    SortByAccNameDSC: function (lists) {
+        listsSorted = lists.sort(function (a, b) {
+            var x = a.toacctname.toLowerCase(), y = b.toacctname.toLowerCase();
+            if (x < y) return -1;
+            if (x > y) return 1;
+            return 0;
+        });
+        return listsSorted;
+    },
+
+    SortByAccNameASC: function (lists) {
+        listsSorted = lists.sort(function (a, b) {
+            var x = a.toacctname.toLowerCase(), y = b.toacctname.toLowerCase();
+            if (x < y) return 1;
+            if (x > y) return -1;
+            return 0;
+        });
+        return listsSorted;
+    },
+};
+var transDetail = {};
+var EXTFILE = 'pdf, jpg, jpeg, png, bmp, xls, xlsx, doc, docx';
+
+var docName = '';
+function validDocument() {
+    var fileSize = VIB.LocalizeString.CONFIG_FILESIZE;
+    var idValid = true;
+    docName = '';
+    $('input[type=file]').each(function () {
+        var file = $(this)[0].files[0];
+        docName += $(this).val() || $("#hidden" + $(this).attr('id')).val();
+        if (file) {
+            if (file.size > fileSize * 1024 * 1024) {
+                Util.ShowErrorMessage(VIB.LocalizeString.ERR_FILETOOBIG);
+                idValid = false;
+            } else {
+                var ext = /[^.]+$/.exec(file.name)[0];
+                var fileName = file.name.replace("." + ext, '');
+                if (ext && EXTFILE.indexOf(ext.toLowerCase()) == -1) {
+                    Util.ShowErrorMessage(VIB.LocalizeString.ERR_FILEFORMAT);
+                    idValid = false;
+                }
+            }
+        }
+    });
+    return idValid;
+}
+
+function changeDate(e) {
+    var dateStr = $(e).val();
+    var purposeId = $(e).attr('data-value');
+    $("#err_expiredDate" + purposeId).hide();
+    if (($("#" + purposeId).val() != '' || $("#hidden" + purposeId).val() != '') && dateStr == '') {
+        $("#err_expiredDate" + purposeId).html(VIB.LocalizeString.ERR_EXPIREDATEBLANK).show();
+    } else {
+        var now = new Date();
+        var month = now.getMonth();
+        now.setMonth(month + 1);
+        var expiredStr = dateStr.split('/');
+        var expiredDate = new Date(expiredStr[2], expiredStr[1], expiredStr[0]);
+        if (now.getTime() > expiredDate.getTime()) {
+            $("#err_expiredDate" + purposeId).html(VIB.LocalizeString.ERR_EXPIREDATENOTVALID).show();
+        }
+    }
+}
+
+function changeFile(e) {
+    var fileSize = VIB.LocalizeString.CONFIG_FILESIZE;
+    var file = $(e)[0].files[0];
+    docName += $(e).val() || $("#hidden" + $(e).attr('id')).val();
+    if (file) {
+        if (file.size > fileSize * 1024 * 1024) {
+            Util.ShowErrorMessage(VIB.LocalizeString.ERR_FILETOOBIG);
+        } else {
+            var ext = /[^.]+$/.exec(file.name)[0];
+            var fileName = file.name.replace("." + ext, '');
+            if (ext && EXTFILE.indexOf(ext.toLowerCase()) == -1) {
+                Util.ShowErrorMessage(VIB.LocalizeString.ERR_FILEFORMAT);
+            }
+        }
+    }
+}
+
+function validDocExpiredDate() {
+    var valid = true;
+    $('.datepicker-vs3').each(function () {
+        var dateStr = $(this).val();
+        var purposeId = $(this).attr('data-value');
+        if (!purposeId) {
+            return;
+        }
+        $("#err_expiredDate" + purposeId).hide();
+        if (($("#" + purposeId).val() != '' || $("#hidden" + purposeId).val() != '') && dateStr == '') {
+            $("#err_expiredDate" + purposeId).html(VIB.LocalizeString.ERR_EXPIREDATEBLANK).show();
+            valid = false;
+        } else {
+            var now = new Date();
+            var month = now.getMonth();
+            now.setMonth(month + 1);
+            var expiredStr = dateStr.split('/');
+            var expiredDate = new Date(expiredStr[2], expiredStr[1], expiredStr[0]);
+            if (now.getTime() > expiredDate.getTime()) {
+                $("#err_expiredDate" + purposeId).html(VIB.LocalizeString.ERR_EXPIREDATENOTVALID).show();
+                valid = false;
+            }
+        }
+    });
+    return valid;
+}
+
+var arrDelete = '';
+function updateTrans() {
+    var v1 = validDocument();
+    var v2 = validDocExpiredDate();
+    if (docName == '') {
+        Util.ShowErrorMessage(VIB.LocalizeString.ERR_ATTACKFILEBLANK);
+        return;
+    }
+
+    if (v1 && v2) {
+        action = 'UPDATE';
+        var otpData = {
+            IsPopup: true,
+        }
+        $("#otp").html('');
+        $("#otpTemplate").tmpl(otpData).appendTo($("#otp"));
+        $("#otpDialog").modal();
+        $("#btnSubmitOTP").attr("disabled", false);
+        Util.RegisterOTPEvent();
+        transactionManagementIBA.GetOTPUpdate();
+        $("#btnGetOTP").show();
+        $('#infoMessageModal').on('hidden.bs.modal', function (e) {
+            $("#txtOtp1").focus();
+        });
+    }
+}
+
+////////----------------------------------------------COMMON FUNCTION
+var commonFunction = {
+    ConvertDateEnglish: function (s) {
+        var months = { Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06', Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12' };
+        return s.replace(/^(..)-(...)-(....)$/, (_, d, m, y) => [d, months[m], y].join('/'));
+    },
+
+    OnChangeInputFilter: function () {
+        if (!$("#fromDate").val() && !$("#toDate").val()) {
+            Util.SetFieldErrorMessage('fromDate', VIB.LocalizeString.Filter_Error_Trans);
+            Util.SetFieldErrorMessage('toDate', VIB.LocalizeString.Filter_Error_Trans);
+            return null;
+        } else {
+            Util.SetFieldErrorMessage("fromDate");
+            Util.SetFieldErrorMessage("toDate");
+        }
+        if (!$("#fromDate").val()) {
+            Util.SetFieldErrorMessage('fromDate', VIB.LocalizeString.Filter_Error_Trans);
+            return null;
+        } else {
+            Util.SetFieldErrorMessage("fromDate");
+        }
+        if (!$("#toDate").val()) {
+            Util.SetFieldErrorMessage('toDate', VIB.LocalizeString.Filter_Error_Trans);
+            return null;
+        } else {
+            Util.SetFieldErrorMessage("toDate");
+        }
+    },
+
+    ResetErrorFilter: function () {
+        Util.SetFieldErrorMessage("fromDate");
+        Util.SetFieldErrorMessage("toDate");
+    },
+
+    FilterListByDateRanger: function () {
+        var listResult = {};
+        commonFunction.OnChangeInputFilter();
+        $("#fromDate").change(function () {
+            if (!$("#fromDate").val()) {
+                Util.SetFieldErrorMessage('fromDate', VIB.LocalizeString.Filter_Error_Trans);
+                return null;
+            } else {
+                Util.SetFieldErrorMessage("fromDate");
+            }
+        });
+        $("#toDate").change(function () {
+            if (!$("#toDate").val()) {
+                Util.SetFieldErrorMessage('toDate', VIB.LocalizeString.Filter_Error_Trans);
+                return null;
+            } else {
+                Util.SetFieldErrorMessage("toDate");
+            }
+        });
+        var fromDate = $("#fromDate").val();
+        var toDate = $("#toDate").val();
+        if (fromDate == "" || toDate == "") {
+            return null;
+        }
+        if (moment(fromDate, "DD/MM/YYYY").format('YYYY-MM-DD') <= moment(toDate, "DD/MM/YYYY").format('YYYY-MM-DD')) {
+            $("#infoFilter").show();
+            $("#fromDateSelected").text(fromDate);
+            $("#toDateSelected").text(toDate);
+            switch (moduleTrans) {
+                case moduleTransactions.bulk:
+                    listResult = commonFunction.FilterRanger(transactionManagementBulk.DATA_BULK, fromDate, toDate, moduleTrans);
+                    listFilter = listResult;
+                    // $("#ListTransBulk").remove();
+                    $("#emptyTransactionManagementTemplate").hide();
+                    uiFunction.ClearContentChangeTab();
+                    if (listResult.length > 0) {
+                        $("#TransactionManagementBulkTemplate").tmpl({ DATA: listResult }).appendTo($("#transList"));
+                    } else {
+                        $("#emptyTransactionManagementTemplate").show();
+                    }
+                    break;
+                case moduleTransactions.schedule:
+                    listResult = commonFunction.FilterRanger(transactionManagementSchedule.DATA_SCHEDULE, fromDate, toDate, moduleTrans);
+                    listFilter = listResult;
+                    // $("#ListTransBulk").remove();
+                    $("#emptyTransactionManagementTemplate").hide();
+                    uiFunction.ClearContentChangeTab();
+                    if (listResult.length > 0) {
+                        $("#TransactionManagementSchedule").tmpl({ DATA: listResult }).appendTo($("#transList"));
+                    } else {
+                        $("#emptyTransactionManagementTemplate").show();
+                    }
+                    break;
+                case moduleTransactions.payanyone:
+                    listResult = commonFunction.FilterRanger(transactionManagementPayAnyOne.DATA_PAYANYONE, fromDate, toDate, moduleTrans);
+                    listFilter = listResult;
+                    // $("#ListTransBulk").remove();
+                    $("#emptyTransactionManagementTemplate").hide();
+                    uiFunction.ClearContentChangeTab();
+                    if (listResult.length > 0) {
+                        $("#TransactionManagementPayAnyOne").tmpl({ DATA: listResult }).appendTo($("#transList"));
+                    } else {
+                        $("#emptyTransactionManagementTemplate").show();
+                    }
+                    break;
+                case moduleTransactions.iba:
+                    listResult = commonFunction.FilterRanger(transactionManagementIBA.DATA_IBA, fromDate, toDate, moduleTrans);
+                    listFilter = listResult;
+                    // $("#ListTransBulk").remove();
+                    $("#emptyTransactionManagementTemplate").hide();
+                    uiFunction.ClearContentChangeTab();
+                    if (listResult.length > 0) {
+                        $("#TransactionManagementIBA").tmpl({ DATA: listResult }).appendTo($("#transList"));
+                    } else {
+                        $("#emptyTransactionManagementTemplate").show();
+                    }
+                    break;
+            }
+        } else {
+            Util.ShowErrorMessage("Ngày bắt đầu phải trước ngày kết thúc");
+            return null;
+        }
+    },
+
+    FilterRanger: function (lists, fromDate, toDate, moduleTrans) {
+        var dtnow = new Date();
+        var startDate = moment(fromDate, "DD/MM/YYYY").format('YYYY-MM-DD');
+        var endDate = moment(toDate, "DD/MM/YYYY").format('YYYY-MM-DD');
+        var resultDate = moment(dtnow, "DD/MM/YYYY").format('YYYY-MM-DD');
+        var listRangerFiltered = lists.filter(function (list) {
+            switch (moduleTrans) {
+                case moduleTransactions.bulk:
+                    resultDate = moment(list.trandate, "DD/MM/YYYY").format('YYYY-MM-DD');
+                    break;
+                case moduleTransactions.schedule:
+                    resultDate = moment(list.createddate, "DD/MM/YYYY").format('YYYY-MM-DD');
+                    break;
+                case moduleTransactions.payanyone:
+                    resultDate = moment(list.createddate, "DD/MM/YYYY").format('YYYY-MM-DD');
+                    break;
+                case moduleTransactions.iba:
+                    resultDate = moment(list.trandate, "DD/MM/YYYY").format('YYYY-MM-DD');
+                    break;
+            }
+            return resultDate >= startDate && resultDate <= endDate;
+        });
+        return listRangerFiltered;
+    },
+
+    FilterDeleteDateRanger: function () {
+        $("#infoFilter").hide();
+        $("#fromDate").val("");
+        $("#toDate").val("");
+        // $("#ListTransBulk").remove();
+        uiFunction.ClearContentChangeTab();
+        commonFunction.ResetErrorFilter();
+        $("#emptyTransactionManagementTemplate").hide();
+        switch (moduleTrans) {
+            case moduleTransactions.bulk:
+                $("#TransactionManagementBulkTemplate").tmpl({ DATA: transactionManagementBulk.DATA_BULK }).appendTo($("#transList"));
+                break;
+            case moduleTransactions.schedule:
+                $("#TransactionManagementSchedule").tmpl({ DATA: transactionManagementSchedule.DATA_SCHEDULE }).appendTo($("#transList"));
+                break;
+            case moduleTransactions.payanyone:
+                $("#TransactionManagementPayAnyOne").tmpl({ DATA: transactionManagementPayAnyOne.DATA_PAYANYONE }).appendTo($("#transList"));
+                break;
+            case moduleTransactions.iba:
+                $("#TransactionManagementIBA").tmpl({ DATA: transactionManagementIBA.DATA_IBA }).appendTo($("#transList"));
+                break;
+        }
+    },
+
+    SortByTotalAmountASC: function (lists) {
+        listsSorted = lists.sort(function (a, b) {
+            var x = b.totalamount.split(" ", 1)[0].split(",").join("");
+            var y = a.totalamount.split(" ", 1)[0].split(",").join("");
+            return x - y;
+        });
+        return listsSorted;
+    },
+
+    SortByTotalAmountDSC: function (lists) {
+        listsSorted = lists.sort(function (a, b) {
+            var x = a.totalamount.split(" ", 1)[0].split(",").join("");
+            var y = b.totalamount.split(" ", 1)[0].split(",").join("");
+            return x - y;
+        });
+        return listsSorted;
+    },
+
+    SortListByDateFieldOfPayAnyOneASC: function (list) {
+        listSorted = list.sort(function (a, b) {
+            var dateBefor = a.createddate.split('/').reverse().join(),
+                dateAfter = b.createddate.split('/').reverse().join();
+            return dateBefor > dateAfter ? -1 : (dateBefor < dateAfter ? 1 : 0);
+        });
+        return listSorted;
+    },
+
+    SumAmount: function (a, b) {
+        var num1 = Number(a.split(" ", 1)[0].split(",").join("")),
+            num2 = Number(b.split(" ", 1)[0].split(",").join(""));
+        var sum = num1 + num2;
+        return sum;
+    },
+
+    Back: function () {
+        $("#transactionContent").show();
+        $(".slide-parent").hide();
+        if (moduleTrans === moduleTransactions.bulk) {
+            transactionManagementBulk.ShowListTransactionBulk();
+        }
+        if (moduleTrans === moduleTransactions.schedule) {
+            transactionManagementSchedule.ShowListTransactionSchedule();
+        }
+        if (moduleTrans === moduleTransactions.payanyone) {
+            transactionManagementPayAnyOne.ShowListTransactionPayAnyOne();
+        }
+        if (moduleTrans === moduleTransactions.iba) {
+            transactionManagementIBA.ShowListTransactionIBA();
+        }
+    },
+
+    filterActive: function (e) {
+    },
+
+    //Excel
+    ExportExcel: function (module) {
+        var wb = XLSX.utils.book_new();
+        wb.Props = {
+            Title: "",
+            Subject: "",
+            Author: "VIB",
+            CreatedDate: new Date()
+        };
+        wb.SheetNames.push("Sheet1");
+        var transactionList = listDataExelFilter;
+        if (transactionList.length <= 0) {
+            Util.ShowErrorMessage('Không có dữ liệu trong bảng để xuất ra');
+            return;
+        }
+        var exportData = [];
+        transactionList.forEach(function (element) {
+            if (module == "LBA") {
+                var attribute = {};
+                attribute[VIB.LocalizeString.STT] = element.stt;
+                attribute[VIB.LocalizeString.ToAcct] = element.toacctno;
+                attribute[VIB.LocalizeString.ToAcctName] = element.toacctname;
+                attribute[VIB.LocalizeString.Amount] = Number(element.amount.split(";").join(""));// element.amount;
+                attribute[VIB.LocalizeString.Status] = element.status;
+                attribute[VIB.LocalizeString.Description] = element.transdesc;
+                attribute[VIB.LocalizeString.TransType1] = element.transfermethod;
+                attribute[VIB.LocalizeString.Bank] = element.bankname;
+                attribute[VIB.LocalizeString.Branch] = element.bankbranchname;
+                attribute[VIB.LocalizeString.City] = element.bankstate;
+
+                exportData.push(attribute);
+            } else {
+                var attribute = {};
+                attribute[VIB.LocalizeString.STT] = element.stt;
+                attribute[VIB.LocalizeString.ToAcct] = element.toacctno;
+                attribute[VIB.LocalizeString.ToAcctName] = element.toacctname;
+                attribute[VIB.LocalizeString.Amount] = element.amount;
+                attribute[VIB.LocalizeString.Status] = element.status;
+                attribute[VIB.LocalizeString.Description] = element.transdesc;
+
+                exportData.push(attribute);
+            }
+        });
+
+        var ws = XLSX.utils.json_to_sheet(exportData, { startRowNo: 5, raw: true });
+        var info = listData.DATA.filter(function (i) { return i.id === IdDetails })[0];
+        ws['B1'] = {
+            t: "s",
+            v: VIB.LocalizeString.Page_Title,
+            s: {
+                font: {
+                    bold: true
+                },
+                alignment: {
+                    horizontal: "center"
+                }
+            }
+        };
+
+        ws['B2'] = {
+            t: "s",
+            v: VIB.LocalizeString.TransNo,
+            s: {
+                alignment: {
+                    horizontal: "left"
+                }
+            }
+        };
+        ws['C2'] = {
+            t: "s",
+            v: info.tranid,
+            s: {
+                alignment: {
+                    horizontal: "left"
+                }
+            }
+        };
+        ws['B3'] = {
+            t: "s",
+            v: VIB.LocalizeString.TotalTrans,
+            s: {
+                alignment: {
+                    horizontal: "left"
+                }
+            }
+        };
+        ws['C3'] = {
+            t: "s",
+            v: info.numberoftransaction,
+            s: {
+                alignment: {
+                    horizontal: "left"
+                }
+            }
+        };
+        ws['B4'] = {
+            t: "s",
+            v: VIB.LocalizeString.TransType,
+            s: {
+                alignment: {
+                    horizontal: "left"
+                }
+            }
+        };
+        ws['C4'] = {
+            t: "s",
+            v: info.servicename,
+            s: {
+                alignment: {
+                    horizontal: "left"
+                }
+            }
+        };
+        var headerStyle = {
+            font: {
+                bold: true
+            },
+            alignment: {
+                horizontal: "center"
+            }
+        };
+
+        ws['A6'].s = headerStyle;
+        ws['B6'].s = headerStyle;
+        ws['C6'].s = headerStyle;
+        ws['D6'].s = headerStyle;
+        ws['E6'].s = headerStyle;
+        ws['F6'].s = headerStyle;
+        if (module == "LBA") {
+
+            ws['G6'].s = headerStyle;
+            ws['H6'].s = headerStyle;
+            ws['I6'].s = headerStyle;
+            ws['J6'].s = headerStyle;
+        }
+
+        var borderStyle = {
+            top: {
+                style: "thin",
+                color: { rgb: "FF000000" }
+            },
+            bottom: {
+                style: "thin",
+                color: { rgb: "FF000000" }
+            },
+            left: {
+                style: "thin",
+                color: { rgb: "FF000000" }
+            },
+            right: {
+                style: "thin",
+                color: { rgb: "FF000000" }
+            }
+        }
+        ws['A6'].s.border = borderStyle;
+
+        var index = 6;
+        while (ws["A" + index]) {
+            ws["A" + index].s = {
+                border: borderStyle
+            }
+            ws["B" + index].s = {
+                border: borderStyle
+            }
+            ws["C" + index].s = {
+                border: borderStyle
+            }
+            ws["D" + index].s = {
+                border: borderStyle
+            }
+            ws["D" + index].t = "n";
+            ws["D" + index].s = {
+                numFmt: "#,###",
+                border: borderStyle
+            }
+
+            ws["E" + index].s = {
+                border: borderStyle
+            }
+            ws["F" + index].s = {
+                border: borderStyle
+            }
+            if (module == "LBA") {
+                ws["G" + index].s = {
+                    border: borderStyle
+                }
+                ws["H" + index].s = {
+                    border: borderStyle
+                }
+                ws["I" + index].s = {
+                    border: borderStyle
+                }
+                ws["J" + index].s = {
+                    border: borderStyle
+                }
+            }
+
+            index++;
+        }
+
+        // Merge
+        var merge = [
+            { s: { r: 0, c: 1 }, e: { r: 0, c: 2 } }
+            // { s: { r: 1, c: 0 }, e: { r: 1, c: 3 } },
+            // { s: { r: 2, c: 0 }, e: { r: 2, c: 3 } },
+            // { s: { r: 3, c: 0 }, e: { r: 3, c: 3 } }
+        ];
+        ws["!merges"] = merge;
+        // Column 
+        var wscols = [];
+        if (module == "LBA") {
+            wscols = [
+                { wch: 10 },
+                { wch: 30 },
+                { wch: 30 },
+                { wch: 15 },
+                { wch: 20 },
+                { wch: 50 },
+                { wch: 20 },
+                { wch: 40 },
+                { wch: 20 },
+                { wch: 20 },
+
+            ];
+        } else {
+            wscols = [
+                { wch: 10 },
+                { wch: 30 },
+                { wch: 30 },
+                { wch: 15 },
+                { wch: 20 },
+                { wch: 20 }
+
+            ];
+
+        }
+
+        ws['!cols'] = wscols;
+
+        wb.Sheets["Sheet1"] = ws;
+        var wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+        saveAs(new Blob([commonFunction.S2ab(wbout)], { type: "application/octet-stream" }), 'bulk_manager.xlsx');
+    },
+
+    S2ab: function (s) {
+        var buf = new ArrayBuffer(s.length);
+        var view = new Uint8Array(buf);
+        for (var i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xFF;
+        return buf;
+    },
+}
+
+/////////----------------------------------------------UI FUNCTION
+//Change Tab
+var uiFunction = {
+    //click tab clear content
+    ClearContentChangeTab: function () {
+        $("#transList").html("");
+    },
+
+    ShowHideModalEdit: function (event) {
+        $('.modal[data-in="edit-modal"]').toggle();
+        $('.content-modal,.verify-section .in-otp').toggle();
+    },
+
+    //Datepicker
+    ShowDatePicker: function () {
+        $('input.datepicker-vs3').each(function () {
+            var $thisElem = $(this);
+            var $container = $(this).parents('.form-group');
+            var date = new Date();
+            $thisElem.datepicker({
+                orientation: "top",
+                format: "dd/mm/yyyy",
+                endDate: date,
+                autoclose: true,
+                todayHighlight: true,
+                container: $container,
+                weekStart: 1,
+            });
+        });
+        $(function () {
+            $('.dropdown-menu').on("click", function (e) {
+                e.stopPropagation();
+            });
+            $('.dropdown-menu a[data-toggle=modal]').click(function (e) {
+                e.preventDefault();
+                $('#example').modal('show');
+            });
+            $('.close.dropdown-toggle').click(function () {
+                $(this).parents('.dropdown-keep-open').find('button.dropdown-toggle').dropdown('toggle')
+            });
+            $('.dropdown-menu #btnFilterCommon').click(function () {
+                if ($("#fromDate").val() && $("#toDate").val()) {
+                    $(this).parents('.dropdown-keep-open').find('button.dropdown-toggle').dropdown('toggle')
+                }
+            });
+        });
+    },
+
+    UploadFile: function () {
+        $('.file-name .del').off("click").on("click", function () {
+            $(this).parents('.Uploadbtn').children('.file-name').hide();
+            $(this).parents('.Uploadbtn').children('.file-name').find('p').html("");
+            $(this).parents('.Uploadbtn').children('.attach-upload').find('.txtUpload').html(VIB.LocalizeString.W_CHONFILE).show();
+            var id = $(this).attr('data-id');
+            $("#" + id).val('');//delete file
+            $("#hidden" + id).val('');
+            arrDelete += id + ';';
+        });
+        $('.Uploadbtn input[type=file]').on('change', function (event) {
+            var parent = $(this).parents('.Uploadbtn');
+            var x = $($(this).val().match(/([^\/\\]+)$/)).get(1);
+            if (typeof x === 'undefined') {
+                return false;
+            } else {
+                $(this).parents('.Uploadbtn').children('.file-name').show();
+                $(this).parents('.Uploadbtn').children('.file-name').find('p').html(x);
+                $(this).parents('.Uploadbtn').children('.attach-upload').find('.txtUpload').hide();
+            }
+        });
+    },
+
+    ShowDatePickerExp: function () {
+        $('input.datepicker-vs3').each(function () {
+            var $thisElem = $(this);
+            var $container = $(this).parents('.form-group');
+            var date = new Date();
+            $thisElem.datepicker({
+                orientation: "top",
+                format: "dd/mm/yyyy",
+                startDate: date,
+                autoclose: true,
+                todayHighlight: true,
+                container: $container,
+                weekStart: 1,
+            }).off("show").on('show', function (e) {
+                var datepick = $('.datepicker');
+                if (datepick.height() > 0) {
+                    DateHeightViewPort(datepick);
+                }
+            }).off("hide").on('hide', function (ev) {
+                $('.right-content').attr("style", "");
+            });
+        });
+
+        $(function () {
+            $('.dropdown-menu').on("click", function (e) {
+                e.stopPropagation();
+            });
+            $('.dropdown-menu a[data-toggle=modal]').click(function (e) {
+                e.preventDefault();
+                $('#example').modal('show');
+            });
+            // $('.dropdown-menu button').click(function () {
+            //     $(this).parents('.dropdown-keep-open').find('button.dropdown-toggle').dropdown('toggle')
+            // });
+        });
+    },
+    SlidePanel: function () {
+        // $('.slide-parent').css('min-height',$('.right-content').height());
+        $('.slide-parent .slide-panel').css({ 'min-height': $('.right-content').height(), 'height': $('.right-content').height(), 'overflow': 'hidden' });
+        $('#slide').click(function () {
+            var hidden = $('.slide-panel');
+            hidden.animate({ "right": "0px" }, "fast").addClass('visible');
+            $('.slide-parent').addClass('active');
+        });
+        $('#back-slide').click(function () {
+            var hidden = $('.slide-panel');
+            hidden.animate({ "right": "-1000px" }, "fast");
+            $('.slide-parent').removeClass('active');
+        });
+        $('.btn-slide').click(function () {
+            var hidden = $('.slide-panel');
+
+
+            if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent)) {
+                if ($(this).get(0).hasAttribute("data-panel")) {
+                    $('.slide-parent .slide-panel').css({ 'height': $('.right-content').height(), 'overflow': 'hidden', 'visibility': 'hidden', 'position': 'absolute' });
+                    $('#' + $(this).attr('data-panel')).css({ 'height': 'auto', 'overflow': 'inherit', 'visibility': 'visible', 'position': 'relative' });
+                } else {
+                    $('.slide-parent .slide-panel').css({ 'height': 'auto', 'overflow': 'inherit', 'visibility': 'visible', 'position': 'relative' });
+                }
+
+            } else {
+                if ($(this).get(0).hasAttribute("data-panel")) {
+                    $('.slide-parent .slide-panel').css({ 'height': $('.right-content').height(), 'overflow': 'hidden', 'position': 'absolute', 'right': '-130%' });
+                    $('#' + $(this).attr('data-panel')).animate({ "right": "0px" }, "fast");
+                    $('#' + $(this).attr('data-panel')).css({ 'height': 'auto', 'overflow': 'inherit', 'position': 'relative' });
+                } else {
+                    $('.slide-parent .slide-panel').css({ 'height': 'auto', 'overflow': 'inherit', 'position': 'relative' });
+                    $('.slide-parent .slide-panel').animate({ "right": "0px" }, "fast");
+                }
+            }
+            // hidden.animate({"right":"0px"}, "fast").addClass('visible');
+            $('.slide-parent').addClass('active');
+
+        });
+        $('.back-slide').click(function () {
+            var hidden = $('.slide-panel');
+            $('.slide-parent').removeClass('active');
+            if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent)) {
+                $('.slide-parent .slide-panel').css({ 'height': 'auto', 'overflow': 'hidden', 'visibility': 'hidden', 'position': 'absolute' });
+            } else {
+
+                $('.slide-parent .slide-panel').css({ 'height': 'auto', 'overflow': 'hidden', 'position': 'absolute' });
+                $('.slide-parent .slide-panel').animate({ "right": -130 + "%" }, "fast");
+            }
+        });
+    },
+
+    TooltipFunc: function () {
+        $(".tooltip-parent .tooltip-normal.tooltip--bottom").each(function () {
+            var widhtTooltip = $(this).width();
+            if (widhtTooltip >= 90) {
+                $(this).css({ "white-space": 'normal', "max-width": "120px", "min-width": "95px" });
+            }
+
+        });
+        $(".tooltip-parent .tooltip-normal.tooltip--left,.tooltip-parent .tooltip-normal.tooltip--right,.tooltip-parent .tooltip-normal.tooltip--left--top,.tooltip-parent .tooltip-normal.tooltip--right--top").each(function () {
+            var widhtTooltip = $(this).width();
+            if (widhtTooltip >= 400) {
+                var postooltip = $(this).parent('.tooltip-parent').offset().left + 500;
+                var postpa = $('.content').width() + 160;
+                var unit = (470 - (postooltip - postpa)) + 'px';
+                if (postooltip > postpa) {
+                    $(this).css({ "white-space": 'normal', "width": unit, "text-align": "left" });
+                } else {
+                    $(this).css({ "white-space": 'normal', "width": "500px", "text-align": "left" });
+                }
+
+            }
+
+        });
+        $(".tooltip-parent-click").on("click", function (e) {
+            if ($(e.target).is("a")) {
+                return;
+            }
+            e.preventDefault();
+            $(".tooltip-parent-click").not(this).children(".tooltip-normal").hide();
+            $(this).children(".tooltip-normal").toggle();
+        });
+
+        $(document).on('click', function (evt) {
+            if ($(evt.target).closest(".tooltip-parent-click").length === 0) {
+                $(".tooltip-parent-click .tooltip-normal").hide();
+            }
+        });
+    },
+
+    DetectDevice: function () {
+        if (navigator.platform.toUpperCase().indexOf('MAC') >= 0) {
+            $('.slide-parent').addClass('ios');
+        }
+    },
+
+    ShowDetailTransferBulk: function () {
+        // lich su giao dich
+        $('tr[data-toggle="toggle-border"]').click(function () {
+            if ($(this).hasClass("toogle-style2")) {
+                $(this).closest('.infomation-transaction').siblings().find('.hide').hide();
+                $(this).closest(".infomation-transaction").siblings().removeClass("toogle-border");
+                $(this).parents(".labels").show();
+                $(this).parents(".labels").toggleClass("toogle-style2-active");
+                $('tr[data-toggle="toggle-border"]').not(this).parents(".labels").removeClass("toogle-style2-active");
+            }
+            else {
+                $(this).parents(".labels").toggle();
+            }
+            $(this).parents().next('.hide').toggle();
+            $(this).closest(".infomation-transaction").toggleClass("toogle-border");
+        });
+        $(function () {
+            $('.dropdown-menu').on("click", function (e) {
+                e.stopPropagation();
+            });
+            $('.dropdown-menu a[data-toggle=modal]').click(function (e) {
+                e.preventDefault();
+                $('#example').modal('show');
+            });
+            $('.dropdown-menu button').click(function () {
+                $(this).parents('.dropdown-keep-open').find('button.dropdown-toggle').dropdown('toggle')
+            });
+
+        });
+
+        // card carousel
+        $(function () {
+            var total = $('#ad-card .carousel-item').length;
+            if (total > 1) {
+                var currentIndex = $('#ad-card .carousel-item.active').index() + 1;
+                $('#ad-card .num').html(currentIndex + " / <span class='light-grey'>  " + total + "</span>");
+
+                // This triggers after each slide change
+                $('#ad-card').on('slid.bs.carousel', function () {
+                    currentIndex = $('#ad-card .carousel-item.active').index() + 1;
+
+                    // Now display this wherever you want
+                    $('#ad-card .num').html(currentIndex + " / <span class='light-grey'>  " + total + "</span>");
+                });
+
+                $('#ad-card .carousel').carousel({
+                    wrap: true,
+                    pause: true,
+                });
+            }
+            else {
+                $('#ad-card .carousel-bottom').hide();
+            }
+
+        });
+    },
+
+    ScrollToEdit() {
+        $(window).scrollTop($('#ssModifyTrans').offset().top);
+    }
+}

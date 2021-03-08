@@ -1,0 +1,1828 @@
+﻿var transferService = function () {
+    var sf = null;
+    var transferControllerVBIA = null;
+    var transferControllerVIBCard = null;
+    var transferControllerMobile = null;
+    var accountControllerAccount = null;
+    var transferControllerOTP = null;
+    var userController = null;
+    var transferControllerInvestment = null;
+    var transferControlerLBA = null;
+    var transferControllerFastTransfer = null;
+    var benController = null;
+    var systemService = null;
+    var transferController = null;
+    var benTransferController = null;
+    var _isFunction = function (_var) {
+        return typeof _var === 'function'
+    };
+    var init = function (moduleId) {
+        sf = $.ServicesFramework(moduleId);
+        transferControllerVBIA = sf.getServiceRoot('TransferController') + 'VIBA/';
+        transferControllerVIBCard = sf.getServiceRoot('TransferController') + 'VIBCard/';
+        transferControllerMobile = sf.getServiceRoot('TransferController') + 'Mobile/';
+        transferControllerPayAnyOne = sf.getServiceRoot('TransferController') + 'PayAnyOne/';
+        transferControllerOTP = sf.getServiceRoot('TransferController') + 'OTP/';
+        accountControllerAccount = sf.getServiceRoot('AccountController') + 'Account/';
+        transferControllerInvestment = sf.getServiceRoot('TransferController') + 'Stock/';
+        transferControlerLBA = sf.getServiceRoot('TransferController') + 'LBA/';
+        transferControllerFastTransfer = sf.getServiceRoot('TransferController') + 'FastTransfer/';
+        userController = sf.getServiceRoot('UserController') + 'User/';
+        transferControllerBulkVIB = sf.getServiceRoot('TransferController') + 'BulkVIBA/';
+        transferControllerLBABulkVIB = sf.getServiceRoot('TransferController') + 'BulkLBA/';
+        benController = sf.getServiceRoot('BenController') + 'Ben/';
+        systemService = sf.getServiceRoot('SystemController');
+        transferController = sf.getServiceRoot('TransferController');
+        benTransferController = sf.getServiceRoot('BenController') + 'Transfer/';
+    };
+    var uploadfileLBulkVIB = function (file) {
+        var deferred = $.Deferred();
+        var formData = new FormData();
+        formData.append('upfile', file);
+
+        $.ajax({
+            type: "POST",
+            url: transferControllerLBABulkVIB + "UploadFile",
+            beforeSend: sf.setModuleHeaders,
+            data: formData,
+            contentType: false,
+            processData: false,
+            global: false
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+          //  LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+    var submitLBulkVIB = function (acctNo) {
+        var deferred = $.Deferred();
+        var data = {
+            fromacctno: acctNo
+        };
+        $.ajax({
+            type: "POST",
+            url: transferControllerLBABulkVIB + "Submit",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+           // LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+    
+    var removeAccountLBulkVIB = function (tempid) {
+        var deferred = $.Deferred();
+        var dataPost = {
+            tempid: tempid
+        };
+        $.ajax({
+           // contentType: 'application/json',
+            type: "POST",
+            url: transferControllerLBABulkVIB + "RemoveAccount",
+            beforeSend: sf.setModuleHeaders,
+            data: dataPost
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+          //  LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+    var addAccountLBulkVIB = function (tempid,amount,acctno,acctname,transfermethod,bankcode,bankname,statecode,branchcode,branchname,description ) {
+        var deferred = $.Deferred();
+        var dataPost = {
+            tempid: tempid,
+            acctno:acctno,
+            acctname:acctname,
+            transfermethod:transfermethod,
+            bankcode:bankcode,
+            bankname:bankname,
+            state:statecode,
+            branchcode:branchcode,
+            branchname:branchname,
+            amount:amount,
+            description:description
+
+        };
+        $.ajax({
+           // contentType: 'application/json',
+            type: "POST",
+            url: transferControllerLBABulkVIB + "AddAccount",
+            beforeSend: sf.setModuleHeaders,
+            data: dataPost
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+           
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+    
+    var retryValidate = function () {
+        var deferred = $.Deferred();
+       
+        $.ajax({
+            type: "GET",
+            url: transferControllerLBABulkVIB + "RetryValidate",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+           // LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+    var getOTPLBulkVIB = function () {
+        var deferred = $.Deferred();
+       
+        $.ajax({
+            type: "GET",
+            url: transferControllerLBABulkVIB + "GetOTP",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+           // LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+    var confirmOTPLBulkVIB = function (otpinput) {
+        var deferred = $.Deferred();
+        var data = {
+            otp: otpinput
+        };
+        $.ajax({
+            type: "POST",
+            url: transferControllerLBABulkVIB + "ConfirmOTP",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+    var clearSessionLBULK = function (otpinput) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: transferControllerLBABulkVIB + "ClearSession",
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+
+    var uploadfileBulkVIB = function (file) {
+        var deferred = $.Deferred();
+        var formData = new FormData();
+        formData.append('upfile', file);
+
+        $.ajax({
+            type: "POST",
+            url: transferControllerBulkVIB + "UploadFile",
+            beforeSend: sf.setModuleHeaders,
+            data: formData,
+            contentType: false,
+            processData: false,
+            global: false
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+    var submitBulkVIB = function (acctNo) {
+        var deferred = $.Deferred();
+        var data = {
+            fromacctno: acctNo
+        };
+        $.ajax({
+            type: "POST",
+            url: transferControllerBulkVIB + "Submit",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+
+    var addAccountBulkVIB = function (acctNo, arrytrans) {
+        var deferred = $.Deferred();
+        var dataPost = {
+            fromacctno: acctNo,
+            listtrans: arrytrans
+        };
+        $.ajax({
+            // contentType: 'application/json',
+            type: "POST",
+            url: transferControllerBulkVIB + "AddAccount",
+            beforeSend: sf.setModuleHeaders,
+            data: dataPost
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+    var getOTPBulkVIB = function () {
+        var deferred = $.Deferred();
+
+        $.ajax({
+            type: "GET",
+            url: transferControllerBulkVIB + "GetOTP",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            Util.ShowSuccessMessage(result);
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+    var confirmOTPBulkVIB = function (otpinput) {
+        var deferred = $.Deferred();
+        var data = {
+            otp: otpinput
+        };
+        $.ajax({
+            type: "POST",
+            url: transferControllerBulkVIB + "ConfirmOTP",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+
+
+    var getEbankLimit = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: userController + "EbankLimit",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+        return deferred.promise();
+
+    };
+    var getVIBAAccount = function (acctNo, toAcctFromBen, benId) {
+        var deferred = $.Deferred();
+        var data = {
+            acctno: acctNo
+        };
+        if (toAcctFromBen && benId) {
+            data.toacctfromben = toAcctFromBen;
+            data.benid = benId;
+        }
+        $.ajax({
+            type: "POST",
+            url: transferControllerVBIA + "GetAccount",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+
+    var getInvestmentAccount = function (acctNo, isFromBen) {
+        var deferred = $.Deferred();
+        var data = {};
+        if (isFromBen) {
+            data = {
+                benid: acctNo,
+                acctno: "",
+                toacctfromben: "Y"
+            };
+        } else {
+            data = {
+                acctno: acctNo,
+                toacctfromben: "N"
+            };
+        }
+        $.ajax({
+            type: "GET",
+            url: transferControllerInvestment + "AccountInfo",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            console.log(result);
+            deferred.resolve(result);
+        }).fail(function (error) {
+            console.log(error);
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+
+
+    var getVIBCardInfo = function (cardNo, toAcctFromBen, benId) {
+        var deferred = $.Deferred();
+        var data = {
+            cardno: cardNo
+        };
+        if (toAcctFromBen && benId) {
+            data.toacctfromben = toAcctFromBen;
+            data.benid = benId;
+        }
+        $.ajax({
+            type: "POST",
+            url: transferControllerVIBCard + "GetCardInfo",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+    var getMobileAccountInfo = function (mobile) {
+        var deferred = $.Deferred();
+        var data = {
+            mobile: mobile
+        };
+        $.ajax({
+            type: "POST",
+            url: transferControllerMobile + "CheckMobile",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+    var getAccountForTransfer = function (module) {
+        var deferred = $.Deferred();
+        var result = JSON.parse(sessionStorage.getItem("ACCOUNT_" + module));
+        if (result) {
+            return deferred.resolve(result).promise();
+        }
+        var data = {
+            module: module
+        };
+        $.ajax({
+            type: "GET",
+            url: accountControllerAccount + "AccountForTransfer",
+            beforeSend: sf.setModuleHeaders,
+            global: false,
+            data: data
+        }).done(function (result) {
+            sessionStorage.setItem("ACCOUNT_" + module, JSON.stringify(result));
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+
+    // Validate
+    var validateTransferViaVIBA = function (fromAcctNo, toAcctNo, amount, description, addBen, scheduleType, scheduleDate, scheduleRegularFreq, scheduleRegularEndType, scheduleRegularEndValue) {
+        var deferred = $.Deferred();
+        var data = {
+            fromacctno: fromAcctNo,
+            toacctno: toAcctNo,
+            amount: amount,
+            description: description,
+            addben: addBen ? "Y" : "N",
+            scheduletype: scheduleType,
+            scheduledate: scheduleDate,
+            scheduleregularfreq: scheduleRegularFreq,
+            scheduleregularendtype: scheduleRegularEndType,
+            scheduleregularendvalue: scheduleRegularEndValue,
+        };
+        $.ajax({
+            type: "POST",
+            url: transferControllerVBIA + "Validate",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+    var validateMobileTransferViaVIBA = function (fromAcctNo, toMobile, amount, description, addBen, scheduleType, scheduleDate, scheduleRegularFreq, scheduleRegularEndType, scheduleRegularEndValue) {
+        var deferred = $.Deferred();
+        var data = {
+            fromacctno: fromAcctNo,
+            tomobile: toMobile,
+            amount: amount,
+            description: description,
+            addben: addBen ? "Y" : "N",
+            scheduletype: scheduleType,
+            scheduledate: scheduleDate,
+            scheduleregularfreq: scheduleRegularFreq,
+            scheduleregularendtype: scheduleRegularEndType,
+            scheduleregularendvalue: scheduleRegularEndValue,
+        };
+        $.ajax({
+            type: "POST",
+            url: transferControllerMobile + "Validate",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+    var validateCardTransferViaVIBA = function (fromAcctNo, toCardNo, amount, description, addBen, scheduleType, scheduleDate, scheduleRegularFreq, scheduleRegularEndType, scheduleRegularEndValue, toAcctFromBen, benId) {
+        var deferred = $.Deferred();
+        var data = {
+            fromacctno: fromAcctNo,
+            tocardno: toCardNo,
+            amount: amount,
+            description: description,
+            addben: addBen ? "Y" : "N",
+            scheduletype: scheduleType,
+            scheduledate: scheduleDate,
+            scheduleregularfreq: scheduleRegularFreq,
+            scheduleregularendtype: scheduleRegularEndType,
+            scheduleregularendvalue: scheduleRegularEndValue,
+            toacctfromben: toAcctFromBen,
+            benid: benId
+        };
+        $.ajax({
+            type: "POST",
+            url: transferControllerVIBCard + "Validate",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+    var validatePayAnyOne = function (data) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            url: transferControllerPayAnyOne + "Validate",
+            beforeSend: sf.setModuleHeaders,
+            data: data,
+            dataType: 'json',
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    }
+
+    var submitPayAnyOne = function (otp) {
+        var deferred = $.Deferred();
+        var data = {
+            otp: otp
+        };
+        $.ajax({
+            type: "POST",
+            url: transferControllerPayAnyOne + "Submit",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    }
+
+    var validateTransferViaInvestment = function (fromAcctNo, toAcctNo, amount, description, addBen, scheduleType, scheduleDate, scheduleRegularFreq, scheduleRegularEndType, scheduleRegularEndValue) {
+        var deferred = $.Deferred();
+        var data = {
+            fromacctno: fromAcctNo,
+            toacctno: toAcctNo,
+            amount: amount,
+            description: description,
+            addben: addBen ? "Y" : "N",
+            scheduletype: scheduleType,
+            scheduledate: scheduleDate,
+            scheduleregularfreq: scheduleRegularFreq,
+            scheduleregularendtype: scheduleRegularEndType,
+            scheduleregularendvalue: scheduleRegularEndValue,
+        };
+        $.ajax({
+            type: "POST",
+            url: transferControllerInvestment + "Validate",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+
+    // Submit
+    var submitVIBAccount = function (otp) {
+        var deferred = $.Deferred();
+        var data = {
+            otp: otp
+        };
+        $.ajax({
+            type: "POST",
+            url: transferControllerVBIA + "Submit",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+    var submitVIBMobile = function (otp) {
+        var deferred = $.Deferred();
+        var data = {
+            otp: otp
+        };
+        $.ajax({
+            type: "POST",
+            url: transferControllerMobile + "Submit",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+    var submitVIBCard = function (otp) {
+        var deferred = $.Deferred();
+        var data = {
+            otp: otp
+        };
+        $.ajax({
+            type: "POST",
+            url: transferControllerVIBCard + "Submit",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+
+    var submitInvestmentAccount = function (otp) {
+        var deferred = $.Deferred();
+        var data = {
+            otp: otp
+        };
+        $.ajax({
+            type: "POST",
+            url: transferControllerInvestment + "Submit",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    }
+    // OTP
+    var getOTP = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: transferControllerOTP + "GetOTP",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            Util.ShowSuccessMessage(result);
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+
+    var getExchangeRate = function (fromAcctNo, toAcctNo, amount) {
+        var deferred = $.Deferred();
+        var data = {
+            fromacctno: fromAcctNo,
+            toacctno: toAcctNo,
+            amount: amount
+        }
+        $.ajax({
+            type: "GET",
+            url: transferControllerVBIA + "ExchangeRate",
+            data: data,
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+
+    var getLBABankList = function () {
+        var deferred = $.Deferred();
+        // Check BankList on session
+        var bankList = JSON.parse(sessionStorage.getItem('LBABankList'));
+        if (bankList) {
+            deferred.resolve(bankList);
+            return deferred.promise();
+        }
+        $.ajax({
+            type: "GET",
+            url: transferControlerLBA + "BankList",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            sessionStorage.setItem('LBABankList', JSON.stringify(result));
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+    var getLBAStateList = function () {
+        var deferred = $.Deferred();
+        // Check StateList on session
+        var stateList = JSON.parse(sessionStorage.getItem('StateList'));
+        if (stateList) {
+            deferred.resolve(stateList);
+            return deferred.promise();
+        }
+        $.ajax({
+            type: "GET",
+            url: transferControlerLBA + "State",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            sessionStorage.setItem('StateList', JSON.stringify(result));
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+
+    var getLBAExtBranchList = function (bankCode, state) {
+        var deferred = $.Deferred();
+        var data = {
+            bankcode: bankCode,
+            state: state
+        }
+        $.ajax({
+            type: "GET",
+            url: transferControlerLBA + "ExtBranch",
+            data: data,
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+
+    var validateTransferViaLBA = function (fromAcctNo, toAcctNo, toAcctName, bankCode, bankName, state, branchCode, branchName, amount, description, addBen, scheduleType, scheduleDate, scheduleRegularFreq, scheduleRegularEndType, scheduleRegularEndValue,_benid) {
+        var deferred = $.Deferred();
+        var _toacctfromben=false;
+        if(_benid){
+           _toacctfromben=true; 
+        }else{
+            _benid="";
+        }
+        var data = {
+            fromacctno: fromAcctNo,
+            toacctno: toAcctNo,
+            toacctname: toAcctName,
+            bankcode: bankCode,
+            bankname: bankName,
+            state: state,
+            branchcode: branchCode,
+            branchname: branchName,
+            amount: amount,
+            description: description,
+            addben: addBen ? "Y" : "N",
+            toacctfromben:_toacctfromben,
+            benid: _benid,
+            scheduletype: scheduleType,
+            scheduledate: scheduleDate,
+            scheduleregularfreq: scheduleRegularFreq,
+            scheduleregularendtype: scheduleRegularEndType,
+            scheduleregularendvalue: scheduleRegularEndValue,
+        };
+        $.ajax({
+            type: "POST",
+            url: transferControlerLBA + "Validate",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+
+    var submitLBA = function (otp) {
+        var deferred = $.Deferred();
+        var data = {
+            otp: otp
+        };
+        $.ajax({
+            type: "POST",
+            url: transferControlerLBA + "Submit",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+
+    
+    var getFastTransferAccountInfoBen = function (id) {
+        var deferred = $.Deferred();
+        var data = {
+            toacctfromben: true,
+            benid: id
+        }
+        $.ajax({
+            type: "POST",
+            url: transferControllerFastTransfer + "GetAccountInfo",
+            data: data,
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+
+    var getFastTransferAccountInfo = function (acctNo, bankCode) {
+        var deferred = $.Deferred();
+        var data = {
+            acctno: acctNo,
+            bankcode: bankCode
+        }
+        $.ajax({
+            type: "POST",
+            url: transferControllerFastTransfer + "GetAccountInfo",
+            data: data,
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+
+    var fastTransferAccountValidate = function (fromAcctNo, toAcctNo, bankCode, amount, description, addBen,_benid) {
+        var deferred = $.Deferred();
+        var _toacctfromben=false;
+        if(_benid){
+           _toacctfromben=true; 
+        }else{
+            _benid="";
+        }
+        var data = {
+            fromacctno: fromAcctNo,
+            toacctno: toAcctNo,
+            bankcode: bankCode,
+            amount: amount,
+            toacctfromben : _toacctfromben,
+            benid: _benid,
+            description: description,
+            addben: addBen ? "Y" : "N"
+        }
+        $.ajax({
+            type: "POST",
+            url: transferControllerFastTransfer + "AccountValidate",
+            data: data,
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+
+    var fastTransferAccountSubmit = function (otp) {
+        var deferred = $.Deferred();
+        var data = {
+            otp: otp
+        };
+        $.ajax({
+            type: "POST",
+            url: transferControllerFastTransfer + "AccountSubmit",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+
+    var getOTPInvestment = function (otp) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: transferControllerInvestment + "GetOTP",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            Util.ShowSuccessMessage(result);
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+
+    var submitNapasCardAccount = function (otp) {
+        var deferred = $.Deferred();
+        var data = {
+            otp: otp
+        };
+        $.ajax({
+            type: "POST",
+            url: transferControllerFastTransfer + "CardSubmit",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            console.log(result);
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    }
+
+    var validateTransferViaNapasCard = function (fromAcctNo, toCardtNo, amount, description, addBen) {
+        var deferred = $.Deferred();
+        var data = {
+            fromacctno: fromAcctNo,
+            tocardno: toCardtNo,
+            amount: amount,
+            description: description,
+            addben: addBen ? "Y" : "N",
+        };
+        $.ajax({
+            type: "POST",
+            url: transferControllerFastTransfer + "CardValidate",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            console.log(result);
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+
+    var getNapasCardAccount = function (cardno, toacctfromben, benid) {
+        var deferred = $.Deferred();
+        var data = {
+            cardno: cardno
+        };
+        if(toacctfromben && benid) {
+            data.toacctfromben = toacctfromben;
+            data.benid = benid;
+        }
+        $.ajax({
+            type: "POST",
+            url: transferControllerFastTransfer + "GetCardInfo",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            console.log(error);
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+
+    var getBenDetail = function (id) {
+        var deferred = $.Deferred();
+        var data = {
+            id: id
+        };
+
+        $.ajax({
+            type: "GET",
+            url: benController + "Detail",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            //console.log(result);
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //console.log(error);
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+
+    var getCountry = function () {
+        var deferred = $.Deferred();
+        // Check countryList on session
+        var countryList = JSON.parse(sessionStorage.getItem('CountryList'));
+        if (countryList) {
+            deferred.resolve(countryList);
+            return deferred.promise();
+        }
+        $.ajax({
+            type: "GET",
+            url: systemService + "EOC/Country",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            if (result.STATUSCODE === StatusCode.Successed) {
+                sessionStorage.setItem('CountryList', JSON.stringify(result));
+                deferred.resolve(result);
+            } else {
+                deferred.reject(result);
+            }
+        }).fail(function (error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    var getConfig = function() {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: transferController + "IBA/Config",
+            beforeSend: sf.setModuleHeaders
+        }).done(function(result) {
+            if (result.STATUSCODE === StatusCode.Successed) {
+                deferred.resolve(result);
+            } else {
+                deferred.reject(result);
+            }
+        }).fail(function(error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    var clearIBASession = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: transferController + "IBA/ClearSession",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            if (result.STATUSCODE === StatusCode.Successed) {
+                deferred.resolve(result);
+            } else {
+                deferred.reject(result);
+            }
+        }).fail(function (error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    var getSwift = function(swiftCode, countryCode) {
+        var deferred = $.Deferred();
+        var data = {
+            swiftcode: swiftCode,
+            countrycode: countryCode
+        }
+        $.ajax({
+            type: "GET",
+            url: transferController + "IBA/Swift",
+            data: data,
+            beforeSend: sf.setModuleHeaders
+        }).done(function(result) {
+            if (result.STATUSCODE === StatusCode.Successed) {
+                //for (var i = 0; i < result.DATA.length; i++) {
+                //    result.DATA[i].name = result.DATA[i].name.replace(/\n/ig, '');
+                //}
+                deferred.resolve(result);
+            } else {
+                deferred.reject(result);
+            }
+        }).fail(function(error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    var getIBABankInfo = function (countryCode) {
+        var deferred = $.Deferred();
+        var data = {
+            countrycode: countryCode
+        }
+        $.ajax({
+            type: "GET",
+            url: transferController + "IBA/Swift",
+            data: data,
+            beforeSend: sf.setModuleHeaders
+        }).done(function(result) {
+            if (result.STATUSCODE === StatusCode.Successed) {
+                //for (var i = 0; i < result.DATA.length; i++) {
+                //    result.DATA[i].name = result.DATA[i].name.replace(/\n/ig, '');
+                //}
+                deferred.resolve(result);
+            } else {
+                deferred.reject(result);
+            }
+        }).fail(function(error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    var calcFee = function(fromacctno, tranccy, amount, feeside) {
+        var deferred = $.Deferred();
+        var data = {
+            fromacctno: fromacctno,
+            tranccy: tranccy,
+            amount: amount,
+            feeside: feeside
+        }
+        $.ajax({
+            type: "POST",
+            url: transferController + "IBA/CalcFee",
+            data: data,
+            beforeSend: sf.setModuleHeaders
+        }).done(function(result) {
+            if (result.STATUSCODE === StatusCode.Successed) {
+                deferred.resolve(result);
+            } else {
+                deferred.reject(result);
+            }
+        }).fail(function(error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    var oldDocument = function(purposecode, passportno, invoiceno) {
+        var deferred = $.Deferred();
+        var data = {
+            purposecode: purposecode,
+            passportno: passportno,
+            invoiceno: invoiceno
+        }
+        $.ajax({
+            type: "GET",
+            url: transferController + "IBA/OldDocument",
+            data: data,
+            beforeSend: sf.setModuleHeaders
+        }).done(function(result) {
+            if (result.STATUSCODE === StatusCode.Successed) {
+                deferred.resolve(result);
+            } else {
+                deferred.reject(result);
+            }
+        }).fail(function(error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    var uploadFile = function(file, callback) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            url: transferController + "IBA/UploadFile",
+            data: file,
+            processData: false,
+            contentType: false,
+            beforeSend: sf.setModuleHeaders
+        }).done(function(result) {
+            if (result.STATUSCODE === StatusCode.Successed) {
+                deferred.resolve(result);
+            } else {
+                deferred.reject(result);
+            }
+            _isFunction(callback) ? callback(result) : '';
+        }).fail(function(error) {
+            deferred.reject(error);
+            _isFunction(callback) ? callback(result) : '';
+        });
+        return deferred.promise();
+    };
+
+    var ibaValidate = function(data) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            url: transferController + "IBA/Validate",
+            data: data,
+            beforeSend: sf.setModuleHeaders
+        }).done(function(result) {
+            if (result.STATUSCODE === StatusCode.Successed) {
+                deferred.resolve(result);
+            } else {
+                deferred.reject(result);
+            }
+        }).fail(function(error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    var submitIBA = function(otp) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            url: transferController + "IBA/Submit",
+            data: { otp: otp },
+            beforeSend: sf.setModuleHeaders
+        }).done(function(result) {
+            deferred.resolve(result);
+        }).fail(function(error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    var getBenListAll = function (failcallback) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: benTransferController + "List",
+            beforeSend: sf.setModuleHeaders,
+            data: {}
+        }).done(function (result) {
+            if (result.STATUSCODE === StatusCode.Successed) {
+                deferred.resolve(result);
+            } else {
+                hideLoadingMask();
+                _isFunction(failcallback) ? failcallback(result.MESSAGE) : '';
+            }
+        }).fail(function (error) {
+            deferred.reject();
+            _isFunction(failcallback) ? failcallback(error) : '';
+        });
+
+        return deferred.promise();
+    };
+
+    var deleteBen = function (benids, failcallback) {
+        var deferred = $.Deferred();
+        if (benids.length > 0) {
+            var benObjs = [];
+            var isEmpty = function (_var) {
+                return typeof _var === 'undefined' || _var == null || _var === 'null' || _var === '';
+            };
+            benids.map(function (benid) {
+                if (!isEmpty(benid)) {
+                    benObjs.push({ id: benid });
+                }
+            })
+            if (benids.length > 0) {
+                $.ajax({
+                    type: "POST",
+                    url: benController+"Delete",
+                    beforeSend: sf.setModuleHeaders,
+                    contentType: "application/json",
+                    data: JSON.stringify(benObjs)
+                }).done(function (result) {
+                    if (result.STATUSCODE === StatusCode.Successed) {           
+                        deferred.resolve(result);
+                    } else {
+                        hideLoadingMask();
+                        deferred.resolve(result);
+                    }
+                }).fail(function (error) {
+                    deferred.reject();
+                    _isFunction(failcallback) ? failcallback(error) : '';
+                });
+            } else {
+                deferred.resolve({});
+            }
+        } else {
+            deferred.resolve({});
+        }
+
+        return deferred.promise();
+    };
+
+    var updateBen = function (obj, failcallback) {
+        var deferred = $.Deferred();
+
+        $.ajax({
+            type: "POST",
+            url: benController + "Update",
+            beforeSend: sf.setModuleHeaders,
+            data: obj
+        }).done(function (result) {
+            if (result.STATUSCODE === StatusCode.Successed) {
+                deferred.resolve(result);
+            } else {
+                hideLoadingMask();
+                _isFunction(failcallback) ? failcallback(result.MESSAGE) : '';
+            }
+        }).fail(function (error) {
+            deferred.reject();
+            _isFunction(failcallback) ? failcallback(error) : '';
+        });
+
+        return deferred.promise();
+    };
+
+    var validateForRedirecting = function (benid, moduleid, acctno, failcallback, ignoreErrDlg) {
+        var deferred = $.Deferred();
+        var url = null;
+        switch (moduleid + '') {
+            case 'VIBA':
+                url = transferControllerVBIA+'GetAccount';
+                break;
+            case 'VIBCARD':
+                url = transferControllerVIBCard+'GetCardInfo';
+                break;
+            case 'SMLCARD':
+                url = transferControllerFastTransfer+'GetCardInfo';
+                break;
+            case 'SMLACCT':
+                url = transferControllerFastTransfer+'GetAccountInfo';
+                break;
+            case 'INVESTMENT':
+                url = transferControllerInvestment+'AccountInfo' + '?benid=' + benid + '&toacctfromben=Y' + '&acctno=' + acctno;
+                break;
+        }
+        if (url != null) {
+            $.ajax({
+                type: moduleid === 'INVESTMENT' ? "GET" : "POST",
+                url: url,
+                beforeSend: sf.setModuleHeaders,
+                data: moduleid === 'INVESTMENT' ? {} : { benid: benid, toacctfromben: true }
+            }).done(function (result) {
+                if (result.STATUSCODE === StatusCode.Successed) {
+                    deferred.resolve(result);
+                } else {
+                    hideLoadingMask();
+                    _isFunction(failcallback) ? failcallback(result.MESSAGE) : '';
+                }
+            }).fail(function (error) {
+                //LogUtil.LogRBAjaxError(error);
+                deferred.reject();
+                _isFunction(failcallback) ? failcallback(error) : '';
+            });
+        } else {
+            deferred.resolve(null);
+        }
+        return deferred.promise();
+    };
+
+    var checkBenMobile = function (benid, failcallback, ignoreErrDlg) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: benTransferController+'CheckBenMobile' + "?benid=" + benid,
+            global: false,
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            if (result.STATUSCODE === StatusCode.Successed) {
+                deferred.resolve(result);
+            } else {
+                //_showMsgDlg(result.MESSAGE);
+                hideLoadingMask();
+                _isFunction(failcallback) ? failcallback(result.MESSAGE) : '';
+            }
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+            _isFunction(failcallback) ? failcallback(error) : '';
+        });
+
+        return deferred.promise();
+    };
+
+    var validateBenMOBILE = function (reqObj, failcallback, ignoreErrDlg) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            url: transferControllerMobile+'Validate',
+            beforeSend: sf.setModuleHeaders,
+            global: false,
+            data: reqObj
+        }).done(function (result) {
+            if (result.STATUSCODE === StatusCode.Successed) {
+                deferred.resolve(result);
+            } else {
+                //_showMsgDlg(result.MESSAGE);
+                deferred.resolve(result);
+                hideLoadingMask();
+                _isFunction(failcallback) ? failcallback(result.MESSAGE) : '';
+            } 
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+            _isFunction(failcallback) ? failcallback(error) : '';
+        });
+
+        return deferred.promise();
+    };
+
+    var validateBenPHNO = function (reqObj, failcallback, ignoreErrDlg) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            url: transferControllerPayAnyOne+'Validate',
+            beforeSend: sf.setModuleHeaders,
+            global: false,
+            data: reqObj
+        }).done(function (result) {
+            if (result.STATUSCODE === StatusCode.Successed) {
+                deferred.resolve(result);
+            } else{
+                //_showMsgDlg(result.MESSAGE);
+                deferred.resolve(result);
+                hideLoadingMask();
+                _isFunction(failcallback) ? failcallback(result.MESSAGE) : '';
+            }
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+            _isFunction(failcallback) ? failcallback(error) : '';
+        });
+
+        return deferred.promise();
+    };
+
+    var retryValidateBen = function (failcallback) {
+        var deferred = $.Deferred();
+
+        $.ajax({
+            type: "GET",
+            url: benTransferController+'RetryValidate',
+            beforeSend: sf.setModuleHeaders,
+            global: false,
+            cache: false
+        }).done(function (result) {
+            if (result.STATUSCODE === StatusCode.Successed) {
+                deferred.resolve(result);
+            } else {
+                //_showMsgDlg(result.MESSAGE);
+                //hideLoadingMask();
+                _isFunction(failcallback) ? failcallback(result.MESSAGE) : '';
+            }
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+            _isFunction(failcallback) ? failcallback(error) : '';
+        });
+
+        return deferred.promise();
+    };
+
+    var validateBen = function (benids, failcallback) {
+        var deferred = $.Deferred();
+        var benObjs = [];
+        benids.map(function (benid) {
+            benObjs.push({ id: benid });
+        })
+        $.ajax({
+            type: "POST",
+            url: benTransferController+'Validate',
+            beforeSend: sf.setModuleHeaders,
+            contentType: "application/json",
+            global:false,
+            data: JSON.stringify(benObjs)
+        }).done(function (result) {
+            if (result.STATUSCODE === StatusCode.Successed) {
+                deferred.resolve(result);
+            } else {
+                deferred.resolve(result);
+                //_showMsgDlg(result.MESSAGE);
+                hideLoadingMask();
+                _isFunction(failcallback) ? failcallback(result.MESSAGE) : '';
+            }
+        }).fail(function (error) {
+            console.log(error);
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+            _isFunction(failcallback) ? failcallback(error) : '';
+        });
+
+        return deferred.promise();
+    };
+
+    var getIBABenInfo = function(benId) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: transferController + "IBA/BenInfo",
+            data: { benid: benId },
+            beforeSend: sf.setModuleHeaders
+        }).done(function(result) {
+            if (result.STATUSCODE === StatusCode.Successed) {
+                deferred.resolve(result);
+            } else {
+                deferred.reject(result);
+            }
+        }).fail(function(error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    var removeFile = function(data) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            url: transferController + "IBA/RemoveFile",
+            data: data,
+            beforeSend: sf.setModuleHeaders
+        }).done(function(result) {
+            if (result.STATUSCODE === StatusCode.Successed) {
+                deferred.resolve(result);
+            } else {
+                deferred.reject(result);
+            }
+        }).fail(function(error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    var submitBenMOBILE = function (otp, failcallback, optexpiredcallback, ignoreErrDlg) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            url: transferControllerMobile + 'Submit',
+            beforeSend: sf.setModuleHeaders,
+            data: { otp: otp },
+            global: false
+        }).done(function (result) {
+            if (result.STATUSCODE === StatusCode.Successed) {
+                deferred.resolve(result);
+            } else if (result.ALLOWRETRYOTP) {
+                _isFunction(optexpiredcallback) ? optexpiredcallback(result) : '';
+            } else if (ignoreErrDlg) {
+                //_showMsgDlg(result.MESSAGE);
+                hideLoadingMask();
+                deferred.resolve(result);
+                _isFunction(failcallback) ? failcallback(result.MESSAGE) : '';
+            } else {
+                deferred.resolve(result);
+                _isFunction(failcallback) ? failcallback(result.MESSAGE) : '';
+            }
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+            _isFunction(failcallback) ? failcallback(error) : '';
+        });
+
+        return deferred.promise();
+    };
+
+    var submitBenPHNO = function (otp, failcallback, optexpiredcallback, ignoreErrDlg) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            url: transferControllerPayAnyOne + 'Submit',
+            beforeSend: sf.setModuleHeaders,
+            data: { otp: otp },
+            global: false
+        }).done(function (result) {
+            if (result.STATUSCODE === StatusCode.Successed) {
+                deferred.resolve(result);
+            } else if (result.ALLOWRETRYOTP) {
+                _isFunction(optexpiredcallback) ? optexpiredcallback(result) : '';
+            } else if (!ignoreErrDlg) {
+                deferred.resolve(result);
+                //_showMsgDlg(result.MESSAGE);
+                hideLoadingMask();
+                _isFunction(failcallback) ? failcallback(result.MESSAGE) : '';
+            } else {
+                deferred.resolve(result);
+                _isFunction(failcallback) ? failcallback(result.MESSAGE) : '';
+            }
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+            _isFunction(failcallback) ? failcallback(error) : '';
+        });
+
+        return deferred.promise();
+    };
+
+    var tranSubmit = function (trans, failcallback) {
+        var deferred = $.Deferred();
+
+        $.ajax({
+            type: "POST",
+            url: benTransferController + 'Submit',
+            beforeSend: sf.setModuleHeaders,
+            contentType: "application/json",
+            data: JSON.stringify(trans)
+        }).done(function (result) {
+            if (result.STATUSCODE === StatusCode.Successed) {
+                deferred.resolve(result);
+            } else {
+                deferred.resolve(result);
+                //_showMsgDlg(result.MESSAGE);
+                hideLoadingMask();
+                _isFunction(failcallback) ? failcallback(result.MESSAGE) : '';
+            }
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+            _isFunction(failcallback) ? failcallback(error) : '';
+        });
+
+        return deferred.promise();
+    };
+
+    var checkConfirmOtp = function (otp, failcallback, optexpiredcallback) {
+        var deferred = $.Deferred();
+
+        $.ajax({
+            type: "POST",
+            url: benTransferController+'ConfirmOTP',
+            beforeSend: sf.setModuleHeaders,
+            data: { otp: otp },
+            global: false
+        }).done(function (result) {
+            if (result.STATUSCODE === StatusCode.Successed) {
+                deferred.resolve(result);
+            } else if (result.ALLOWRETRYOTP) {
+                _isFunction(optexpiredcallback) ? optexpiredcallback(result) : '';
+            } else {
+                //_showMsgDlg(result.MESSAGE);
+                deferred.resolve(result);
+                hideLoadingMask();
+                _isFunction(failcallback) ? failcallback(result.MESSAGE) : '';
+            }
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+            _isFunction(failcallback) ? failcallback(error) : '';
+        });
+
+        return deferred.promise();
+    };
+
+    var retryConfirmOtp = function (failcallback) {
+        var deferred = $.Deferred();
+
+        $.ajax({
+            type: "GET",
+            url: benTransferController + 'RetryConfirm',
+            beforeSend: sf.setModuleHeaders,
+            global: false,
+            cache: false
+        }).done(function (result) {
+            if (result.STATUSCODE === StatusCode.Successed) {
+                deferred.resolve(result);
+            } else {
+                //_showMsgDlg(result.MESSAGE);
+                //hideLoadingMask();
+                _isFunction(failcallback) ? failcallback(result.MESSAGE) : '';
+            }
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+            _isFunction(failcallback) ? failcallback(error) : '';
+        });
+
+        return deferred.promise();
+    };
+
+    var getOtpBen = function (failcallback) {
+        var deferred = $.Deferred();
+
+        $.ajax({
+            type: "GET",
+            url: benTransferController + 'GetOTP',
+            beforeSend: sf.setModuleHeaders,
+            cache: false
+        }).done(function (result) {
+            Util.ShowSuccessMessage(result);
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+            _isFunction(failcallback) ? failcallback(error) : '';
+        });
+
+        return deferred.promise();
+    };
+
+    return {
+        Init: init,
+        // GET
+        GetVIBAAccount: getVIBAAccount,
+        GetEbankLimit: getEbankLimit,
+        GetVIBCardInfo: getVIBCardInfo,
+        GetMobileAccountInfo: getMobileAccountInfo,
+        GetAccountForTransfer: getAccountForTransfer,
+        GetInvestmentAccount: getInvestmentAccount,
+        // Validate
+        ValidateAccountTransferViaVIBA: validateTransferViaVIBA,
+        ValidateMobileTransferViaVIBA: validateMobileTransferViaVIBA,
+        ValidateCardTransferViaVIBA: validateCardTransferViaVIBA,
+        ValidateAccountTransferViaInvestment: validateTransferViaInvestment,
+        ValidatePayAnyOne: validatePayAnyOne,
+
+        // Submit
+        SubmitVIBAccount: submitVIBAccount,
+        SubmitVIBMobile: submitVIBMobile,
+        SubmitVIBCard: submitVIBCard,
+
+        SubmitBulkVIB: submitBulkVIB,
+        SubmitInvestmentAccount: submitInvestmentAccount,
+        // Get OTP
+        GetOTP: getOTP,
+        GetOTPBulkVIB: getOTPBulkVIB,
+        //POST
+        UploadfileBulkVIB: uploadfileBulkVIB,
+        ConfirmOTPBulkVIB: confirmOTPBulkVIB,
+        AddAccountBulkVIB: addAccountBulkVIB,
+        GetExchangeRate: getExchangeRate,
+
+        GetOTPInvestment: getOTPInvestment,
+
+        // LBA
+        GetLBABankList: getLBABankList,
+        GetLBAStateList: getLBAStateList,
+        GetLBAExtBranchList: getLBAExtBranchList,
+        ValidateTransferViaLBA: validateTransferViaLBA,
+        SubmitLBA: submitLBA,
+        GetFastTransferAccountInfo: getFastTransferAccountInfo,
+        FastTransferAccountValidate: fastTransferAccountValidate,
+        FastTransferAccountSubmit: fastTransferAccountSubmit,
+
+        // Napas Card
+        GetNapasCardAccount: getNapasCardAccount,
+        ValidateTransferViaNapasCard: validateTransferViaNapasCard,
+        SubmitNapasCardAccount: submitNapasCardAccount,
+
+        // Mobile
+        SubmitPayAnyOne: submitPayAnyOne,
+
+        //BEN
+        GetBenDetail: getBenDetail,
+        GetFastTransferAccountInfoBen: getFastTransferAccountInfoBen,
+        GetBenListAll: getBenListAll,
+        DeleteBen: deleteBen,
+        UpdateBen: updateBen,
+        CheckBenMobile: checkBenMobile,
+        ValidateBenMOBILE: validateBenMOBILE,
+        ValidateBenPHNO: validateBenPHNO,
+        ValidateForRedirecting: validateForRedirecting,
+        SubmitBenPHNO: submitBenPHNO,
+        SubmitBenMOBILE: submitBenMOBILE,
+        ValidateBen: validateBen,
+        RetryValidateBen: retryValidateBen,
+        TranSubmit: tranSubmit,
+        CheckConfirmOtp: checkConfirmOtp,
+        RetryConfirmOtp: retryConfirmOtp,
+        GetOtpBen: getOtpBen,
+
+
+        // IBA
+        GetCountry: getCountry,
+        GetConfig: getConfig,
+        GetSwift: getSwift,
+        GetIBABankInfo: getIBABankInfo,
+        CalcFee: calcFee,
+        OldDocument: oldDocument,
+        UploadFile: uploadFile,
+        IBAValidate: ibaValidate,
+        SubmitIBA: submitIBA,
+        GetIBABenInfo: getIBABenInfo,
+        RemoveFile: removeFile,
+        ClearIBASession: clearIBASession,
+        //LBULK
+        ClearSessionBULK:clearSessionLBULK,
+        RetryValidate: retryValidate,
+        SubmitLBulkVIB: submitLBulkVIB,
+        GetOTPLBulkVIB:getOTPLBulkVIB,
+        UploadfileLBulkVIB: uploadfileLBulkVIB,
+        ConfirmOTPLBulkVIB:confirmOTPLBulkVIB,
+        AddAccountLBulkVIB:addAccountLBulkVIB,
+        RemoveAccountLBulkVIB: removeAccountLBulkVIB,  
+        isFunction: _isFunction,
+
+    };
+}();

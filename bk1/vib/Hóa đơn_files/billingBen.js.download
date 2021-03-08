@@ -1,0 +1,1453 @@
+﻿var otpJSTemplate = "/DesktopModules/MVC/VIB.MVC.Common/Template/OTPJSTemplate2.html?v=1";
+var commonJSTemplate = "/DesktopModules/MVC/VIB.MVC.Common/Template/CommonJSTemplate.html?v=1";
+var subMenuJSTemplate = "/DesktopModules/MVC/VIB.MVC.TopupBilling2/Views/Shared/Template/BillingSubmenuTemplate.html?v=1";
+
+var billingBen = {
+    BENID_URL: null,
+    SUPPLIERID_URL: null,
+    SERVICE_URL: null,
+    DATA_BEN_LIST: {},
+    DATA_SUPPORT: {
+        ListBenChecked: [],
+        ListBenRadio: [],
+        BEN_ID_FROMLIST: null,
+        SERVICE_ID_FROMLIST: null,
+        SUPPLIER_ID_FROMLIST: null,
+        DATA_SERVICE_SINGLE: null,
+        DATA_SUPPLIER_SINGLE: null,
+        INFO_BEN: null,
+        DATA_PAGE_REVIEW: null,
+        DATA_CUSTOMER_PRU: null,
+        TOTAL_AMOUNT: 0,
+        FEE_PRU: {
+            PHI_DINH_KY: false,
+            PHI_HTTT: false,
+            PHI_HTTU: false,
+            PHI_KHAC: false,
+        },
+        DATA_YET: 0,
+        CARD_REPAYMENT: {
+            DATA_INFO_CARD: {}
+        },
+        DATA_BILLING_MULTI: {
+            DATA_BENBULKVALIDATE: [],
+            DATA_MIX: [],
+            COUNT_CHECK_INFO_BEN: [],
+            DATA_FROM_ACCOUNT: null,
+            TOTAL_AMOUNT_ITEM: [],
+            CLICK_BUTTON_DELETE_BENBULK: false,
+            LIST_FROM_ACCOUNT: {},
+            SUM_AMOUNT_LASTEST: 0,
+            DATA_USING_CHECK: [],
+        }
+    },
+    DATA_API_BILLING_LIST: {
+        LIMIT: null,
+        LIMITMESS: null,
+        WARNING: null,
+    },
+    TEXT_CHOOSE_BEN: null,
+    DATA_INPUT_PRU: [],
+    IsHideAmount: false,
+    Init: function (moduleid) {
+        hideLoadingMask();
+        $.when(
+            $.get(otpJSTemplate, function (templates) {
+                $('body').append(templates);
+            }),
+            $.get(commonJSTemplate, function (templates) {
+                $('body').append(templates);
+
+            }),
+            $.get(subMenuJSTemplate, function (templates) {
+                $('body').append(templates);
+            })).then(function () {
+                initAjaxLoading();
+                billingService.Init(moduleid);
+                sessionStorage.setItem("DataBillingList", null);
+
+                var checkSessionStorageBillingList = sessionStorage.getItem("DataBillingList");
+                if (!checkSessionStorageBillingList || checkSessionStorageBillingList === "null") {
+                    billingService.BillingList().then(function (rs) {
+                        billingBen.AccessFirst(rs);
+                        sessionStorage.setItem("DataBillingList", JSON.stringify(rs));
+                    });
+                } else {
+                    billingBen.AccessFirst(JSON.parse(checkSessionStorageBillingList));
+                }
+            });
+    },
+
+    AccessFirst: function (rs) {
+        billingBen.DATA_API_BILLING_LIST.LIMIT = Number(rs.LIMIT);
+        billingBen.DATA_API_BILLING_LIST.LIMITMESS = rs.LIMITMESS;
+        billingBen.DATA_API_BILLING_LIST.WARNING = rs.WARNING;
+        billingBen.DATA_BEN_LIST = rs;
+        $("#leftContent").empty();
+        $("#submenuTemplate").tmpl({ DATA: rs.BENCATE }).appendTo("#leftContent");
+        $("#rightContent").empty();
+        $("#BillingBen").tmpl().appendTo("#rightContent");
+        $("#ListBen").empty();
+
+        rs.BENLIST.map(function (e) {
+            e.nameFilter = removeAccdent(e.name);
+            e.acctidFilter = removeAccdent(e.acctid);
+            e.servicenameFilter = removeAccdent(e.servicename);
+            e.billamountFilter = removeAccdent(e.billamount);
+        })
+
+        var dtType1 = rs.BENLIST.filter(function (x) { return x.type === 1 });
+        var dtType2 = rs.BENLIST.filter(function (x) { return x.type === 2 });
+        var dataRender = {
+            DATA_TYPE1: dtType1,
+            DATA_TYPE2: dtType2,
+            WARNING: billingBen.DATA_API_BILLING_LIST.WARNING,
+            TOTAL_TYPE_1: dtType1.length,
+            TOTAL_TYPE_2: dtType2.length,
+        }
+        $("#BillingBenManagementTemplate").tmpl(dataRender).appendTo("#ListBen");
+        $("#FooterTemplate").empty();
+        $("#FooterListBen").tmpl().appendTo("#FooterTemplate");
+        billingBen.BENID_URL = Util.GetQueryString("bendid");
+        billingBen.SERVICE_URL = Util.GetQueryString("serviceid");
+        billingBen.SUPPLIERID_URL = Util.GetQueryString("supplierid");
+        if (!billingBen.SERVICE_URL) {
+            $("#leftContent .submenu .menu-item:first-child").addClass('active');
+        }
+        $(".menu-item").click(function () {
+            showLoadingMask();
+            var type = Number($(this).attr('type-value'));
+            if (type === 0) {
+                location.href = location.href.replace('hoadonmoi', 'danhba');
+                //danhba
+            } else if (type === 1) {
+                location.href = location.href.replace('danhba', 'hoadonmoi');
+                //hoadon
+            } else {
+                location.href = location.href.replace('danhba', 'thetindung');
+                //dunothetindung
+            }
+        })
+        scrollViewport();
+
+        // Check user dang ky online va co HM = 0
+        if (rbSkinPageV2.WarningRegisterOnline()) {
+            // disable all control
+            disableControl();
+            return;
+        }
+    },
+
+    BackToAny: function (type) {
+        $("#FooterTemplate").empty();
+        switch (type) {
+            case 'LIST':
+                $("#leftContent").show();
+                $("#InputBillingBen").hide();
+                $("#ListBen").show();
+                $("#FooterListBen").tmpl().appendTo("#FooterTemplate");
+                $("#FooterTemplate .absolute-button-bottom div:first-child").show().text(billingBen.TEXT_CHOOSE_BEN);
+                scrollViewport();
+                Util.ScrollTop();
+                break;
+            case 'REVIEW':
+                $("#InputBillingBen").show();
+                $("#ReviewBillingBen").hide();
+                $("#FooterInputBillingBen").tmpl().appendTo("#FooterTemplate");
+                scrollViewport();
+                Util.ScrollTop();
+                break;
+            case 'INPUT_MULTI':
+                $("#leftContent").show();
+                $("#InputBillingBen").show();
+                $("#ReviewBillingBen").hide();
+                $("#FooterTemplate").empty();
+                $("#FooterInputBillingMulti").tmpl().appendTo("#FooterTemplate");
+                scrollViewport();
+                Util.ScrollTop();
+                break;
+            case 'INPUT':
+                $("#leftContent").show();
+                $("#InputBillingBen").show();
+                $("#ReviewBillingBen").hide();
+                $("#FooterTemplate").empty();
+                $("#FooterInputBillingBen").tmpl().appendTo("#FooterTemplate");
+                scrollViewport();
+                Util.ScrollTop();
+                break;
+
+            default:
+                break;
+        }
+    },
+
+    NextToAny: function (type) {
+        switch (type) {
+            case 'REVIEW':
+                billingBen.ValidateData();
+                break;
+            case 'RECEIPT':
+                $("#leftContent").hide();
+                billingBen.ConfirmOTP();
+                break;
+            case 'LIST':
+                location.reload();
+                break;
+            case 'REVIEW_BILLING_MULTI':
+                billingBen.BenBulkSubmit();
+                break;
+            case 'RECEIPT_MULTI':
+                $("#leftContent").hide();
+                billingBen.ConfirmOTPBillingBen();
+                break;
+
+            default:
+                break;
+        }
+    },
+
+    ChooseBen: function (element, benId, type) {
+        $("#btnEdit").hide();
+        $("#btnDelete").hide();
+        $("#FooterTemplate .absolute-button-bottom div:first-child").hide();
+        if (type === 1) {
+            $("#ListBen .tbl-opt.type1 tr.disabled-tmp").each(function (i, e) {
+                $(e).removeClass("disabled");
+            });
+            $("input:radio").removeAttr("checked");
+            billingBen.DATA_SUPPORT.ListBenRadio = [];
+            var checkExist = billingBen.DATA_SUPPORT.ListBenChecked.findIndex(function (x) { return x === benId });
+            if (checkExist !== -1) {
+                billingBen.DATA_SUPPORT.ListBenChecked.splice(checkExist, 1);
+                $(element).find("input").prop("checked", false);
+            } else {
+                billingBen.DATA_SUPPORT.ListBenChecked.push(benId);
+                $(element).find("input").prop("checked", true);
+            }
+            if (billingBen.DATA_SUPPORT.ListBenChecked.length === 0) {
+                $("#ListBen .tbl-opt.type2 tr.disabled-tmp").each(function (i, e) {
+                    $(e).removeClass("disabled");
+                });
+            } else {
+                $("#ListBen .tbl-opt.type2 tr.disabled-tmp").each(function (i, e) {
+                    $(e).addClass("disabled");
+                });
+            }
+            if (billingBen.DATA_SUPPORT.ListBenChecked.length > billingBen.DATA_API_BILLING_LIST.LIMIT) {
+                var checkExist2 = billingBen.DATA_SUPPORT.ListBenChecked.findIndex(function (x) { return x === benId });
+                billingBen.DATA_SUPPORT.ListBenChecked.splice(checkExist2, 1);
+                $("#FooterTemplate .absolute-button-bottom div:first-child").show();
+                Util.ShowErrorMessage(billingBen.DATA_API_BILLING_LIST.LIMITMESS);
+                $(element).find("input").prop("checked", !$(element).find("input").prop("checked"));
+                return;
+            }
+            if (billingBen.DATA_SUPPORT.ListBenChecked.length === 1) {
+                var checkCanEdit = billingBen.DATA_BEN_LIST.BENLIST.find(function (x) { return x.id === billingBen.DATA_SUPPORT.ListBenChecked[0] });
+                if (checkCanEdit && checkCanEdit.caneditben) {
+                    $("#btnEdit").show();
+                } else {
+                    $("#btnEdit").hide();
+                }
+            }
+            if (billingBen.DATA_SUPPORT.ListBenChecked.length !== 0) {
+                if (billingBen.DATA_SUPPORT.ListBenChecked.length > billingBen.DATA_API_BILLING_LIST.LIMIT) {
+                    Util.ShowErrorMessage(billingBen.DATA_API_BILLING_LIST.LIMITMESS);
+                    $(element).find("input").prop("checked", !$(element).find("input").prop("checked"));
+                    return;
+                } else {
+                    $("#btnDelete").show();
+                    billingBen.DATA_SUPPORT.ListBenChecked.forEach(function (e) {
+                        var item = billingBen.DATA_BEN_LIST.BENLIST.find(function (x) { return x.id === benId });
+                        if (!item.candeleteben) {
+                            $("#btnDelete").hide();
+                        }
+                    });
+                    billingBen.TEXT_CHOOSE_BEN = String(VIB.LocalizeString.COUNT_SELECTED_BEN).replace('@x', billingBen.DATA_SUPPORT.ListBenChecked.length);
+                    $("#FooterTemplate .absolute-button-bottom div:first-child").show().text(billingBen.TEXT_CHOOSE_BEN);
+                }
+            }
+        } else {
+            $("#ListBen .tbl-opt.type2 tr.disabled-tmp").each(function (i, e) {
+                $(e).removeClass("disabled");
+            });
+            $("#ListBen .tbl-opt.type1 tr.disabled-tmp").each(function (i, e) {
+                $(e).addClass("disabled");
+            });
+            billingBen.DATA_SUPPORT.ListBenChecked = [];
+            $("#ListBen .tbl-opt.type1 input").each(function (i, el) {
+                if ($(el).is(':checked')) {
+                    $(el).removeAttr("checked");
+                }
+            })
+            billingBen.DATA_SUPPORT.ListBenRadio = [];
+            billingBen.DATA_SUPPORT.ListBenRadio.push(benId);
+            $(element).find("input").prop("checked", true);
+            if (billingBen.DATA_SUPPORT.ListBenRadio.length === 1) {
+                var checkCanEdit = billingBen.DATA_BEN_LIST.BENLIST.find(function (x) { return x.id === billingBen.DATA_SUPPORT.ListBenRadio[0] });
+                if (checkCanEdit && checkCanEdit.caneditben) {
+                    $("#btnEdit").show();
+                } else {
+                    $("#btnEdit").hide();
+                }
+            }
+            if (billingBen.DATA_SUPPORT.ListBenRadio.length !== 0) {
+                $("#btnDelete").show();
+                billingBen.DATA_SUPPORT.ListBenRadio.forEach(function (e) {
+                    var item = billingBen.DATA_BEN_LIST.BENLIST.find(function (x) { return x.id === benId });
+                    if (!item.candeleteben) {
+                        $("#btnDelete").hide();
+                    }
+                })
+                billingBen.TEXT_CHOOSE_BEN = String(VIB.LocalizeString.COUNT_SELECTED_BEN).replace('@x', billingBen.DATA_SUPPORT.ListBenRadio.length);
+                $("#FooterTemplate .absolute-button-bottom div:first-child").show().text(billingBen.TEXT_CHOOSE_BEN);
+            }
+        }
+    },
+
+    EditBen: function () {
+        var checkBenInfo = billingBen.DATA_BEN_LIST.BENLIST.find(function (x) { return x.id === billingBen.DATA_SUPPORT.ListBenChecked[0] });
+        $("#Popup").empty();
+        $("#PopupEditBen").tmpl().appendTo("#Popup");
+        $("#PopupEditBen").modal('show');
+        $("#PopupEditBen button").click(function () {
+
+        })
+    },
+
+    DeleteBen: function () {
+        var dataMap = [];
+        billingBen.DATA_SUPPORT.ListBenChecked.map(function (x) {
+            dataMap.push({
+                id: x
+            });
+        });
+        billingBen.DATA_SUPPORT.ListBenRadio.map(function (x) {
+            dataMap.push({
+                id: x
+            });
+        });
+        var mess = null;
+        if (billingBen.DATA_SUPPORT.ListBenChecked.length > 1) {
+            mess = VIB.LocalizeString.ConfirmDeleteMessage1;
+        } else {
+            mess = VIB.LocalizeString.ConfirmDeleteMessage;
+        }
+        $("#Popup").empty();
+        $("#PopupDeleteBen").tmpl({ MESSAGE: mess }).appendTo("#Popup");
+        $("#PopupDeleteBen").modal('show');
+        $("#PopupDeleteBen button#btnDelete").click(function () {
+            billingService.DeleteBen(dataMap).then(function (rs) {
+                if (rs.STATUSCODE === "000000") {
+                    sessionStorage.removeItem("DataBillingList");
+                    Util.ShowSuccessMessage(VIB.LocalizeString.DeleteSuccessMessage);
+                    $("#successMessageModal").click(function () {
+                        location.reload();
+                    });
+                } else {
+                    Util.ShowErrorMessage(rs.MESSAGE);
+                }
+            });
+        })
+    },
+
+    ContinueBillingBen: function () {
+        if (billingBen.DATA_SUPPORT.ListBenChecked.length === 0) {
+            if (billingBen.DATA_SUPPORT.ListBenRadio.length === 0) {
+                Util.ShowErrorMessage(VIB.LocalizeString.ErrorNotSelectedBen);
+                return;
+            }
+        } else if (billingBen.DATA_SUPPORT.ListBenChecked.length > billingBen.DATA_API_BILLING_LIST.LIMIT) {
+            Util.ShowErrorMessage(VIB.LocalizeString.ErrorMaxSelectedBen);
+            return;
+        }
+        if (billingBen.DATA_SUPPORT.ListBenRadio.length === 1) {
+            showLoadingMask();
+            $(document).ajaxStart(function () { }).ajaxStop(function () { });
+            var inforBen = billingBen.DATA_BEN_LIST.BENLIST.find(function (x) { return x.id === billingBen.DATA_SUPPORT.ListBenRadio[0] });
+            var cardserno = billingBen.GetUrlParameter(inforBen.url, 'cardserno');
+            var benIdCurrent = billingBen.GetUrlParameter(inforBen.url, 'bendid');
+            billingService.CardInfo("", benIdCurrent ? true : false, benIdCurrent ? benIdCurrent : "", cardserno ? cardserno : "").then(function (resultCardInfo) {
+                if (resultCardInfo.STATUSCODE === "000000") {
+                    location.href = inforBen.url;
+                } else {
+                    Util.ShowErrorMessage(resultCardInfo.MESSAGE);
+                }
+                hideLoadingMask();
+            });
+        } else if (billingBen.DATA_SUPPORT.ListBenChecked.length === 1) {
+            $(document).ajaxStart(function () { showLoadingMask(); }).ajaxStop(function () { });
+            var inforBen = billingBen.DATA_BEN_LIST.BENLIST.find(function (x) { return x.id === billingBen.DATA_SUPPORT.ListBenChecked[0] });
+            billingBen.DATA_SUPPORT.INFO_BEN = inforBen;
+            billingBen.DATA_SUPPORT.BEN_ID_FROMLIST = inforBen.id;
+            billingBen.DATA_SUPPORT.SERVICE_ID_FROMLIST = inforBen.serviceid;
+            billingBen.DATA_SUPPORT.SUPPLIER_ID_FROMLIST = inforBen.supplierid;
+            billingService.GetBillingBenDetail(billingBen.DATA_SUPPORT.ListBenChecked[0]).then(function (rs) {
+                if (rs.STATUSCODE !== "000000") {
+                    hideLoadingMask();
+                    Util.ShowErrorMessage(rs.MESSAGE);
+                    return;
+                }
+                billingService.GetStateBillingWater().then(function (stateBillingResult) {
+                    if (stateBillingResult.STATUSCODE !== "000000") {
+                        hideLoadingMask();
+                        Util.ShowErrorMessage(stateBillingResult.MESSAGE);
+                        return;
+                    }
+                    var service = stateBillingResult.DATA.filter(function (e) { return e.ServiceId === billingBen.DATA_SUPPORT.SERVICE_ID_FROMLIST });
+                    billingBen.DATA_SUPPORT.DATA_SERVICE_SINGLE = service[0];
+                    if (service.length > 0) {
+                        var supplier = service[0].Supplier.filter(function (e) { return e.SupplierId === billingBen.DATA_SUPPORT.SUPPLIER_ID_FROMLIST });
+                        billingBen.DATA_SUPPORT.DATA_SUPPLIER_SINGLE = supplier[0];
+                        var frombenlist = true;
+                        var accountInfo = null;
+                        if (service[0].isWarter === true) {
+                            accountInfo = billingService.GetBillingWaterAccount(rs.DATA.acctno, billingBen.DATA_SUPPORT.SERVICE_ID_FROMLIST, billingBen.DATA_SUPPORT.SUPPLIER_ID_FROMLIST, frombenlist);
+                        } else if (service[0].isEVN === true) {
+                            accountInfo = billingService.GetBillingEVNAccount(rs.DATA.acctno, frombenlist);
+                        } else if (service[0].isInsurance === true && supplier[0].isPru === true) {
+                            accountInfo = billingService.GetBillingPruAccount(rs.DATA.acctno, "HD", frombenlist);
+                        } else {
+                            accountInfo = billingService.GetBillingWaterAccount(rs.DATA.acctno, billingBen.DATA_SUPPORT.SERVICE_ID_FROMLIST, billingBen.DATA_SUPPORT.SUPPLIER_ID_FROMLIST, frombenlist);
+                        }
+                        $.when(accountInfo).done(function (accountInfoResult) {
+                            if (accountInfoResult.STATUSCODE !== "000000") {
+                                hideLoadingMask();
+                                Util.ShowErrorMessage(accountInfoResult.MESSAGE);
+                                return;
+                            }
+
+
+
+                            billingBen.IsHideAmount = accountInfoResult.DATA.IsHideAmount;
+                            if (accountInfoResult.DATA.IsHideAmount) {
+                                $("#modalHideAmount").modal();
+                                $("#modalHideAmountTitle").text(VIB.LocalizeString.BILLING_ERRORHIDENTAMOUNT);
+                                $("#btnNextInput").click(function () {
+                                    billingBen.showInputBillingBen(accountInfoResult, service, supplier, inforBen);
+                                })
+
+                            } else {
+                                billingBen.showInputBillingBen(accountInfoResult, service, supplier, inforBen);
+                            }
+                           
+                        })
+                    }
+                })
+            })
+        } else {
+            billingBen.BenBulkValidate(billingBen.DATA_SUPPORT.ListBenChecked);
+        }
+    },
+
+    showInputBillingBen: function (accountInfoResult, service, supplier, inforBen) {
+                            $("#ListBen").hide();
+                            $("#InputBillingBen").show();
+                            $("#InputBillingBen").empty();
+                            if (accountInfoResult.DATA.BillInfo)
+                                accountInfoResult.DATA.Bills = accountInfoResult.DATA.BillInfo.Bills;
+                            var totalAmount = 0;
+                            if (supplier[0].isPru) {
+                                totalAmount = accountInfoResult.DATA.Bills[0].BillAmt;
+                                billingBen.DATA_SUPPORT.DATA_CUSTOMER_PRU = accountInfoResult.DATA;
+                            } else {
+                                accountInfoResult.DATA.Bills.forEach(function (x) {
+                                    totalAmount += x.Amount;
+                                })
+                            }
+                            var renderData = {
+                                DATA: accountInfoResult.DATA,
+                                SERVICE: service[0],
+                                IS_PRU: supplier[0].isPru,
+                                TOTAL_AMOUNT: totalAmount,
+                                CCY: CCY_VND,
+                                INFO_BEN: inforBen,
+                                DueDateVisible: accountInfoResult.DATA.Bills[0].DueDateVisible,
+                                DueDate: accountInfoResult.DATA.Bills[0].DueDate,
+                            };
+                            $("#BillingBenFromBenListSingle").tmpl(renderData).appendTo("#InputBillingBen");
+        if (!accountInfoResult.DATA.IsHideAmount) {
+                            Util.SetAmountFormat("totalAmount");
+        }
+
+                            Util.SetAmountFormat("amountOther");
+                            Util.InitAmountControlEvent("amountOther", "amountOther", "ccy");
+                            billingBen.AutoCheckedPhiDK();
+                            var txtAmt = $("#totalAmount").text();
+                            if (String(txtAmt.substr(0, 1)) === "0") {
+                                $("#totalAmount").text(txtAmt.substr(1, txtAmt.length));
+                            }
+                            var txtAmt2 = $("#totalAmount").text();
+                            if (String(txtAmt2.substr(0, 1)) === ",") {
+                                $("#totalAmount").text(txtAmt2.substr(1, txtAmt2.length));
+                            }
+                            $(document).ajaxStart(function () { showLoadingMask(); }).ajaxStop(function () { });
+                            billingService.GetAccountForTransfer("TOPUPBILLING").then(function (getAccountForTransferResult) {
+                                if (getAccountForTransferResult.STATUSCODE === "000000") {
+                $("#fromAccount").empty();
+                                    Util.InitAccountListControl("fromAccList", getAccountForTransferResult, "fromAccount");
+                                    $("#fromAccList .item1:first-child").click();
+                                } else {
+                                    Util.ShowErrorMessage(getAccountForTransferResult.MESSAGE);
+                                }
+                                hideLoadingMask();
+                            });
+                            $("#FooterTemplate").empty();
+                            $("#FooterInputBillingBen").tmpl().appendTo("#FooterTemplate");
+                            scrollViewport();
+    },
+
+    ValidateData: function () {
+        if (String($("#description").attr('is-pass')) === "false") {
+            return;
+        }
+        if ($("#amountOther").parent().parent().parent().find("input").prop("checked")) {
+            var amountCheck = $.trim($("#amountOther").val());
+            if (amountCheck === "") {
+                $("#amountOther").addClass("field-error");
+                $("#amountOther").parent().find(".error").text(VIB.LocalizeString.LBL_SOTIENTRONG).show();
+                return;
+            } else {
+                $("#amountOther").removeClass("field-error");
+                $("#amountOther").parent().find(".error").hide();
+            }
+        }
+        var checkCheckbox = [];
+        $(".checkbox-custom.fee").each(function (i, e) {
+            checkCheckbox.push($(e).prop("checked"));
+        });
+        if (checkCheckbox.length !== 0) {
+            if (checkCheckbox.filter(function (x) { return x === true }).length === 0) {
+                Util.ShowErrorMessage(VIB.LocalizeString.PLEASE_INSERT_FEE);
+                return;
+            }
+        }
+        $(document).ajaxStart(function () { showLoadingMask(); }).ajaxStop(function () { });
+        var dtService = billingBen.DATA_SUPPORT.DATA_SERVICE_SINGLE;
+        var dtSupplier = billingBen.DATA_SUPPORT.DATA_SUPPLIER_SINGLE;
+        var accountId = $("#fromAccount .item1.selected").attr('data-value');
+        var description = $("#description").val();
+        var custId = billingBen.DATA_SUPPORT.INFO_BEN.acctid;
+        var isSave = false;
+        var requestValidate = null;
+        if (dtService.isWarter) {
+            requestValidate = billingService.ValidateBillingWater(custId, isSave, description, accountId);
+        } else if (dtService.isEVN) {
+            requestValidate = billingService.ValidateBillingEVN(custId, isSave, description, accountId);
+        } else if (dtService.isInsurance && dtSupplier.isPru) {
+            if (!Number($("#totalAmount").attr('data-value'))) {
+                Util.ShowErrorMessage(VIB.LocalizeString.LBL_SOTIENTRONG);
+                return;
+            }
+            var amount = Number($("#totalAmount").attr('data-value'));
+            var isPayPhiDK = billingBen.DATA_SUPPORT.FEE_PRU.PHI_DINH_KY;
+            var isPayPhiHTTD = billingBen.DATA_SUPPORT.FEE_PRU.PHI_HTTT;
+            var isPayPhiTamUng = billingBen.DATA_SUPPORT.FEE_PRU.PHI_HTTU;
+            var isPayPhiKhac = billingBen.DATA_SUPPORT.FEE_PRU.PHI_KHAC;
+            requestValidate = billingService.ValidateBillingPru(custId, isSave, description, accountId, amount, isPayPhiDK, isPayPhiHTTD, isPayPhiTamUng, isPayPhiKhac);
+        } else {
+            requestValidate = billingService.ValidateBillingWater(custId, isSave, description, accountId);
+        }
+        $.when(requestValidate).done(function (requestValidateResult) {
+            if (requestValidateResult.STATUSCODE !== "000000") {
+                Util.ShowErrorMessage(requestValidateResult.MESSAGE);
+            } else {
+                $("#leftContent").hide();
+                billingBen.DATA_SUPPORT.DATA_PAGE_REVIEW = requestValidateResult.DATA;
+                $("#InputBillingBen").hide();
+                $("#ReviewBillingBen").empty().show();
+                requestValidateResult.DATA.IsHideAmount = billingBen.IsHideAmount; 
+                $("#BillingBenReview").tmpl(requestValidateResult.DATA).appendTo("#ReviewBillingBen");
+                var userInfo = JSON.parse(sessionStorage.getItem('UserInfo'));
+                if (userInfo) {
+                    var renderData = {
+                        IsPopup: false,
+                    }
+                    $("#otpTemplate").tmpl(renderData).appendTo("#otpContent");
+                    $('#btnGetOTP').click(function () {
+                        var requestGetOTP = null;
+                        if (dtService.isWarter) {
+                            requestGetOTP = billingService.GetOTPBillingWater();
+                        } else if (dtService.isEVN) {
+                            requestGetOTP = billingService.GetOTPBillingEVN();
+                        } else if (dtService.isInsurance && dtSupplier.isPru) {
+                            requestGetOTP = billingService.GetOTPBillingPru();
+                        } else {
+                            requestGetOTP = billingService.GetOTPBillingWater();
+                        }
+                        $.when(requestGetOTP).done();
+                    });
+                    Util.RegisterOTPEvent();
+                }
+                $("#FooterTemplate").empty();
+                $("#FooterReviewBillingBen").tmpl().appendTo("#FooterTemplate");
+                scrollViewport();
+                Util.ScrollTop();
+            }
+            hideLoadingMask();
+        })
+    },
+
+    ConfirmOTP: function () {
+        var otp = $('#txtOtp1').val() + $('#txtOtp2').val() + $('#txtOtp3').val() + $('#txtOtp4').val() + $('#txtOtp5').val() + $('#txtOtp6').val();
+        if (otp.length != 6) {
+            Util.SetOTPErrorMessage(true, VIB.LocalizeString.LBL_EMPTY_OTP);
+            billingBen.InitOTP();
+            return;
+        }
+        var dtService = billingBen.DATA_SUPPORT.DATA_SERVICE_SINGLE;
+        var requestSubmitOTP = null;
+        if (dtService.isWarter) {
+            requestSubmitOTP = billingService.SubmitOTPBillingWater(otp);
+        } else if (dtService.isEVN) {
+            requestSubmitOTP = billingService.SubmitOTPBillingEVN(otp);
+        } else if (dtService.isInsurance && billingBen.DATA_SUPPORT.DATA_SUPPLIER_SINGLE.isPru) {
+            requestSubmitOTP = billingService.SubmitOTPBillingPru(otp);
+        } else {
+            requestSubmitOTP = billingService.SubmitOTPBillingWater(otp);
+        }
+        $.when(requestSubmitOTP).done(function (requestSubmitOTPResult) {
+            if (requestSubmitOTPResult.STATUSCODE === "000000") {
+                clearAccountForTransferData();
+                $('#ReviewBillingBen').hide();
+                $("#ReceiptBillingBen").empty().show();
+                requestSubmitOTPResult.DATA.IsHideAmount = billingBen.IsHideAmount; 
+                $("#BillingBenReceipt").tmpl(requestSubmitOTPResult.DATA).appendTo("#ReceiptBillingBen");
+                $("#FooterTemplate").empty();
+                $("#FooterReceiptBillingBen").tmpl().appendTo("#FooterTemplate");
+                scrollViewport();
+                Util.ScrollTop();
+            } else if (requestSubmitOTPResult.ALLOWRETRYOTP) {
+                Util.SetOTPErrorMessage(true, requestSubmitOTPResult.MESSAGE);
+                billingBen.InitOTP();
+                Util.ScrollTop();
+            } else {
+                Util.ShowErrorMessage(requestSubmitOTPResult.MESSAGE);
+                // $("#ErrorBillingBen").empty();
+                // billingBen.DATA_SUPPORT.DATA_PAGE_REVIEW.MESSAGE = requestSubmitOTPResult.MESSAGE;
+                // $("#BillingBenError").tmpl(billingBen.DATA_SUPPORT.DATA_PAGE_REVIEW).appendTo("#ErrorBillingBen");
+                // $("#FooterTemplate").empty();
+                // $("#FooterErrorBillingBen").tmpl().appendTo("#FooterTemplate");
+                scrollViewport();
+                Util.ScrollTop();
+            }
+        })
+    },
+
+    SearchBen: function (e) {
+        $(e).removeClass('field-error');
+        $(e).parent().find('.error').text(VIB.LocalizeString.LBL_KYTUDACBIET).hide();
+        var text = removeAccdent($(e).val().trim());
+        if (text !== "") {
+            if (!validate.REGEX_VALID_SEARCH.test(text.toLowerCase())) {
+                $(e).addClass('field-error');
+                $(e).parent().find('.error').text(VIB.LocalizeString.LBL_KYTUDACBIET).show();
+            } else {
+                $(".type1").show();
+                $(".type2").show();
+                $(".type3").hide();
+                $("#ListBen .item-ben").show();
+                $("#ListBen div.td-inner-conts").each(function (index, element) {
+                    [text].forEach(function (item) {
+                        var text = removeAccdent($(element).attr('data-value'));
+                        var position = text.indexOf(item);
+                        var pos = [];
+                        while (position !== -1) {
+                            pos.push({ s: position, e: item.length + position })
+                            position = text.indexOf(item, position + 1);
+                        }
+                        pos.forEach(function (e) {
+                            var re = $(element).attr('data-value').substring(e.s, e.e);
+                            $(element).html($(element).attr('data-value').replace(re, "<span class='blue'>" + re + "</span>"))
+                        })
+                        //$(element).html($(element).attr('data-value').replace(new RegExp("(" + item + ")", 'ig'), "<span class='blue'>$1</span>"));
+                    });
+                    $("#ListBen .item-ben").not("[data-value*='" + text.toLowerCase() + "']").hide();
+                })
+                billingBen.ShowHideTitle("type1");
+                billingBen.ShowHideTitle("type2");
+            }
+        } else {
+            $(".type1").show();
+            $(".type2").show();
+            $(".type3").hide();
+            $("#ListBen .item-ben").show();
+            $("#ListBen div.td-inner-conts").each(function (index, element) {
+                $(element).html($(element).attr('data-value'));
+            });
+        }
+    },
+
+    ShowHideTitle: function (className) {
+        var total = 0;
+        $("." + className + " .item-ben").each(function (i, e) {
+            if ($(e).is(":visible"))
+                total += 1;
+        })
+        if (total === 0) {
+            $("." + className).hide();
+            $(".type3").show();
+            $(".type3 div").text(billingBen.DATA_API_BILLING_LIST.WARNING);
+        } else {
+            $("." + className).show();
+            $(".type3").hide();
+        }
+    },
+
+    CheckFee: function (e, type) {
+        var isCheked = $(e).prop('checked');
+        if (type === 'PHI_KHAC') {
+            $("#amountOther").parent().find(".error").hide();
+            $("#amountOther").removeClass("field-error");
+            billingBen.DATA_SUPPORT.DATA_YET = 0;
+            if (isCheked) {
+                $("#amountOther").prop("disabled", false);
+                billingBen.DATA_SUPPORT.TOTAL_AMOUNT += Number($(e).attr("data-value"));
+            } else {
+                $("#amountOther").parent().find(".currency").hide();
+                $("#amountOther").next().removeClass("formTop");
+                $("#amountOther").prop("disabled", true);
+                billingBen.DATA_SUPPORT.TOTAL_AMOUNT -= Number($(e).attr("data-value"));
+            }
+        } else {
+            $("#amountOther").removeClass("field-error");
+            $("#amountOther").parent().find(".error").hide();
+            billingBen.DATA_SUPPORT.DATA_YET = Number($("#amountOther").autoNumeric("get"));
+            billingBen.DATA_SUPPORT.TOTAL_AMOUNT -= billingBen.DATA_SUPPORT.DATA_YET;
+            $("#amountOther").val("");
+            $("#amountOther").parent().find(".currency").hide();
+            $("#amountOther").parent().parent().parent().find("input").prop("checked", false);
+            $("#amountOther").next().removeClass("formTop");
+            $("#amountOther").prop("disabled", true);
+            if (isCheked) {
+                billingBen.DATA_SUPPORT.TOTAL_AMOUNT += Number($(e).attr("data-value"));
+            } else {
+                billingBen.DATA_SUPPORT.TOTAL_AMOUNT -= Number($(e).attr("data-value"));
+            }
+        }
+        billingBen.DATA_SUPPORT.FEE_PRU.PHI_KHAC = false;
+        switch (type) {
+            case 'PHI_DINH_KY':
+                billingBen.DATA_SUPPORT.FEE_PRU.PHI_DINH_KY = isCheked;
+                break;
+            case 'PHI_HTTT':
+                billingBen.DATA_SUPPORT.FEE_PRU.PHI_HTTT = isCheked;
+                break;
+            case 'PHI_HTTU':
+                billingBen.DATA_SUPPORT.FEE_PRU.PHI_HTTU = isCheked;
+                break;
+            case 'PHI_KHAC':
+                $("input[type='checkbox'].fee").each(function (i, e) {
+                    if (i < 3) {
+                        $(e).prop('checked', false);
+                    }
+                })
+                billingBen.DATA_SUPPORT.FEE_PRU.PHI_DINH_KY = false;
+                billingBen.DATA_SUPPORT.FEE_PRU.PHI_HTTT = false;
+                billingBen.DATA_SUPPORT.FEE_PRU.PHI_HTTU = false;
+                billingBen.DATA_SUPPORT.FEE_PRU.PHI_KHAC = isCheked;
+                billingBen.DATA_SUPPORT.TOTAL_AMOUNT = 0;
+                if (!isCheked) {
+                    $("#totalAmount").parent().find('.currencys').hide();
+                    var amountOther = $("#amountOther").autoNumeric('get');
+                    if (amountOther) {
+                        billingBen.DATA_SUPPORT.TOTAL_AMOUNT -= Number(amountOther);
+                        billingBen.SetTotalAmount();
+                        $("#amountOther").val('');
+                        billingBen.DATA_SUPPORT.DATA_YET = 0
+                    }
+                }
+                $(e).parent().parent().next().find('input').prop('disabled', !isCheked);
+                break;
+        }
+        billingBen.SetTotalAmount();
+    },
+
+    GetAmountOther: function (e) {
+        var amountOther = $(e).autoNumeric('get');
+        if (amountOther || amountOther === '') {
+            $("#amountOther").removeClass("field-error");
+            $("#amountOther").parent().find(".error").hide();
+            if (billingBen.DATA_SUPPORT.DATA_YET) {
+                billingBen.DATA_SUPPORT.TOTAL_AMOUNT -= Number(billingBen.DATA_SUPPORT.DATA_YET);
+            }
+            billingBen.DATA_SUPPORT.DATA_YET = amountOther;
+            billingBen.DATA_SUPPORT.TOTAL_AMOUNT += Number(amountOther);
+            billingBen.SetTotalAmount();
+        }
+    },
+
+    SetTotalAmount: function () {
+        $("#totalAmount").text(billingBen.DATA_SUPPORT.TOTAL_AMOUNT);
+        $("#totalAmount").attr('data-value', billingBen.DATA_SUPPORT.TOTAL_AMOUNT);
+        if (billingBen.DATA_SUPPORT.TOTAL_AMOUNT !== 0) {
+            Util.SetAmountFormat("totalAmount");
+        }
+        $("#totalAmount").parent().find('.currencys').show();
+    },
+
+    GetUrlParameter: function (url, sParam) {
+        var sPageURL = url ? (new URL(url)).search.substring(1) : window.location.search.substring(1),
+            sURLVariables = sPageURL.split('&'),
+            sParameterName,
+            i;
+        for (i = 0; i < sURLVariables.length; i++) {
+            sParameterName = sURLVariables[i].split('=');
+            if (sParameterName[0] === sParam) {
+                return sParameterName[1] === undefined ? true : decodeURIComponent(sParameterName[1]);
+            }
+        }
+    },
+
+    BenBulkValidate: function (lstBenId) {
+        billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.DATA_BENBULKVALIDATE = [];
+        var dataBenTmp = [];
+        var caneditMulti = true;
+        lstBenId.forEach(function (x) {
+            var beninfo = billingBen.DATA_BEN_LIST.BENLIST.find(function (beninfo) { return beninfo.id === x });
+            if (beninfo) {
+                if (!beninfo.canmultipleben) {
+                    caneditMulti = false                    
+                }
+                dataBenTmp.push(beninfo);
+            }
+        });
+        if (!caneditMulti) {
+            Util.ShowErrorMessage(VIB.LocalizeString.CANNOTMULTIEDIT);
+            return;
+        }
+
+        $("#Popup").empty();
+        $("#PopupBenBulkValidate").tmpl({ DATA: dataBenTmp }).appendTo("#Popup");
+        $("#PopupBenBulkValidate").modal({backdrop: 'static', show: true});
+        //$("#PopupBenBulkValidate").unbind("click");
+        $(".close").bind("click");
+        $(document).ajaxStart(function () { hideLoadingMask(); }).ajaxStop(function () { });
+        var bulkValidate = billingService.BenBulkValidate(lstBenId);
+        $.when(bulkValidate).done(function (bulkValidateResult) {
+            if (bulkValidateResult.STATUSCODE === "000000") {
+                billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.DATA_MIX = [];
+                billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.COUNT_CHECK_INFO_BEN = [];
+                billingBen.DATA_INPUT_PRU = [];
+                billingBen.LoopGetBenBulkInfo();
+            } else {
+                Util.ShowInfoMessage(accountInfoResult.MESSAGE);
+            }
+        });
+    },
+
+    LoopGetBenBulkInfo: function () {
+        billingService.GetBenBulkInfo().then(function (resultGetBenBulkInfo) {
+            billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.COUNT_CHECK_INFO_BEN.push(resultGetBenBulkInfo.STATUSCODE === "000000" ? true : false);
+            if (resultGetBenBulkInfo.ISRETRY) {
+                if (resultGetBenBulkInfo.ISPRU) {
+                    billingBen.DATA_INPUT_PRU.push({
+                        BENID: resultGetBenBulkInfo.BENID,
+                        PhiDK: true,
+                        PhiHTTD: false,
+                        PhiHTTU: false,
+                        PhiKhac: false,
+                    });
+                }
+                billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.DATA_BENBULKVALIDATE.push(resultGetBenBulkInfo);
+                var mess = null;
+                if (resultGetBenBulkInfo.STATUSCODE === "000000") {
+                    mess = VIB.LocalizeString.LBL_VALID;
+                } else {
+                    mess = resultGetBenBulkInfo.MESSAGE;
+                    $("#" + resultGetBenBulkInfo.DATA.CustomerIdValue).find('td.td-fit-conts').addClass('red');
+                }
+                $("#" + resultGetBenBulkInfo.DATA.CustomerIdValue).find('td.td-fit-conts').html(mess);
+                billingBen.LoopGetBenBulkInfo();
+            } else {
+                //$("#PopupBenBulkValidate").bind("click", function () {
+                //    $(this).modal('hide');
+                //});
+                var indexBill = 0;
+                billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.DATA_BENBULKVALIDATE.forEach(function (item) {
+                    if (item.STATUSCODE === "000000") {
+                        indexBill += 1;
+                        item.INDEX = indexBill;
+                        var infoBen = billingBen.DATA_BEN_LIST.BENLIST.find(function (itemBen) { return itemBen.id === item.BENID });
+                        if (infoBen) {
+                            billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.DATA_MIX.push({
+                                INFO_BEN: infoBen,
+                                INFO_BEN_DETAIL: item
+                            });
+                        }
+                    }
+                });
+                var countCheckInfoBenFail = billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.COUNT_CHECK_INFO_BEN.filter(function (c) { return c === false }).length;
+                if (countCheckInfoBenFail === billingBen.DATA_SUPPORT.ListBenChecked.length) {
+                    $("#totalBenError").text(VIB.LocalizeString.MESSAGE_TOTAL_FAIL);
+                    $("#btnSubmitValidate").hide();
+                } else if (countCheckInfoBenFail !== 0) {
+                    $("#totalBenError").text(VIB.LocalizeString.MESSAGE_TOTAL_SUCCESS.replace("@x", countCheckInfoBenFail));
+                    $("#btnSubmitValidate").show();
+                } else {
+                    $("#totalBenError").text("");
+                    $("#btnSubmitValidate").show();
+                }
+            }
+        })
+    },
+
+    GoToInputBillingBenMulti: function () {
+        billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.LIST_FROM_ACCOUNT = {};
+        billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.CLICK_BUTTON_DELETE_BENBULK = false;
+        billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.TOTAL_AMOUNT_ITEM = [];
+        $("#PopupBenBulkValidate").modal('hide');
+        $("#ListBen").hide();
+        $("#InputBillingBen").empty().show();
+        $("#InputBillingMulti").tmpl({ RENDER_DATA: billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.DATA_MIX }).appendTo("#InputBillingBen");
+        Util.InitDropdownListControl();
+        $(".section-transfer.isOther").each(function (i, e) {
+            $(e).find('.form-style-li').each(function (i2, e2) {
+                $(e2).find('.checkbox-custom').first().click();
+                $(e2).find('.checkbox-custom').prop("disabled", true);
+            })
+        })
+        billingBen.GetAccountForTransfer();
+        billingBen.InitEventForm();
+        billingBen.AutoCheckedPhiDK();
+        billingBen.SumTotalAmount();
+        $("#FooterTemplate").empty();
+        $("#FooterInputBillingMulti").tmpl().appendTo("#FooterTemplate");
+        scrollViewport();
+        Util.ScrollTop();
+    },
+
+    InitEventForm: function () {
+        billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.DATA_MIX.forEach(function (ben) {
+            //xu ly noi dung
+            /** 
+             $("#"+ben.INFO_BEN.id)
+             * */
+            $("#desc_" + ben.INFO_BEN.id).change(function () {
+                ben.desc = $(this).val();
+                ben.isDesc = ben.desc ? true : false;
+            });
+
+            $("#PhiDKAmt_" + ben.INFO_BEN.id).change(function () {
+                ben.isPhiDKAmt = $(this).prop('checked');
+                if (ben.isPhiDKAmt) {
+                    ben.isPhiKhac = false;
+                }
+                billingBen.CaculatorTotalAmount(ben);
+            });
+
+            $("#PhiHTTDAmt_" + ben.INFO_BEN.id).change(function () {
+                ben.isPhiHTTDAmt = $(this).prop('checked');
+                if (ben.isPhiHTTDAmt) {
+                    ben.isPhiKhac = false;
+                }
+                billingBen.CaculatorTotalAmount(ben);
+            });
+
+            $("#PhiTamUngAmt_" + ben.INFO_BEN.id).change(function () {
+                ben.isPhiTamUngAmt = $(this).prop('checked');
+                if (ben.isPhiTamUngAmt) {
+                    ben.isPhiKhac = false;
+                }
+                billingBen.CaculatorTotalAmount(ben);
+            });
+
+            $("#PhiKhac_" + ben.INFO_BEN.id).change(function () {
+                ben.isPhiKhac = $(this).prop('checked');
+                if (ben.isPhiKhac) {
+                    ben.isPhiTamUngAmt = false;
+                    ben.isPhiHTTDAmt = false;
+                    ben.isPhiDKAmt = false;
+                }
+                billingBen.CaculatorTotalAmount(ben);
+            });
+
+            Util.SetAmountFormat("amountOther_" + ben.INFO_BEN.id);
+            Util.InitAmountControlEvent("amountOther_" + ben.INFO_BEN.id, "amountOther", "ccy_" + ben.INFO_BEN.id);
+            $("#amountOther_" + ben.INFO_BEN.id).change(function () {
+                ben.amountOther = $("#amountOther_" + ben.INFO_BEN.id).autoNumeric('get');
+            });
+
+        })
+        if (billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.DATA_FROM_ACCOUNT) {
+            $("#fromAcc .item1").each(function (i, e) {
+                if ($(e).attr('data-value') === billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.DATA_FROM_ACCOUNT) {
+                    $(e).click();
+                }
+            })
+        }
+    },
+
+    CaculatorTotalAmount: function (ben) {
+        ben.totalAmount = $("#totalAmount_" + ben.INFO_BEN.id).text().trim();
+    },
+
+    BenBulkDelete: function (benId) {
+        $("#Popup").empty();
+        $("#PopupRemoveBen").tmpl().appendTo("#Popup");
+        $("#PopupRemoveBen").modal('show');
+        $("#btnBenBulkDelete").click(function () {
+            billingService.BenBulkDelete(benId).then(function (resultDelete) {
+                if (resultDelete.STATUSCODE === "000000") {
+                    billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.CLICK_BUTTON_DELETE_BENBULK = true;
+                    var indexItemCur = billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.DATA_MIX.findIndex(function (i) { return i.INFO_BEN.id === benId });
+                    if (indexItemCur !== -1) {
+                        billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.DATA_MIX.splice(indexItemCur, 1);
+                        for (var index = 0; index < billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.DATA_MIX.length; index++) {
+                            var element = billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.DATA_MIX[index];
+                            element.INFO_BEN_DETAIL.INDEX = index + 1;
+                        }
+                        $("#InputBillingBen").empty().show();
+                        $("#InputBillingMulti").tmpl({ RENDER_DATA: billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.DATA_MIX }).appendTo("#InputBillingBen");
+                        billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.TOTAL_AMOUNT_ITEM = [];
+                        billingBen.GetAccountForTransfer();
+                        billingBen.InitEventForm();
+                        // billingBen.AutoCheckedPhiDK();
+                        billingBen.SumTotalAmount();
+                        billingBen.AutoSumAfterDeleteBenItem();
+                        $(".checkbox-disabled").prop("checked", true);
+                        $(".checkbox-disabled").prop("disabled", true);
+                        for (var i2 = 0; i2 < billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.DATA_MIX.length; i2++) {
+                            var e2 = billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.DATA_MIX[i2];
+                            if (e2.isPhiDKAmt) {
+                                $("#PhiDKAmt_" + e2.INFO_BEN_DETAIL.BENID).click();
+                            }
+                            if (e2.isPhiHTTDAmt) {
+                                $("#PhiHTTDAmt_" + e2.INFO_BEN_DETAIL.BENID).click();
+                            }
+                            if (e2.isPhiTamUngAmt) {
+                                $("#PhiTamUngAmt_" + e2.INFO_BEN_DETAIL.BENID).click();
+                            }
+                            if (e2.isPhiKhac) {
+                                $("#PhiKhac_" + e2.INFO_BEN_DETAIL.BENID).click();
+                                $("#amountOther_" + e2.INFO_BEN_DETAIL.BENID).focus();
+                                $("#amountOther_" + e2.INFO_BEN_DETAIL.BENID).focusout();
+                            }
+                        }
+                        if (billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.DATA_MIX.length === 0) {
+                            billingBen.BackToAny("LIST");
+                        }
+                        return;
+                    }
+                    Util.ScrollTop();
+
+                } else {
+                    Util.ShowErrorMessage(resultDelete.MESSAGE);
+                }
+            })
+        });
+        return;
+    },
+
+    GetAccountForTransfer: function () {
+        $("#fromAcc").empty();
+        if (billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.LIST_FROM_ACCOUNT.DATA) {
+            Util.InitAccountListControl("fromAccList", billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.LIST_FROM_ACCOUNT, "fromAcc");
+            $("#fromAccList .item1").click(function () {
+                billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.DATA_FROM_ACCOUNT = $(this).attr('data-value');
+            });
+            if (!billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.CLICK_BUTTON_DELETE_BENBULK)
+                $("#fromAccList .item1:first-child").click();
+        } else {
+            var accountForTransfer = billingService.GetAccountForTransfer("TOPUPBILLING");
+            $.when(accountForTransfer).done(function (accountForTransferResult) {
+                if (accountForTransferResult.STATUSCODE === "000000") {
+                    billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.LIST_FROM_ACCOUNT = accountForTransferResult;
+                    Util.InitAccountListControl("fromAccList", accountForTransferResult, "fromAcc");
+                    $("#fromAccList .item1").click(function () {
+                        billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.DATA_FROM_ACCOUNT = $(this).attr('data-value');
+                    });
+                    if (!billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.CLICK_BUTTON_DELETE_BENBULK)
+                        $("#fromAccList .item1:first-child").click();
+
+                }
+            });
+        }
+    },
+
+    CheckFeeMulti: function (e, type, benId) {
+        var totalAmountItem = billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.TOTAL_AMOUNT_ITEM.find(function (x) { return x.BEN_ID === benId });
+        if (!totalAmountItem) {
+            billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.TOTAL_AMOUNT_ITEM.push({
+                BEN_ID: benId,
+                TOTAL: 0
+            });
+        }
+        totalAmountItem = billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.TOTAL_AMOUNT_ITEM.find(function (x) { return x.BEN_ID === benId })
+        billingBen.SetTotalAmountItem(e, type, benId, totalAmountItem);
+        billingBen.SumTotalAmount();
+        $(".total_amount_child").next().text(CCY_VND).show();
+    },
+
+    SetTotalAmountItem: function (e, type, benId, totalAmountItem) {
+        var check = $(e).prop("checked");
+        if (totalAmountItem.BEN_ID === benId) {
+            if (type === 'PhiKhac') {
+                $("#amountOther_" + benId).removeClass("field-error");
+                $("#amountOther_" + benId).next().removeClass("formTop");
+                $("#amountOther_" + benId).prop("disabled", false);
+                totalAmountItem.TOTAL = 0;
+                $("#totalAmount_" + benId).text('0');
+                if (check) {
+                    $("#ccy_" + benId).hide();
+                    $(e).parent().parent().parent().parent().parent().find('input').not($(e)).each(function (i, el) {
+                        if ($(el).prop('checked')) {
+                            $(el).prop('checked', false);
+                        }
+                    })
+                } else {
+                    $("#ccy_" + benId).hide();
+                    $("#amountOther_" + benId).val('');
+                }
+            } else {
+                $("#amountOther_" + benId).val("");
+                $("#amountOther_" + benId).parent().find(".currency").hide();
+                $("#amountOther_" + benId).parent().find("div.error").hide();
+                $("#amountOther_" + benId).removeClass("formTop").prop("disabled", true);
+                if (check) {
+                    totalAmountItem.TOTAL += Number($(e).attr("data-value"));
+                    if ($(e).parent().parent().parent().parent().find('input.PhiKhac_' + benId).prop('checked')) {
+                        $(e).parent().parent().parent().parent().find('input.PhiKhac_' + benId).prop('checked', false);
+                        $("#amountOther_" + benId).removeClass("formTop").prop("disabled", true);
+                    }
+                    $("#amountOther_" + benId).val('');
+                } else {
+                    totalAmountItem.TOTAL -= Number($(e).attr("data-value"));
+                }
+                $("#totalAmount_" + benId).text(totalAmountItem.TOTAL);
+                Util.SetAmountFormat("totalAmount_" + benId);
+            }
+            $(e).parent().parent().parent().parent().find("#totalAmount_" + benId).attr('data-value', totalAmountItem.TOTAL);
+        }
+    },
+
+    GetAmountOtherMulti: function (e, benId) {
+        if ($(e).val() !== '') {
+            $("#amountOther_" + benId).removeClass("field-error");
+            $("#amountOther_" + benId).parent().find(".error").hide();
+            $("#totalAmount_" + benId).text($(e).autoNumeric('get'));
+            $(e).parent().parent().parent().parent().find("#totalAmount_" + benId).attr('data-value', $(e).autoNumeric('get'));
+            billingBen.SumTotalAmount();
+            Util.SetAmountFormat("totalAmount_" + benId);
+            billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.DATA_MIX.forEach(function (ben) {
+                if (ben.INFO_BEN.id === benId) {
+                    billingBen.CaculatorTotalAmount(ben);
+                    Util.SetAmountFormat("amountOther_" + benId);
+                    Util.InitAmountControlEvent("amountOther_" + benId, "amountOther", "ccy_" + benId);
+                    ben.amountOther = $("#amountOther_" + benId).autoNumeric('get');
+                }
+            })
+        } else {
+            $("#amountOther_" + benId).addClass("field-error");
+            $("#amountOther_" + benId).parent().find(".error").text(VIB.LocalizeString.LBL_SOTIENTRONG).show();
+            $("#totalAmount_" + benId).html("");
+        }
+    },
+
+    BenBulkSubmit: function () {
+        var dataQuery = [];
+        if (billingBen.ValidateBilling()) {
+            for (var index = 0; index < billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.DATA_MIX.length; index++) {
+                var x = billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.DATA_MIX[index];
+                var item = {};
+                item.isPayPhiDK = x.INFO_BEN_DETAIL.DATA.IsPru ? $("#PhiDKAmt_" + x.INFO_BEN_DETAIL.BENID).prop("checked") : false;
+                item.isPayPhiHTTD = x.INFO_BEN_DETAIL.DATA.IsPru ? $("#PhiHTTDAmt_" + x.INFO_BEN_DETAIL.BENID).prop("checked") : false;
+                item.isPayPhiTamUng = x.INFO_BEN_DETAIL.DATA.IsPru ? $("#PhiTamUngAmt_" + x.INFO_BEN_DETAIL.BENID).prop("checked") : false;
+                item.isPayPhiKhac = x.INFO_BEN_DETAIL.DATA.IsPru ? $("#PhiKhac_" + x.INFO_BEN_DETAIL.BENID).prop("checked") : false;
+                item.benid = x.INFO_BEN_DETAIL.BENID;
+                item.custId = x.INFO_BEN.acctid;
+                item.desc = $("#desc_" + x.INFO_BEN_DETAIL.BENID).val();
+                item.amount = Number($("#" + x.INFO_BEN_DETAIL.BENID + " .total_amount_child").attr('data-value'));
+                dataQuery.push(item);
+            }
+            $(document).ajaxStart(function () {
+                showLoadingMask();
+            }).ajaxStop(function () { });
+            var fromaccount = $("#fromAcc .item1.selected").attr('data-value');
+            billingService.BenBulkSubmitInfo(fromaccount, dataQuery).then(function (res) {
+                if (res.STATUSCODE === "000000") {
+                    $("#leftContent").hide();
+                    $("#InputBillingBen").hide();
+                    $("#FooterTemplate").empty();
+                    $("#ReviewBillingBen").empty().show();
+                    $("#ReviewBillingBenList").tmpl(res).appendTo("#ReviewBillingBen");
+                    var userInfo = JSON.parse(sessionStorage.getItem('UserInfo'));
+                    if (userInfo) {
+                        var renderData = {
+                            IsPopup: false,
+                        }
+                        $("#otpTemplate").tmpl(renderData).appendTo($("#contentOTP"));
+                        $('#btnGetOTP').click(function () {
+                            billingService.GetOTPBillingWater().then();
+                        });
+                        Util.RegisterOTPEvent();
+                    }
+                    $("#FooterReiewBillingMulti").tmpl().appendTo("#FooterTemplate");
+                    scrollViewport();
+                    hideLoadingMask();
+                    Util.ScrollTop();
+                } else {
+                    Util.ShowErrorMessage(res.MESSAGE);
+                    hideLoadingMask();
+                }
+            })
+        }
+        return;
+    },
+
+    SumTotalAmount: function () {
+        var sum = 0;
+        $(".total_amount_child").each(function (i, e) {
+            var valAmountItem = null;
+            if ($(e).parent().find('.checkbox-custom').prop("checked")) {
+                valAmountItem = $(e).attr('data-value');
+            } else if ($(e).attr("data-value")) {
+                if ($(e).parent().find("input.checkbox-custom").is(":visible")) {
+                    if ($(e).parent().find("input.checkbox-custom").prop("checked"))
+                        valAmountItem = Number($(e).html().replace(/,/gi, ''));
+                    else {
+                        valAmountItem = 0;
+                    }
+                } else {
+                    valAmountItem = $(e).attr('data-value');
+                }
+            }
+            if (valAmountItem) {
+                sum += Number(valAmountItem);
+            }
+        });
+        billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.SUM_AMOUNT_LASTEST = sum;
+        if (sum !== 0) {
+            $("#totalAmountPayment").html(sum);
+            $("#totalAmountPayment").show();
+            Util.SetAmountFormat("totalAmountPayment", CCY_VND);
+            $("#totalAmountPayment").next().text(CCY_VND).show();
+        } else {
+            $("#totalAmountPayment").hide();
+            $("#totalAmountPayment").next().text(CCY_VND).hide();
+        }
+    },
+
+    ValidateBilling: function () {
+        var flag = [];
+        billingBen.DATA_SUPPORT.DATA_BILLING_MULTI.DATA_MIX.forEach(function (e) {
+            if (e.INFO_BEN_DETAIL.DATA.IsPru) {
+                if (String($("#totalAmount_" + e.INFO_BEN_DETAIL.BENID).autoNumeric('get')) !== "0" && String($("#totalAmount_" + e.INFO_BEN_DETAIL.BENID).autoNumeric('get')) !== "") {
+                    flag.push(true);
+                    $(".mess_error_" + e.INFO_BEN_DETAIL.BENID).hide();
+                    $(".mess_error_" + e.INFO_BEN_DETAIL.BENID).parent().find("input").removeClass("field-error");
+                } else {
+                    flag.push(false);
+                    $(".mess_error_" + e.INFO_BEN_DETAIL.BENID).parent().find("input").addClass("field-error");
+                    $(".mess_error_" + e.INFO_BEN_DETAIL.BENID).show().text(VIB.LocalizeString.LBL_SOTIENTRONG);
+                }
+            }
+        });
+        if (flag.filter(function (x) { return x === false }).length !== 0)
+            return false;
+        return true;
+    },
+
+    AutoCheckedPhiDK: function () {
+        var flag = [];
+        $(".checkbox-custom.ben_item").each(function (i, e) {
+            flag.push($(e).prop("checked"));
+        })
+        if (flag.filter(function (x) { return x === true }).length == 0) {
+            $(".autocheck").click();
+        }
+    },
+
+    AutoSumAfterDeleteBenItem: function () {
+        // $(".itemBenPRU").each(function (i, e) {
+        //     var sum = 0;
+        //     $(".checkbox-custom.ben_item").each(function (i2, e2) {
+        //         if ($(e2).prop("checked")) {
+        //             sum += Number($(e2).attr("data-value"));
+        //         }
+        //     });
+        //     $(this).find(".total_amount_child").text(sum);
+        //     Util.SetAmountFormat($(this).find(".total_amount_child"), CCY_VND);
+        // })
+    },
+
+    ShowDetailTransaction: function (page) {
+        $("#FooterTemplate").hide();
+        if (page === 'review') {
+            $("#transaction-overview-review").hide();
+            $("#transaction-detail-review").show();
+        } else {
+            $("#transaction-overview-receipt").hide();
+            $("#transaction-detail-receipt").show();
+        }
+    },
+
+    ShowOverviewTransaction: function (page) {
+        $("#FooterTemplate").show();
+        if (page === 'review') {
+            $("#transaction-overview-review").show();
+            $("#transaction-detail-review").hide();
+        } else {
+            $("#transaction-overview-receipt").show();
+            $("#transaction-detail-receipt").hide();
+        }
+    },
+
+    ToggleDetailTrans: function (e) {
+        if ($(e).hasClass("toogle-style2")) {
+            $(e).closest('.infomation-transaction').siblings().find('.hide').hide();
+            $(e).closest(".infomation-transaction").siblings().removeClass("toogle-border");
+            $(e).parents(".labels").show();
+            $(e).parents(".labels").toggleClass("toogle-style2-active");
+            $('tr[data-toggle="toggle-border"]').not(e).parents(".labels").removeClass("toogle-style2-active");
+        }
+        else {
+            $(e).parents(".labels").toggle();
+        }
+        $(e).parents().next('.hide').toggle();
+        $(e).closest(".infomation-transaction").toggleClass("toogle-border");
+    },
+
+    ConfirmOTPBillingBen: function () {
+        var otp = $('#txtOtp1').val() + $('#txtOtp2').val() + $('#txtOtp3').val() + $('#txtOtp4').val() + $('#txtOtp5').val() + $('#txtOtp6').val();
+        if (otp.length != 6) {
+            Util.SetOTPErrorMessage(true, VIB.LocalizeString.LBL_EMPTY_OTP);
+            billingBen.InitOTP();
+            return;
+        }
+        showLoadingMask();
+        $(document).ajaxStart(function () {
+            showLoadingMask();
+        }).ajaxStop(function () {
+            hideLoadingMask();
+        });
+        billingService.BenBulkConfirmOTP(otp).then(function (rs) {
+            if (rs.STATUSCODE === "000000") {
+                billingBen.LoopConfirmOTP();
+            } else {
+                hideLoadingMask();
+                util.ShowErrorMessage(rs.MESSAGE);
+            }
+            // ALLOWRETRYOTP
+        })
+
+    },
+
+    LoopConfirmOTP: function () {
+        billingService.BenBulkConfirmOTPProcess().then(function (rs) {
+            if (rs.ISCONTINUE) {
+                billingBen.LoopConfirmOTP();
+            } else {
+                clearAccountForTransferData();
+                hideLoadingMask();
+                $("#ReviewBillingBen").hide();
+                $("#FooterTemplate").empty();
+                $("#ReceiptBillingBen").empty().show();
+                $("#ReceiptBillingBenList").tmpl(rs).appendTo("#ReceiptBillingBen");
+                $("#FooterReceiptBillingMulti").tmpl().appendTo("#FooterTemplate");
+                scrollViewport();
+                Util.ScrollTop();
+            }
+        })
+    },
+
+    InitOTP: function () {
+        var otp = ["txtOtp1", "txtOtp2", "txtOtp3", "txtOtp4", "txtOtp5", "txtOtp6"];
+        otp.forEach(function (e) {
+            $("#" + e).keyup(function () {
+                var otp = $('#txtOtp1').val() + $('#txtOtp2').val() + $('#txtOtp3').val() + $('#txtOtp4').val() + $('#txtOtp5').val() + $('#txtOtp6').val();
+                if (otp.length != 6) {
+                    Util.SetOTPErrorMessage(true, VIB.LocalizeString.EMPTY_OTP);
+                } else {
+                    Util.SetOTPErrorMessage(false);
+                }
+            })
+        })
+    },
+
+    ShowInforAmountOther: function (e) {
+        $(e).find("span").text(VIB.LocalizeString.BILLING_TOOLTIP_OTHER_FEE).toggle();
+    },
+
+    InitDataInput: function (benId) {
+        if (billingBen.DATA_INPUT_PRU.length !== 0) {
+            for (var index = 0; index < billingBen.DATA_INPUT_PRU.length; index++) {
+                var element = billingBen.DATA_INPUT_PRU[index];
+                if (element.BENID === benId) {
+                    if (element.PhiDK) {
+
+                    }
+                    if (element.PhiHTTD) {
+
+                    }
+                    if (element.PhiHTTU) {
+
+                    }
+                    if (element.PhiKhac) {
+
+                    }
+                }
+            }
+        }
+    }
+}
+
+var validate = {
+    REGEX_VALID_NOIDUNG: /^[a-zA-Z0-9à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ|đ|ỳ|ý|ỵ|ỷ|ỹ|ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ|ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ|è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ|ì|í|ị|ỉ|ĩ\s.\-+,_():\/\\]+$/,
+    REGEX_VALID_SEARCH: /^[a-zA-Z0-9à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ|đ|ỳ|ý|ỵ|ỷ|ỹ|ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ|ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ|è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ|ì|í|ị|ỉ|ĩ\s.\-+,_:\/\\]+$/,
+
+    REGEX_VALID_TEN: /^[a-zA-Zà|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ|đ|ỳ|ý|ỵ|ỷ|ỹ|ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ|ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ|è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ|ì|í|ị|ỉ|ĩ\s.\-+,_\/\\]+$/,
+
+    ValidateDesc: function (e) {
+        $(e).parent().parent().find('.error').hide();
+        $(e).removeClass('field-error');
+        $(e).attr('is-pass', true);
+        var value = $(e).val();
+        if (value !== '') {
+            if (!validate.REGEX_VALID_NOIDUNG.test(value.toLowerCase())) {
+                $(e).attr('is-pass', false);
+                $(e).addClass('field-error');
+                $(e).parent().parent().find('.error').text(VIB.LocalizeString.LBL_KYTUDACBIET).show();
+            }
+        }
+    },
+
+    ValidateFullName: function (e) {
+        validate.checkButtonSubmitEditBen = false;
+        $(e).parent().parent().find('.error').hide();
+        $(e).removeClass('field-error');
+        var value = $(e).val();
+        if (value !== '') {
+            if (Util.CheckSpecialDescriptionCharacter(value)) {
+                $(e).addClass('field-error');
+                $(e).parent().parent().find('.error').text(VIB.LocalizeString.BEN_NAME);
+                $(e).parent().parent().find('.error').show();
+            }
+        }
+    },
+
+    ValidateCusId: function (e) {
+        $(e).parent().parent().find('.error').hide();
+        $(e).removeClass('field-error');
+        var value = $(e).val();
+        if (value !== '') {
+            if (!validate.REGEX_VALID_NOIDUNG.test(value.toLowerCase())) {
+                $(e).addClass('field-error');
+                $(e).parent().parent().find('.error').show();
+            }
+        }
+    }
+}
+/* Set disable control */
+function disableControl() {
+
+    $("input").prop("disabled", true);
+    $("input").addClass("disabled");
+};
+
+function removeAccdent(text) {
+    if (!text) {
+        return text
+    }
+    text = text.toLowerCase();
+    return text.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a").replace(/đ/g, "d").replace(/đ/g, "d").replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y").replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u").replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ.+/g, "o").replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ.+/g, "e").replace(/ì|í|ị|ỉ|ĩ/g, "i");
+}

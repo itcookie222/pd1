@@ -1,0 +1,418 @@
+﻿var topupService = function () {
+    var sf = null;
+    var acount = null;
+    var topupBillingServices = null;
+    var benController = null;
+    var init = function (moduleId) {
+        sf = $.ServicesFramework(moduleId);
+        acount = sf.getServiceRoot('AccountController') + 'Account/';
+        topupBillingServices = sf.getServiceRoot('TopupBillingController');
+        benController = sf.getServiceRoot('BenController');
+    };
+
+    var benBulkConfirmOTPProcess = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            url: topupBillingServices + "Service/BenBulkConfirmOTPProcess",
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    }
+
+    var benBulkConfirmOTP = function (otp) {
+        const data = {
+            otp: otp
+        }
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            url: topupBillingServices + "Service/BenBulkConfirmOTP",
+            data: data,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    }
+
+    var benBulkSubmitInfo = function (data) {
+        var deferred = $.Deferred();
+        const dataPost = {
+            input: JSON.stringify(data)
+        };
+        $.ajax({
+            type: "POST",
+            url: topupBillingServices + "Service/BenBulkSubmitInfo",
+            data: dataPost,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    }
+
+    var benBulkSubmitInfoProcess = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            url: topupBillingServices + "Service/BenBulkSubmitInfoProcess",
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    }
+
+    var benBulkRemove = function (benId) {
+        const data = {
+            benId: benId
+        }
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            url: topupBillingServices + "Service/BenBulkRemove",
+            data: data,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    }
+
+    var benBulkSubmitInfo = function (data) {
+        var deferred = $.Deferred();
+        const dataPost = {
+            input: JSON.stringify(data)
+        };
+        $.ajax({
+            type: "POST",
+            url: topupBillingServices + "Service/BenBulkSubmitInfo",
+            data: dataPost,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    }
+
+    var benBulkRetryGetInfo = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: topupBillingServices + "Service/BenBulkRetryGetInfo",
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    }
+
+    var getDetailBen = function (idBen) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: benController + "Ben/Detail?id=" + idBen,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    }
+
+    var benBulkValidate = function (listBenId) {
+        const data = {
+            benIds: listBenId,
+        };
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            url: topupBillingServices + "Service/BenBulkValidate",
+            data: data,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    }
+
+    var deleteBen = function (data) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            url: benController + "Ben/Delete",
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var updateBen = function (data) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            url: benController + "Ben/Update",
+            data: data,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    }
+
+    var confirmTopupNew = function (otp) {
+        var deferred = $.Deferred();
+        var data = {
+            otp: otp
+        };
+        $.ajax({
+            type: "POST",
+            url: topupBillingServices + "Service/ConfirmTopup",
+            dataType: 'json',
+            data: data,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var getOTPTopupOther = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: topupBillingServices + "Service/GetOTP",
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            Util.ShowSuccessMessage(result);
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var submitInfoTopupOther = function (custId, mobile, accountId, name, email, isSave, amount, desc) {
+        var data = {
+            custId: custId,
+            mobile: mobile,
+            accountId: accountId,
+            name: name,
+            email: email,
+            isSave: isSave,
+            amount: amount,
+            desc: desc,
+        }
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            url: topupBillingServices + "Service/SubmitInfo",
+            dataType: 'json',
+            data: data,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var getOTPTopupMobile = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: topupBillingServices + "Mobile/GetOTP ",
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            Util.ShowSuccessMessage(result);
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var confirmTopupMobile = function (otp) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            url: topupBillingServices + 'Mobile/ConfirmTopup',
+            data: { otp: otp },
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    var submitInfoTopupMobile = function (obj) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            url: topupBillingServices + 'Mobile/SubmitInfo',
+            data: obj,
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    var accountForTransfer = function (data) {
+        var deferred = $.Deferred();
+        var result = JSON.parse(sessionStorage.getItem("ACCOUNT_" + data.module));
+        if (result) {
+            return deferred.resolve(result).promise();
+        }
+        $.ajax({
+            type: "GET",
+            url: acount + "AccountForTransfer",
+            data: data,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            sessionStorage.setItem("ACCOUNT_" + data.module, JSON.stringify(result));
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var getCustomerInfoEwalletCabTVGame = function (custId, serviceId, supplierId, frombenlist) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: topupBillingServices + "Service/GetCustomerInfo",
+            data: {
+                custId: custId,
+                serviceId: serviceId,
+                supplierId: supplierId,
+                frombenlist: frombenlist
+            },
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    }
+
+    var getOTP = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: acount + "GetOtp",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            alert(result);
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    var getServiceAndSupplier = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: topupBillingServices + 'Service/Services',
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result.DATA);
+        }).fail(function (error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    var getBenCate = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: benController + "Topup/List",
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var getCustomerInfoMobile = function (custId) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: topupBillingServices + 'Mobile/GetCustomerInfo',
+            data: { custId: custId },
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    return {
+        Init: init,
+        GetOTP: getOTP,
+        GetServiceAndSupplier: getServiceAndSupplier,
+        GetBenCate: getBenCate,
+        GetCustomerInfoMobile: getCustomerInfoMobile,
+        GetCustomerInfoEwalletCabTVGame: getCustomerInfoEwalletCabTVGame,
+        AccountForTransfer: accountForTransfer,
+        SubmitInfoTopupMobile: submitInfoTopupMobile,
+        ConfirmTopupMobile: confirmTopupMobile,
+        GetOTPTopupMobile: getOTPTopupMobile,
+        SubmitInfoTopupOther: submitInfoTopupOther,
+        GetOTPTopupOther: getOTPTopupOther,
+        ConfirmTopupNew: confirmTopupNew,
+        DeleteBen: deleteBen,
+        UpdateBen: updateBen,
+        BenBulkValidate: benBulkValidate,
+        GetDetailBen: getDetailBen,
+        BenBulkRetryGetInfo: benBulkRetryGetInfo,
+        BenBulkSubmitInfo: benBulkSubmitInfo,
+        BenBulkRemove: benBulkRemove,
+        BenBulkSubmitInfoProcess: benBulkSubmitInfoProcess,
+        BenBulkConfirmOTP: benBulkConfirmOTP,
+        BenBulkConfirmOTPProcess: benBulkConfirmOTPProcess
+    };
+}();

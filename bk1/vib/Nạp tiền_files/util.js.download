@@ -1,0 +1,487 @@
+﻿var Util = {
+    timer: null,
+    GetQueryString: function () {
+        var key = false, res = {}, itm = null;
+        // get the query string without the ?
+        var qs = location.search.substring(1);
+        // check for the key as an argument
+        if (arguments.length > 0 && arguments[0].length > 1)
+            key = arguments[0];
+        // make a regex pattern to grab key/value
+        var pattern = /([^&=]+)=([^&]*)/g;
+        // loop the items in the query string, either
+        // find a match to the argument, or build an object
+        // with key/value pairs
+        while (itm = pattern.exec(qs)) {
+            if (key !== false && decodeURIComponent(itm[1]) === key)
+                return decodeURIComponent(itm[2]);
+            else if (key === false)
+                res[decodeURIComponent(itm[1])] = decodeURIComponent(itm[2]);
+        }
+
+        return key === false ? res : null;
+    },
+    ShowSuccessMessage: function (message) {
+        if (message) {
+            $("#successMessageModalMesage").html("<img src='/Portals/_default/Skins/VIB-RB-2020V2/img/icon-blue-success.svg' alt='' width='30' class='mr-10'/> " + message);
+            $("#successMessageModal").modal();
+        }
+    },
+    ShowErrorMessage: function (message) {
+        if (message) {
+            $("#errorMessageModalMesage").html("<img src='/Portals/_default/Skins/VIB-RB-2020V2/img/icon-red-error.svg' alt='' width='30' class='mr-10'/> " + message);
+            $("#errorMessageModal").modal();
+        }
+    },
+    SetOTPErrorMessage: function(isDisplay, message) {
+        if (isDisplay) {
+            if (message) {
+                $("#lblOTPError").html(message);
+                $(".code-input").addClass("code-error");
+            }
+        } else {
+            $("#lblOTPError").html("");
+            $(".code-input").removeClass("code-error");
+        }
+    },
+    SetFieldErrorMessage: function(fieldId, message) {
+        if (message) {
+            $("#" + fieldId).addClass(fieldErrorClass);
+            $("#lblError" + fieldId).html(message).show();
+        } else {
+            $("#lblError" + fieldId).hide();
+            $("#" + fieldId).removeClass(fieldErrorClass);
+        }
+    },
+    HtmlDecode: function (value) {
+        if (value) {
+            return $.parseHTML(value)[0].textContent;
+        }
+        return "";
+    },
+    InitDropdownListControl: function () {
+        $('.form-group .dropdown > .caption').off('click').on('click',  function() {
+            $('.form-group .dropdown > .caption').not(this).parent('.dropdown').removeClass('open');
+            $(this).parent().toggleClass('open');
+
+            $('.right-content').height('auto');
+            // get the scollTop (distance scrolled from top)
+            var scrollTop = $(window).scrollTop();
+            // get the top offset of the dropdown (distance from top of the page)
+            var topOffset = $(this).parent().offset().top;
+            // calculate the dropdown offset relative to window position
+            var relativeOffset = topOffset - scrollTop;
+            // get the window height
+            var windowHeight = $('.wrapper').height();
+
+            var relativeOffset2 = windowHeight - topOffset;
+            //console.log(scrollTop , topOffset , windowHeight);
+            // if the relative offset is greater than half the window height,
+            // reverse the dropdown.
+            if (relativeOffset2 < 250) {
+                $('.right-content').height($('.right-content').height() + 320 - relativeOffset2);
+            }
+            $('.dropdown-keep-open.show').find('button.dropdown-toggle').dropdown('toggle');
+            event.stopPropagation();
+        });
+    },
+    InitAccountListControl: function (accountListElementName, accountListData, appendToElementName) {
+        if (accountListElementName && appendToElementName) {
+            accountListData.elementId = accountListElementName;
+            $("#accountListTemplate").tmpl(accountListData || []).appendTo($("#" + appendToElementName));
+            $("#" + accountListElementName + " .item1").on('click', function () {
+                $(this).parent().find(".item1").removeClass('selected');
+                var $dropParent = $(this).addClass('selected').parent().parent();
+                var text = $(this).attr("data-display");
+                $dropParent.removeClass('open').children('.caption').text(text);
+                $dropParent.parent().children('.formLabel').addClass('formTop');
+            });
+            $("#" + appendToElementName + " .caption").on('click', function () {
+                if ($(this).parent().hasClass("open")) {
+                    $(this).parent().removeClass("open");
+                    return;
+                }
+                $(this).parent().toggleClass('open');
+                // get the scollTop (distance scrolled from top)
+                var scrollTop = $(window).scrollTop();
+                // get the top offset of the dropdown (distance from top of the page)
+                var topOffset = $(this).parent().offset().top;
+                // calculate the dropdown offset relative to window position
+                var relativeOffset = topOffset - scrollTop;
+                // get the window height
+                var windowHeight = $('.wrapper').height();
+
+                var relativeOffset2 = windowHeight - topOffset;
+                //console.log(scrollTop , topOffset , windowHeight);
+                // if the relative offset is greater than half the window height,
+                // reverse the dropdown.
+                if (relativeOffset2 < 250) {
+                    $('.right-content').height($('.right-content').height() + 320 - relativeOffset2);
+                }
+            });
+            //$("#" + appendToElementName + " .btn.btn-circle-arrow").on('click', function () {
+            //    $('.btn-circle-arrow').not(this).parent('.dropdown').removeClass('open');
+            //    $(this).parent().toggleClass('open');
+            //    $(this).closest('.date-popup.list-dropdown-popup').toggleClass('open');
+            //    event.stopPropagation();
+            //});
+        }
+    },
+    InitAmountControlEvent: function (amountElementName, accountListElementName, amountCCYElementName) {
+        if (amountElementName) {
+            $("#" + amountElementName).on("blur", function () {
+                //if ($(this).val().length > 0) {
+                //    $(this).next().addClass('formTop');
+                //} else {
+                //    $(this).next().removeClass('formTop');
+                //}
+            });
+        }
+        if (amountElementName && accountListElementName && amountCCYElementName) {
+            $("#" + amountCCYElementName).hide();
+            $("#" + amountElementName).on("blur", function () {
+                if ($(this).val().length > 0) {
+                    $("#" + amountCCYElementName).html($("#" + accountListElementName + " div.selected").attr("data-display-ccy") || CCY_VND);
+                    if ($(this).hasClass('currency-right')) {
+                        $("#" + amountCCYElementName).show().css({ "left": "auto", 'right': 0 });
+                        $(this).css('padding-right', '13px');
+                    } else {
+                        $("#" + amountCCYElementName).show().css('left', $(this).getTextSize()[0]);
+                    }
+                }
+            });
+            $("#" + amountElementName).on("focus", function () {
+                $("#" + amountCCYElementName).hide();
+            });
+            $("#" + accountListElementName + " .item1").on('click', function () {
+                var text = $(this).attr("data-display-ccy") || CCY_VND;
+                $("#" + amountCCYElementName).html(text);
+            });
+        }
+    },
+    SetAmountFormat: function (amountElementName, ccy) {
+        var ccyVND = "VND";
+        if (CCY_VND)
+            ccyVND = CCY_VND;
+        if (amountElementName) {
+            $("#" + amountElementName).autoNumeric('destroy');
+            if (ccy && ccy !== ccyVND) {
+                $("#" + amountElementName).autoNumeric({ pSign: 's', vMax: '999999999999.99', vMin: '0.00' });
+            } else {
+                $("#" + amountElementName).autoNumeric({ pSign: 's', vMax: '999999999999', vMin: '0' });
+            }
+        }
+    },
+    RegisterOTPEvent: function () {
+        $('.code-input').on('keyup', function (e) {
+            if ($(this).val()) {
+                $(this).next().focus();
+            }
+        });
+        $(".code-input").on("input", function (e) {
+            var self = $(this);
+            self.val(self.val().replace(/[^0-9]/g, ''));
+            if ((e.which != 46 || self.val().indexOf('.') != -1) && (e.which < 48 || e.which > 57)) {
+                e.preventDefault();
+            }
+        });
+        $('.code-input').on('keydown', function (e) {
+            if ((e.which == 8 || e.which == 46) && $(this).val() == '') {
+                $(this).prev().focus();
+            }
+        });
+        $('.code-input').focus(function () {
+            if ($(this).val()) {
+                $(this).select();
+            }
+        });
+        if (Util.timer) {
+            clearInterval(Util.timer);
+        }
+    },
+    GetOTPButtonClicked: function () {
+        var currentTime = Number(VIB.OTPTimeout);
+        Util.timer = setInterval(function () {
+            $("#btnGetOTP").attr("disabled", true);
+            $("#btnGetOTP").text(VIB.SkinLocalizeString.EffectAfter.replace("{s}", currentTime));
+            if (currentTime <= 0) {
+                if (Util.timer) {
+                    clearInterval(Util.timer);
+                }
+                $("#btnGetOTP").attr("disabled", false).text(VIB.SkinLocalizeString.GetOTP);
+            }
+            currentTime -= 1;
+        }, 1000);
+        $('#successMessageModal,#errorMessageModal').on('hidden.bs.modal', function (e) {
+            $("#txtOtp1").focus();
+        });
+        $('#otpDialog').on('hidden.bs.modal', function (e) {
+            if (Util.timer) {
+                clearInterval(Util.timer);
+            }
+        });
+        //me.GetOTP().done(function () {
+        //    $("#txtOtp1").focus();
+        //    $('#successMessageModal,#errorMessageModal').on('hidden.bs.modal', function (e) {
+        //        $("#txtOtp1").focus();
+        //    });
+        //});
+    },
+    CheckSpecialDescriptionCharacter: function(val) {
+        var re = new RegExp(regexTransferDesc);
+        return !re.test(val);
+    },
+    CheckSpecialCharacters: function(element, errorMessage) {
+        if (!element) return;
+        var content = $("#" + element).val();
+        var iChars = "!@#$%&/<>=?";
+        Util.SetFieldErrorMessage(element);
+        for (var i = 0; i < content.length; i++) {
+            if (iChars.indexOf(content.charAt(i)) !== -1) {
+                Util.SetFieldErrorMessage(element, errorMessage);
+                return;
+            }
+        }
+        return;
+    },
+    /* Hien thi du lieu acc receipt */
+    InitAccountReceiptControl: function (accountListData, appendToElementName, isCallChangeEvent) {
+        if (appendToElementName) {
+            $("#accountReceiptTemplate").tmpl(accountListData || []).appendTo("#" + appendToElementName);
+            $("#" + appendToElementName + " .btn.btn-circle-arrow").on('click', function (event) {
+                $('.btn-circle-arrow').not(this).parent('.dropdown').removeClass('open');
+                $(this).parent().toggleClass('open');
+                $(this).parents('.input-search-dropdown').find($(".input-search-dropdown  .dropdown > .list > .item1")).show();
+                event = event || window.event;
+                // var target = e.target || e.srcElement;
+                event.stopPropagation();
+            });
+
+            $(".input-search-dropdown [data-search]").on("focus", function () {
+                $("#" + appendToElementName + " .btn.btn-circle-arrow").on('click', function (event) {
+                    $(this).parent().addClass('open');
+                    $(".input-search-dropdown  .dropdown > .list  .item1 .account-num .light-grey").contents().unwrap();
+                    event = event || window.event;
+                    // var target = e.target || e.srcElement;
+                    event.stopPropagation();
+                });
+            });
+            /* Click Item */
+            $("#" + appendToElementName + " .list .item1").on('click', function () {
+                $('.dropdown > .list > .item1').removeClass('selected');
+                $(this).addClass('selected');
+                $(this).parents('.input-search-dropdown').find('.formLabel').addClass('formTop');
+                $(this).parents('.dropdown').removeClass('open');
+                $(this).parents('.input-search-dropdown').find('input[type=text]').val($(this).find('.account-num').text());
+                if (isCallChangeEvent)
+                    $(this).parents('.input-search-dropdown').find('input[type=text]').change();
+            });
+
+            /* filter products */
+            $(".input-search-dropdown [data-search]").on("input", function () {
+                $('.dropdown > .list > .item1').removeClass('selected');
+                if (this.value.length > 0) {
+                    $(".input-search-dropdown  .dropdown > .list > .item1").removeClass("match").hide().filter(function () {
+                        return $(this).text().toLowerCase().indexOf($(".input-search-dropdown [data-search]").val().toLowerCase()) != -1;
+                    }).addClass("match").show();
+                    highlight(this.value);
+                    $(".input-search-dropdown  .dropdown").addClass('open');;
+                }
+                else {
+                    $(".input-search-dropdown  .dropdown > .list > .item1").removeClass("match").hide();
+                }
+
+            });
+
+            /* highlight matches text */
+            var highlight = function (string) {
+                $(".input-search-dropdown  .dropdown > .list   .item1.match .account-num").each(function () {
+                    var matchStart = $(this).text().toLowerCase().indexOf("string.toLowerCase()");
+                    if (matchStart !== -1) {
+                        var matchEnd = matchStart + string.length - 1;
+                        var beforeMatch = $(this).text().slice(0, matchStart);
+                        var matchText = $(this).text().slice(matchStart, matchEnd + 1);
+                        var afterMatch = $(this).text().slice(matchEnd + 1);
+                        $(this).html('');
+                        $(this).html(beforeMatch + " <em class='light-grey'>" + matchText + "</em>" + afterMatch);
+                    }
+                });
+            };
+
+            $("#" + appendToElementName + " > .list").each(function () {
+                var heightDropdown = $(this).find('.item1').length;
+                var heightDropdown2 = $(this).height();
+                if (heightDropdown > 5 || heightDropdown2 > 250) {
+                    $(this).addClass("scroller");
+                }
+
+            });
+
+        }
+    },
+    GetCurrentLang: function () {
+        if (document.documentElement.lang) {
+            return document.documentElement.lang.toLocaleLowerCase();
+        }
+        
+    },
+    InitInputTable: function() {
+        var formInputs = $('input.form-control'),
+        formInputs2 = $('textarea.form-control'),
+        formLabels = $('.formLabel');
+        formCurrency = $('.currency');
+        formLabels.click(function () {
+            $(this).parent().children('.form-control').focus();
+            $(this).parent().children('.form-control').click();
+        });
+        formCurrency.click(function () {
+            $(this).parent().children('.form-control').focus();
+            $(this).parent().children('.form-control').click();
+        });
+        formInputs.focus(function () {
+            $(this).parent().children('.formLabel').addClass('formTop');
+            $(this).parent().children('.currency').hide();
+            if ($(this).hasClass('currency-right')) {
+                $(this).css('padding-right', '0');
+            }
+            $(this).parent().children('.hideLabel').hide();
+        });
+        formInputs.focusout(function () {
+            if ($.trim($(this).val()).length == 0) {
+                $(this).parent().children('.formLabel').removeClass('formTop');
+                $(this).parent().children('.currency').hide();
+                $(this).parent().children('.hideLabel').show();
+            } else if ($(this).hasClass('currency-right')) {
+                $(this).parent().children('.currency').show().css({ "left": "auto", 'right': 0 });
+                $(this).css('padding-right', '13px');
+            } else {
+                $(this).parent().children('.currency').show().css('left', $(this).getTextSize()[0]);
+            }
+        });
+        formInputs2.focus(function () {
+            $(this).parent().children('.formLabel').addClass('formTop');
+        });
+        formInputs2.focusout(function () {
+            if ($.trim($(this).val()).length == 0) {
+                $(this).parent().children('.formLabel').removeClass('formTop');
+                $(this).parent().children('.currency').hide();
+            }
+        });
+        // searchbox
+        $('.search-box').keyup(function (e) {
+            var _value = e.currentTarget.value.trim();
+            if (_value !== '') {
+                $(this).nextAll('.btn-clear').removeClass('d-none');
+            } else {
+                $(this).nextAll('.btn-clear').addClass('d-none');
+            }
+        });
+    },
+    NumberAndCharOnly: function() {
+        var regex = new RegExp("^[a-zA-Z0-9]+$");
+        var key = String.fromCharCode(!event.charCode ? event.which : event.charCode);
+        if (!regex.test(key)) {
+            event.preventDefault();
+            return false;
+        }
+    },
+    TooltipParentClicked: function (el, isSkipOtherEvent) {
+        $(".tooltip-parent .tooltip-normal.tooltip--bottom").each(function () {
+            var widhtTooltip = $(this).width();
+            if (widhtTooltip >= 80) {
+                $(this).css({ "white-space": 'normal', "max-width": "90px", "min-width": "90px" });
+            }
+        });
+        tooltipWidth();
+        if (!isSkipOtherEvent) {
+            event.preventDefault();
+        }
+        $(".tooltip-parent-click").not(el).children(".tooltip-normal").hide();
+        $(el).children(".tooltip-normal").toggle();
+    },
+    ScrollTop: function() {
+        $("html, body").animate({ scrollTop: 0 }, "slow");
+    },
+    RemoveVietnameseCharacter: function(str) {
+        str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
+        str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
+        str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
+        str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
+        str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
+        str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
+        str = str.replace(/đ/g, "d");
+        str = str.replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, "A");
+        str = str.replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, "E");
+        str = str.replace(/Ì|Í|Ị|Ỉ|Ĩ/g, "I");
+        str = str.replace(/Ò|Ó|Ọ|Ỏ|Õ|Ô|Ồ|Ố|Ộ|Ổ|Ỗ|Ơ|Ờ|Ớ|Ợ|Ở|Ỡ/g, "O");
+        str = str.replace(/Ù|Ú|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, "U");
+        str = str.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
+        str = str.replace(/Đ/g, "D");
+        return str;
+    }
+}
+var DateTimeUtil = {
+    IsValidDate: function (value) {
+        return moment(value, "DD/MM/YYYY").isValid();
+    },
+    ValidateDatetime: function (value) {
+        return value.match(/^(?:(?:31(\/|-|\.)(?:0?[13578]|1[02]))\1|(?:(?:29|30)(\/|-|\.)(?:0?[13-9]|1[0-2])\2))(?:(?:1[6-9]|[2-9]\d)?\d{2})$|^(?:29(\/|-|\.)0?2\3(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00))))$|^(?:0?[1-9]|1\d|2[0-8])(\/|-|\.)(?:(?:0?[1-9])|(?:1[0-2]))\4(?:(?:1[6-9]|[2-9]\d)?\d{2})$/);
+    },
+    FormatDateTimeForControl: function (value) {
+        if (document.documentElement.lang === Lang_EN) {
+            var mydate = moment(value, 'DD-MMMM-YYYY');
+            //format that date into a different format
+            return moment(mydate).format("DD/MM/YYYY");
+        }
+        return value;
+    },
+    ToDate: function (date) {
+        var dateParts = date.split("/");
+        var dateObject = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+        return dateObject;
+    },
+    GetListLastCalendarItem: function(numOfItem, subtractBy ,outputFormat) {
+        var result = [];
+        for (var i = 0; i < numOfItem; i++) {
+            var value = moment().subtract(i, subtractBy).format(outputFormat);
+            result.push(value);
+        }
+        return result;
+    }
+}
+
+// get width or height
+!(function ($) {
+    var N = function (key) { return 'getTextSize.' + key; },
+        fontMapping = function ($o, font) {
+            //return {"font": font.font || $o.css('font')};
+            var result = {}; // don't affect original object
+            $.each(font, function (prop, val) {
+                result[prop] = (val || $o.css(prop));
+            });
+            return result;
+        }
+        ;
+
+    $.fn.getTextSize = function (dimension, text, font) {
+        dimension = (dimension || 'width');
+        // figure out what font aspects we're concerned with
+        if (typeof font === "string") {
+            font = { "font": font };
+        }
+        // include other common style properties that affect sizing
+        font = $.extend({ "font": false, "text-transform": false, "letter-spacing": false }, font);
+
+        // allow multiple calculations
+        return $.map($(this), function (o) {
+            var $o = $(o), $fake = $o.data(N('fake'));
+            if (!$fake) {
+                // cloning causes duplication issues on subsequent calls
+                // can attach to parent, but may be unnecessary parsing vs. body if updating font each time
+                $fake = $('<span>').hide().addClass('placeholder').empty().appendTo(document.body);
+                $o.data(N('fake'), $fake);
+            }
+            return $fake.html(text || $o.val() || $o.text()).css(fontMapping($o, font))[dimension]();
+        });
+    };
+})(jQuery);

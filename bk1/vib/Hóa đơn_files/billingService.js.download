@@ -1,0 +1,495 @@
+﻿var billingService = function () {
+    var sf = null;
+    var benController = null;
+    var accountController = null;
+    var cardController = null;
+    var topupBillingController = null;
+
+    var init = function (moduleId) {
+        sf = $.ServicesFramework(moduleId);
+        topupBillingController = sf.getServiceRoot('TopupBillingController');
+        benController = sf.getServiceRoot('BenController');
+        accountController = sf.getServiceRoot('AccountController');
+        cardController = sf.getServiceRoot('CardController');
+    };
+
+    var getServiceBilling = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: topupBillingController + 'Billing/Services',
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var benBulkConfirmOTP = function (otp) {
+        var deferred = $.Deferred();
+        var data = {
+            otp: otp
+        };
+        $.ajax({
+            type: "POST",
+            url: topupBillingController + 'Billing/BenBulkConfirmOTP',
+            data: data,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var benBulkConfirmOTPProcess = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            url: topupBillingController + 'Billing/BenBulkConfirmOTPProcess',
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var benBulkSubmitInfo = function (accountId, lstObjQuery) {
+        var deferred = $.Deferred();
+        var data = {
+            accountId: accountId,
+            input: JSON.stringify(lstObjQuery)
+        };
+        $.ajax({
+            type: "POST",
+            url: topupBillingController + 'Billing/BenBulkSubmitInfo',
+            data: data,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var benBulkDelete = function (benId) {
+        var deferred = $.Deferred();
+        var data = {
+            benId: benId
+        };
+        $.ajax({
+            type: "POST",
+            url: topupBillingController + 'Billing/BenBulkRemove',
+            data: data,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var benBulkValidate = function (lstBenId) {
+        var deferred = $.Deferred();
+        var data = {
+            benIds: lstBenId
+        };
+        $.ajax({
+            type: "POST",
+            url: topupBillingController + 'Billing/BenBulkValidate',
+            data: data,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var getBenBulkInfo = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: topupBillingController + 'Billing/BenBulkRetryGetInfo',
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var cardInfo = function (cardNo, toacctfromben, benid, cardser) {
+        var deferred = $.Deferred();
+        var data = {
+            cardno: cardNo,
+            toacctfromben: toacctfromben,
+            benid: benid,
+            cardser: cardser
+        };
+        $.ajax({
+            type: "POST",
+            url: cardController + "Payment/CardInfo",
+            data: data,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var submitOTPBillingPru = function (otp) {
+        var deferred = $.Deferred();
+        var data = {
+            otp: otp
+        };
+        $.ajax({
+            type: "POST",
+            url: topupBillingController + '/Prudential/Confirm',
+            data: data,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var submitOTPBillingWater = function (otp) {
+        var deferred = $.Deferred();
+        var data = {
+            otp: otp
+        };
+        $.ajax({
+            type: "POST",
+            url: topupBillingController + 'Billing/Confirm',
+            data: data,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var submitOTPBillingEVN = function (otp) {
+        var deferred = $.Deferred();
+        var data = {
+            otp: otp
+        };
+        $.ajax({
+            type: "POST",
+            url: topupBillingController + '/EVN/Confirm',
+            data: data,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var getOTPBillingWater = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: topupBillingController + 'Billing/GetOTP',
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            Util.ShowSuccessMessage(result);
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var getOTPBillingEVN = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: topupBillingController + 'EVN/GetOTP',
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            Util.ShowSuccessMessage(result);
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var getOTPBillingPru = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: topupBillingController + 'Prudential/GetOTP',
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            Util.ShowSuccessMessage(result);
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var validateBillingPru = function (custId, isSave, description, accountId, amount, isPayPhiDK, isPayPhiHTTD, isPayPhiTamUng, isPayPhiKhac) {
+        var deferred = $.Deferred();
+        var data = {
+            custId: custId,
+            name: "",
+            email: "",
+            mobile: "",
+            isSave: isSave,
+            desc: description,
+            accountId: accountId,
+            amount: amount,
+            isPayPhiDK: isPayPhiDK,
+            isPayPhiHTTD: isPayPhiHTTD,
+            isPayPhiTamUng: isPayPhiTamUng,
+            isPayPhiKhac: isPayPhiKhac
+        };
+        $.ajax({
+            type: "POST",
+            url: topupBillingController + 'Prudential/SubmitInfo',
+            data: data,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var validateBillingEVN = function (custId, isSave, desc, accountId) {
+        var deferred = $.Deferred();
+        var data = {
+            custId: custId,
+            isSave: isSave,
+            desc: desc,
+            accountId: accountId
+        };
+        $.ajax({
+            type: "POST",
+            url: topupBillingController + '/EVN/SubmitInfo',
+            data: data,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var validateBillingWater = function (custId, isSave, desc, accountId) {
+        var deferred = $.Deferred();
+        var data = {
+            custId: custId,
+            isSave: isSave,
+            desc: desc,
+            accountId: accountId
+        };
+        $.ajax({
+            type: "POST",
+            url: topupBillingController + 'Billing/SubmitInfo',
+            data: data,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var getAccountForTransfer = function (module) {
+        var deferred = $.Deferred();
+        var fromaccount = JSON.parse(sessionStorage.getItem("ACCOUNT_" + module));
+        if (fromaccount) {
+            return deferred.resolve(fromaccount).promise();
+        }
+        var data = {
+            module: module
+        };
+        $.ajax({
+            type: "GET",
+            url: accountController + "Account/AccountForTransfer",
+            data: data,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            sessionStorage.setItem("ACCOUNT_" + module, JSON.stringify(result));
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var getBillingPruAccount = function (custId, type, frombenlist) {
+        var deferred = $.Deferred();
+        var data = {
+            custId: custId,
+            type: type,
+            frombenlist: frombenlist
+        };
+        $.ajax({
+            type: "GET",
+            url: topupBillingController + 'Prudential/GetCustomerInfo',
+            data: data,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var getBillingEVNAccount = function (custId, frombenlist) {
+        var deferred = $.Deferred();
+        var data = {
+            custId: custId.toUpperCase(),
+            frombenlist: frombenlist
+        };
+        $.ajax({
+            type: "GET",
+            url: topupBillingController + 'EVN/GetCustomerInfo',
+            data: data,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var getBillingWaterAccount = function (custId, serviceId, supplierId, frombenlist) {
+        var deferred = $.Deferred();
+        var data = {
+            custId: custId,
+            serviceId: serviceId,
+            supplierId: supplierId,
+            frombenlist: frombenlist
+        };
+        $.ajax({
+            type: "GET",
+            url: topupBillingController + 'Billing/GetCustomerInfo',
+            data: data,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var getStateBillingWater = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: topupBillingController + 'Billing/Services',
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var getBillingBenDetail = function (benId) {
+        var deferred = $.Deferred();
+        var data = {
+            id: benId
+        };
+        $.ajax({
+            type: "GET",
+            url: benController + 'Ben/Detail',
+            data: data,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var deleteBen = function (data) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            url: benController + "Ben/Delete",
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var billingList = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: benController + "Billing/List",
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    return {
+        Init: init,
+        BillingList: billingList,
+        DeleteBen: deleteBen,
+        GetBillingBenDetail: getBillingBenDetail,
+        GetStateBillingWater: getStateBillingWater,
+        GetBillingWaterAccount: getBillingWaterAccount,
+        GetBillingEVNAccount: getBillingEVNAccount,
+        GetBillingPruAccount: getBillingPruAccount,
+        GetAccountForTransfer: getAccountForTransfer,
+        ValidateBillingWater: validateBillingWater,
+        ValidateBillingEVN: validateBillingEVN,
+        ValidateBillingPru: validateBillingPru,
+        GetOTPBillingPru: getOTPBillingPru,
+        GetOTPBillingEVN: getOTPBillingEVN,
+        GetOTPBillingWater: getOTPBillingWater,
+        SubmitOTPBillingEVN: submitOTPBillingEVN,
+        SubmitOTPBillingWater: submitOTPBillingWater,
+        SubmitOTPBillingPru: submitOTPBillingPru,
+        CardInfo: cardInfo,
+        BenBulkValidate: benBulkValidate,
+        GetBenBulkInfo: getBenBulkInfo,
+        BenBulkDelete: benBulkDelete,
+        BenBulkSubmitInfo: benBulkSubmitInfo,
+        BenBulkConfirmOTPProcess: benBulkConfirmOTPProcess,
+        BenBulkConfirmOTP: benBulkConfirmOTP,
+        GetServiceBilling: getServiceBilling
+    };
+}();

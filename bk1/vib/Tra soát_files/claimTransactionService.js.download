@@ -1,0 +1,188 @@
+﻿var claimTransactionService = function () {
+    var sf = null;
+    var accountController = null;
+    var transactionController = null;
+    var init = function (moduleId) {
+        sf = $.ServicesFramework(moduleId);
+        accountController = sf.getServiceRoot('AccountController') + 'Account/';
+        transactionController = sf.getServiceRoot('TransactionController') + 'OnlineClaim/';
+    };
+        // claimTransaction
+        var loadAccountForTransfer = function () {
+            var deferred = $.Deferred();
+            var param = {
+                module: "TRANSACTIONCLAIM"
+            };
+            $.ajax({
+                type: "GET",
+                url: accountController + "AccountForTransfer",
+                data: param,
+                beforeSend: sf.setModuleHeaders
+            }).done(function (result) {
+                deferred.resolve(result);
+            }).fail(function (error) {
+                deferred.reject();
+            });
+            return deferred.promise();
+        };
+
+        var loadClaimList = function (acctno, month) {
+            var deferred = $.Deferred();
+            var param = {
+                acctno: acctno,
+                month: month // Format: MM/YYYY
+            };
+            $.ajax({
+                type: "GET",
+                url: transactionController + "List",
+                data: param,
+                beforeSend: sf.setModuleHeaders
+            }).done(function (result) {
+                deferred.resolve(result);
+            }).fail(function (error) {
+                deferred.reject();
+            });
+            return deferred.promise();
+        };
+
+        var loadClaimTransDetail = function (id, acctno, transdate){
+            var deferred = $.Deferred();
+            var param = {
+                id: id,
+                acctno: acctno, 
+                trandate: transdate,
+            };
+            $.ajax({
+                type: "GET",
+                url: transactionController + "TransDetail",
+                data: param,
+                beforeSend: sf.setModuleHeaders
+            }).done(function (result) {
+                deferred.resolve(result);
+            }).fail(function (error) {
+                deferred.reject();
+            });
+            return deferred.promise();
+        };
+
+        var submitClaimRequest = function (acctno, id, claimcode, claimdesc, transdate){
+            var deferred = $.Deferred();
+            var activetypeOfSubmit = $("#allowclaim-type").val();
+            var param = {
+                trandate: transdate,
+                claimcode: claimcode,
+                claimdesc: claimdesc,
+            };
+            if (activetypeOfSubmit == typeOfSubmit.CLAIM){
+                param.acctno = acctno;
+                param.id = id;
+            }
+            else {
+                param.id = $("#active-claimid").val();
+            }
+            $.ajax({
+                type: "POST",
+                cache: false,
+                url: transactionController + "Submit",
+                data: param,
+                beforeSend: sf.setModuleHeaders
+            }).success(function (result) {
+                deferred.resolve(result);
+            }).error(function (error) {
+                deferred.reject(error);
+            });
+            return deferred.promise();
+        };
+
+        var loadDataViewDetailClaim = function (id, transid){
+            var deferred = $.Deferred();
+            var param = {
+                id: id
+            };
+            $.ajax({
+                type: "GET",
+                url: transactionController + "Detail",
+                data: param,
+                beforeSend: sf.setModuleHeaders
+            }).done(function (result) {
+                deferred.resolve(result);
+            }).fail(function () {
+                deferred.reject();
+            });
+            return deferred.promise();
+        };
+
+        var updateStatus = function (id, action, msgAction){
+            var deferred = $.Deferred();
+            var param = {
+                id: id,
+                action: action // CLOSED / DELETED / CANCELED
+            };
+            $.ajax({
+                type: "POST",
+                cache: false,
+                url: transactionController + "UpdateStatus",
+                data: param,
+                beforeSend: sf.setModuleHeaders,
+            }).done(function (result) {
+                deferred.resolve(result);
+            }).fail(function () {
+                deferred.reject();
+            });
+            return deferred.promise();
+        };
+
+        // claimTransactionHistory
+        var loadListClaimHistory = function (status) {
+            var deferred = $.Deferred();
+            var param = {
+                status: status
+            };
+            $.ajax({
+                type: "GET",
+                url: transactionController + "History",
+                data: param,
+                beforeSend: sf.setModuleHeaders
+            }).done(function (result) {
+                deferred.resolve(result);
+            }).fail(function () {
+                deferred.reject();
+            });
+            return deferred.promise();
+        };
+
+        var submitClaimHistoryRequest = function (acctno, id, claimcode, claimdesc){
+            var deferred = $.Deferred();
+            // var activetypeOfSubmit = $("#allowclaim-type").val();
+            var param = {
+                id: id,
+                claimcode: claimcode,
+                claimdesc: claimdesc,
+                acctno: acctno
+            };
+            $.ajax({
+                type: "POST",
+                cache: false,
+                url: transactionController + "Submit",
+                data: param,
+                beforeSend: sf.setModuleHeaders
+            }).done(function (result) {
+                deferred.resolve(result);
+            }).fail(function (error) {
+                deferred.reject();
+            });
+            return deferred.promise();
+        };
+        
+        return {
+            Init: init,
+            LoadAccountForTransfer: loadAccountForTransfer,
+            LoadClaimList: loadClaimList,
+            LoadClaimTransDetail: loadClaimTransDetail,
+            SubmitClaimRequest: submitClaimRequest,
+            LoadDataViewDetailClaim: loadDataViewDetailClaim,
+            UpdateStatus: updateStatus,
+            LoadListClaimHistory: loadListClaimHistory,
+            SubmitClaimHistoryRequest: submitClaimHistoryRequest
+        }
+}();

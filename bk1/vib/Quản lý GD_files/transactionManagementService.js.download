@@ -1,0 +1,361 @@
+﻿var transactionManagementService = function () {
+    var sf = null;
+    var transferControllerBulkManagement = "";
+    var transferControllerIBAManagement = "";
+    var transferControllerPayAnyOneManagement = "";
+    var transferControllerSchedule = "";
+
+    var init = function (moduleId) {
+        sf = $.ServicesFramework(moduleId);
+        transferControllerBulkManagement = sf.getServiceRoot('TransferController') + 'BulkManagement/';
+        transferControllerIBAManagement = sf.getServiceRoot('TransferController') + 'IBAManagement/';
+        transferControllerPayAnyOneManagement = sf.getServiceRoot('TransferController') + 'PayAnyOneManagement/';
+        transferControllerSchedule = sf.getServiceRoot('TransferController') + 'Schedule/';
+        transferControllerIBAConfig = sf.getServiceRoot('TransferController') + 'IBA/Config';
+    };
+
+    //Bulk Management
+    var bulkService = {
+        GetList: function () {
+            var deferred = $.Deferred();
+            var data = {
+                module: "",
+                searchtype: "DATE",
+                fromdate: "1-1-2000",
+                todate: ""
+            }
+            $.ajax({
+                type: "GET",
+                url: transferControllerBulkManagement + "List",
+                dataType: 'json',
+                beforeSend: sf.setModuleHeaders,
+                data: data
+            }).done(function (result) {
+                deferred.resolve(result);
+            }).fail(function (error) {
+                Util.ShowErrorMessage(error);
+                deferred.reject();
+            });
+            return deferred.promise();
+        },
+        GetDetail: function (id) {
+            var data = {
+                id: id
+            }
+            var deferred = $.Deferred();
+            $.ajax({
+                type: "GET",
+                url: transferControllerBulkManagement + "Detail",
+                beforeSend: sf.setModuleHeaders,
+                data: data
+            }).done(function (result) {
+                deferred.resolve(result);
+            }).fail(function (error) {
+                Util.ShowErrorMessage(error);
+                deferred.reject(error);
+            });
+            return deferred.promise();
+        }
+    };
+    //IBA Mangement
+    var iBAService = {
+        GetList: function () {
+            var data = {
+                searchtype: "DATE",
+                fromdate: "1-1-2000",
+                todate: ""
+            }
+            var deferred = $.Deferred();
+            $.ajax({
+                type: "GET",
+                url: transferControllerIBAManagement + "List",
+                beforeSend: sf.setModuleHeaders,
+                data: data
+            }).done(function (result) {
+                if (result.STATUSCODE == '000000') {
+                    deferred.resolve(result);
+                } else {
+                    LogUtil.LogRBAjaxError(result.MESSAGE);
+                    deferred.reject(result);
+                }
+            }).fail(function (error) {
+                LogUtil.LogRBAjaxError(error);
+                deferred.reject(error);
+            });
+            return deferred.promise();
+        },
+
+        GetDetail: function (id) {
+            var data = {
+                id: id
+            }
+            var deferred = $.Deferred();
+            $.ajax({
+                type: "GET",
+                url: transferControllerIBAManagement + "Detail",
+                beforeSend: sf.setModuleHeaders,
+                data: data
+            }).done(function (result) {
+                if (result.STATUSCODE == '000000') {
+                    deferred.resolve(result);
+                } else {
+                    deferred.reject(result);
+                }
+            }).fail(function (error) {
+                deferred.reject(error);
+            });
+            return deferred.promise();
+        },
+
+        GetOTP: function () {
+            var deferred = $.Deferred();
+            $.ajax({
+                type: "GET",
+                url: transferControllerIBAManagement + "GetOtp",
+                beforeSend: sf.setModuleHeaders
+            }).done(function (result) {
+                Util.ShowSuccessMessage(result);
+                deferred.resolve(result);
+            }).fail(function (error) {
+                LogUtil.LogRBAjaxError(error);
+                deferred.reject();
+            });
+            return deferred.promise();
+        },
+
+        UpdateStatus: function (data) {
+            var deferred = $.Deferred();
+            $.ajax({
+                type: "POST",
+                url: transferControllerIBAManagement + "UpdateStatus",
+                beforeSend: sf.setModuleHeaders,
+                data: data
+            }).done(function (result) {
+                deferred.resolve(result);
+            }).fail(function (error) {
+                deferred.reject(error);
+            });
+            return deferred.promise();
+        },
+
+        GetConfig: function () {
+            var deferred = $.Deferred();
+            $.ajax({
+                type: "GET",
+                url: transferControllerIBAConfig,
+                beforeSend: sf.setModuleHeaders,
+            }).done(function (result) {
+                deferred.resolve(result);
+            }).fail(function (error) {
+                deferred.reject(error);
+            });
+            return deferred.promise();
+        },
+
+        UploadFile: function (file) {
+            var deferred = $.Deferred();
+            $.ajax({
+                type: "POST",
+                url: transferControllerIBAManagement + "UploadFile",
+                data: file,
+                processData: false,
+                contentType: false,
+                beforeSend: sf.setModuleHeaders,
+                async: false
+            }).done(function (result) {
+                deferred.resolve(result);
+            }).fail(function (error) {
+                deferred.reject(error);
+            });
+            return deferred.promise();
+        },
+
+        UpdateFileIBA: function (data) {
+            var deferred = $.Deferred();
+            $.ajax({
+                type: "POST",
+                url: transferControllerIBAManagement + "UpdateFileIBA",
+                data: data,
+                beforeSend: sf.setModuleHeaders
+            }).done(function (result) {
+                deferred.resolve(result);
+            }).fail(function (error) {
+                deferred.reject(error);
+            });
+            return deferred.promise();
+        }
+    };
+    //PayAnyOne Mangement
+    var payAnyOneService = {
+        GetList: function () {
+            var deferred = $.Deferred();
+            var data = {
+                searchtype: "DATE",
+                fromdate: "1-1-2000",
+                todate: ""
+            };
+            $.ajax({
+                type: "GET",
+                url: transferControllerPayAnyOneManagement + "List",
+                beforeSend: sf.setModuleHeaders,
+                data: data
+            }).done(function (result) {
+                deferred.resolve(result);
+            }).fail(function (error) {
+                LogUtil.LogRBAjaxError(error);
+                deferred.reject();
+            });
+            return deferred.promise();
+        },
+        GetOTP: function () {
+            var deferred = $.Deferred();
+            $.ajax({
+                type: "GET",
+                url: transferControllerPayAnyOneManagement + "GetOtp",
+                beforeSend: sf.setModuleHeaders
+            }).done(function (result) {
+                deferred.resolve(result);
+            }).fail(function (error) {
+                LogUtil.LogRBAjaxError(error);
+                deferred.reject();
+            });
+            return deferred.promise();
+        },
+        UpdateStatus: function (action, id, otp) {
+            var deferred = $.Deferred();
+            var data = {
+                id: id,
+                action: action,
+                otp: otp
+            };
+            $.ajax({
+                type: "POST",
+                url: transferControllerPayAnyOneManagement + "UpdateStatus",
+                beforeSend: sf.setModuleHeaders,
+                data: data
+            }).done(function (result) {
+                deferred.resolve(result);
+            }).fail(function (error) {
+                LogUtil.LogRBAjaxError(error);
+                deferred.reject();
+            });
+            return deferred.promise();
+        },
+        GetDetail: function (id) {
+            var deferred = $.Deferred();
+            var data = {
+                id: id
+            };
+            $.ajax({
+                type: "GET",
+                url: transferControllerPayAnyOneManagement + "Detail",
+                beforeSend: sf.setModuleHeaders,
+                data: data
+            }).done(function (result) {
+                deferred.resolve(result);
+            }).fail(function (error) {
+                LogUtil.LogRBAjaxError(error);
+                deferred.reject();
+            });
+            return deferred.promise();
+        },
+    };
+    //Schudule - Chuyen thien dat lich
+    var scheduleService = {
+        GetList: function () {
+            var deferred = $.Deferred();
+            $.ajax({
+                type: "GET",
+                url: transferControllerSchedule + "List",
+                dataType: 'json',
+                beforeSend: sf.setModuleHeaders
+            }).done(function (result) {
+                deferred.resolve(result);
+            }).fail(function (error) {
+                Util.ShowErrorMessage(error);
+                deferred.reject();
+            });
+            return deferred.promise();
+        },
+
+        Delete: function (id, otp) {
+            var data = {
+                id: id,
+                otp: otp
+            }
+            var deferred = $.Deferred();
+            $.ajax({
+                type: "POST",
+                url: transferControllerSchedule + "Delete",
+                beforeSend: sf.setModuleHeaders,
+                data: data
+            }).done(function (result) {
+                deferred.resolve(result);
+            }).fail(function (error) {
+                Util.ShowErrorMessage(error);
+                deferred.reject(error);
+            });
+            return deferred.promise();
+        },
+
+        Update: function (data) {
+            var deferred = $.Deferred();
+            $.ajax({
+                type: "POST",
+                url: transferControllerSchedule + "Update",
+                beforeSend: sf.setModuleHeaders,
+                data: data
+            }).done(function (result) {
+                if (result.STATUSCODE == '000000') {
+                    deferred.resolve(result);
+                } else {
+                    deferred.reject(result);
+                }
+            }).fail(function (error) {
+                deferred.reject(error);
+            });
+            return deferred.promise();
+        },
+
+        GetOTP: function () {
+            var deferred = $.Deferred();
+            $.ajax({
+                type: "GET",
+                url: transferControllerSchedule + "GetOtp",
+                beforeSend: sf.setModuleHeaders
+            }).done(function (result) {
+                Util.ShowSuccessMessage(result);
+                deferred.resolve(result);
+            }).fail(function (error) {
+                LogUtil.LogRBAjaxError(error);
+                deferred.reject();
+            });
+            return deferred.promise();
+        }
+    };
+
+    return {
+        Init: init,
+        //BULK
+        GetListBulk: bulkService.GetList,
+        GetDetailBulk: bulkService.GetDetail,
+        //Schedule
+        GetListSchedule: scheduleService.GetList,
+        DeleteSchedule: scheduleService.Delete,
+        UpdateSchedule: scheduleService.Update,
+        GetOtpSchedule: scheduleService.GetOTP,
+        //PayAnyOne
+        GetListPayAnyOne: payAnyOneService.GetList,
+        GetOTPPayAnyOne: payAnyOneService.GetOTP,
+        UpdateStatusPayAnyOne: payAnyOneService.UpdateStatus,
+        GetDetailPayAnyOne: payAnyOneService.GetDetail,
+        //IBA
+        GetListIBA: iBAService.GetList,
+        GetDetailIBA: iBAService.GetDetail,
+        GetOTPIBA: iBAService.GetOTP,
+        UpdateStatusIBA: iBAService.UpdateStatus,
+        UploadFileIBA: iBAService.UploadFile,
+        UpdateFileIBA: iBAService.UpdateFileIBA,
+        GetConfigIBA: iBAService.GetConfig,
+    }
+}();

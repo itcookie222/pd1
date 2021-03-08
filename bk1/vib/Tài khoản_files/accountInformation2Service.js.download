@@ -1,0 +1,1134 @@
+﻿var accountInformation2Service = function () {
+    var sf = null;
+    var ac = null;
+    var cc = null;
+    var cci = null;
+    var cce = null;
+    var cl = null;
+    var lc = null;
+    var scc = null;
+    var accountController = null;
+    var cardController = null;
+    var acount = null;
+    var init = function (moduleId) {
+        sf = $.ServicesFramework(moduleId);
+        ac = sf.getServiceRoot('AccountController') + 'Account/';
+        cc = sf.getServiceRoot('CardController') + 'Card/';
+        cardPayoff = sf.getServiceRoot('CardController');
+        cce = sf.getServiceRoot('CardController') + 'Egift/';
+        cl = sf.getServiceRoot('AccountController') + 'Close/';
+        lc = sf.getServiceRoot('LoanController') + 'Loan/';
+        scc = sf.getServiceRoot('CardController') + 'SelfService/';
+        accountController = sf.getServiceRoot('AccountController');
+        cardController = sf.getServiceRoot('CardController');
+        sf = $.ServicesFramework(moduleId);
+        cci = sf.getServiceRoot('CardController') + 'Installment/';
+        acount = sf.getServiceRoot('AccountController') + 'Account/';
+        accVIBA = sf.getServiceRoot('TransferController');
+    };
+    var getAccountOTP = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: ac + "GetOtp",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            Util.ShowSuccessMessage(result);
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+    var getAccountList = function () {
+
+        cci = sf.getServiceRoot('CardController') + 'Installment/';
+    };
+
+    var getAccountList = function () {
+
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: ac + "List",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            if (result.STATUSCODE === "000000") {
+                deferred.resolve(result);
+            } else {
+                deferred.reject(result);
+            }
+        }).fail(function (error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    var getAccountDetail = function (id, productType) {
+        var deferred = $.Deferred();
+        var url = ac + "Detail?id=" + id;
+        if (productType === ProductType.Card) {
+            url = cc + "CardInfo?id=" + id;
+        }
+        $.ajax({
+            type: "GET",
+            url: url,
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            if (result.STATUSCODE === "000000") {
+                deferred.resolve(result);
+            } else {
+                deferred.reject(result);
+            }
+        }).fail(function (error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+    var sendCardStatement = function (date, cardNo) {
+        var deferred = $.Deferred();
+        var param = {
+            id: cardNo,
+            dateRp: date,
+            type: "SendEmail"
+        };
+
+        $.ajax({
+            type: "GET",
+            data: param,
+            url: cc + "CardStatement",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+    var getCardStatement = function (date, cardNo) {
+        var deferred = $.Deferred();
+        var param = {
+            id: cardNo,
+            dateRp: date,
+            type: "Report"
+        };
+
+        $.ajax({
+            type: "GET",
+            data: param,
+            url: cc + "CardStatement",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var getTransactionHistoryList = function (acctId, acctType, timeType, dtFrom, dTo, pageIndex, failCB) {
+        var deferred = $.Deferred();
+        var param = {
+            acctid: acctId,
+            accttype: acctType.toLowerCase() || "",
+            timetype: timeType,
+            pageindex: pageIndex,
+            dtfrom: dtFrom,
+            dtto: dTo
+        };
+        $.ajax({
+            type: "GET",
+            url: ac + "ListTrans",
+            data: param,
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            if (result.STATUSCODE === "000000") {
+                deferred.resolve(result);
+            } else {
+                deferred.reject();
+                typeof failCB === 'function' ? failCB() : "";
+            }
+
+        }).fail(function (error) {
+            deferred.reject();
+            typeof failCB === 'function' ? failCB() : "";
+        });
+        return deferred.promise();
+
+    };
+
+    var getAccountTransferPayoff = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: ac + "AccountForTransfer",
+            data: { module: 'CARDPAYOFF' },
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    var getAccountTransferSendMoreMoney = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: ac + "AccountForTransfer",
+            data: { module: 'VIBA' },
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    // OTP
+    var getOTPTransferSendMoreMoney = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: accVIBA + "OTP/GetOTP",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            Util.ShowSuccessMessage(result);
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+
+    var submitTransferSendMoreMoney = function (otp) {
+        var deferred = $.Deferred();
+        var data = {
+            otp: otp
+        };
+        $.ajax({
+            type: "POST",
+            url: accVIBA + "VIBA/Submit",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+
+    var validateTransferSendMoreMoney = function (fromAcctNo, toAcctNo, amount, description, addBen, scheduleType, scheduleDate, scheduleRegularFreq, scheduleRegularEndType, scheduleRegularEndValue) {
+        var deferred = $.Deferred();
+        var data = {
+            fromacctno: fromAcctNo,
+            toacctno: toAcctNo,
+            amount: amount,
+            description: description,
+            addben: addBen ? "Y" : "N",
+            scheduletype: scheduleType,
+            scheduledate: scheduleDate,
+            scheduleregularfreq: scheduleRegularFreq,
+            scheduleregularendtype: scheduleRegularEndType,
+            scheduleregularendvalue: scheduleRegularEndValue,
+        };
+        $.ajax({
+            type: "POST",
+            url: accVIBA + "VIBA/Validate",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    };
+
+    var validateTransactionPayoff = function (objPayment) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            url: cardPayoff + "/Payment/ValidateTransaction",
+            data: objPayment,
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+    var submitPaymentPayoff = function (otp) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            url: cardPayoff + "/Payment/SubmitPayment",
+            data: { otp: otp },
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+    var cardInfo = function (cardId) {
+        var deferred = $.Deferred();
+        var param = {
+            id: cardId,
+            getacct: 'Y'
+        };
+        $.ajax({
+            type: "GET",
+            data: param,
+            url: cc + "CardInfo",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    var getTransactionHistoryDetail = function (acctId, acctType, tranType, tranMode, tranDate, tranNo, refid, ccy) {
+        var deferred = $.Deferred();
+        var param = {
+            acctid: acctId,
+            accttype: acctType,
+            trantype: tranType,
+            tranmode: tranMode,
+            trandate: tranDate,
+            tranno: tranNo,
+            refid: refid,
+            ccy: ccy
+        };
+        $.ajax({
+            type: "GET",
+            url: ac + "TranDetails",
+            data: param,
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            if (result.STATUSCODE === "000000") {
+                deferred.resolve(result);
+            } else {
+                deferred.reject();
+            }
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var getAvgBalance = function (acctId, month) {
+        var deferred = $.Deferred();
+        var param = {
+            id: acctId,
+            month: month
+        };
+        $.ajax({
+            type: "GET",
+            url: ac + "AvgBalance",
+            data: param,
+            cache: true,
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            if (result.STATUSCODE === "000000" || result.STATUSCODE === "0000000") {
+                deferred.resolve(result);
+            } else {
+                deferred.reject();
+            }
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var getCardList = function () {
+        var deferred = $.Deferred();
+        var cardList = JSON.parse(sessionStorage.getItem('CardList') || "[]");
+        if (cardList && cardList.length > 0) {
+            deferred.resolve(cardList);
+        } else {
+            $.ajax({
+                type: "GET",
+                url: cc + "List",
+                cache: true,
+                beforeSend: sf.setModuleHeaders
+            }).done(function (result) {
+                if (result.STATUSCODE === "000000") {
+                    sessionStorage.setItem('CardList', JSON.stringify(result.DATA || []));
+                    deferred.resolve(result.DATA);
+                } else {
+                    deferred.reject();
+                }
+            }).fail(function (error) {
+                deferred.reject();
+            });
+        }
+
+        return deferred.promise();
+    }
+
+    // bắt đầu xử lý cardInstallment
+    var installmentInfo = function (cardserno) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: cci + "ListTrans4Register",
+            data: { cardserno: cardserno },
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+    var detailTransForInstallment = function (cardserno, dataIndex) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: cci + "DetailTransForInstallment",
+            data: { cardserno: cardserno, dataIndex: dataIndex },
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+    var listRegistedInstallment = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: cci + "ListRegistedInstallment",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result.DATA);
+        }).fail(function (error) {
+            reject(error);
+        });
+        return deferred.promise();
+    };
+    // kết thúc xư lý cardInstallment
+    /* Xu ly Card */
+    /* Lay thong tin Card */
+    var loadCardInfo = function (cardNo) {
+        var deferred = $.Deferred();
+        var param = {
+            id: cardNo,
+            getacct: 'Y'
+        };
+        $.ajax({
+            type: "GET",
+            data: param,
+            url: cc + "CardInfo",
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            // LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+    /* Lay thong tin xu huong tieu dung */
+    var loadTrend = function (cardNo, date) {
+        var deferred = $.Deferred();
+        var param = {
+            cardser: cardNo,
+            dateRp: date
+        };
+        $.ajax({
+            type: "GET",
+            data: param,
+            url: cc + "TransSumary",
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            // LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    /* Load bonus card */
+    var getCardPoint = function (cardNo) {
+        var deferred = $.Deferred();
+        var param = {
+            cardser: cardNo,
+            checkannual: "Y"
+        };
+        $.ajax({
+            type: "GET",
+            data: param,
+            url: cc + "CardPoint",
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            // LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var getOTP = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: ac + "GetOtp",
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            Util.ShowSuccessMessage(result);
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    // Hien thi thong tin the
+    var cardSecretInfo = function (cardNo, otp) {
+        var deferred = $.Deferred();
+        var param = {
+            cardser: cardNo,
+            otp: otp
+        };
+
+        $.ajax({
+            type: "GET",
+            data: param,
+            url: cc + "CardSecretInfo",
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    /* API xu ly phan doi qua */
+    /* Lay danh sach lich su doi qua */
+    var getListHistoryEgiftTrans = function (cardserno, pageSize, pageIndex) {
+        var objData = {
+            cardserno: cardserno,
+            pageSize: pageSize,
+            pageIndex: pageIndex
+        };
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: cce + "GetListEgiftTrans",
+            data: objData,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            if (result.STATUSCODE === "000000") {
+                deferred.resolve(result.DATA);
+            } else {
+                deferred.reject(result);
+            }
+        }).fail(function (error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+    var GetListUrboxTrans = function (cardserno, pageSize, pageIndex) {
+        var objData = {
+            cardserno: cardserno,
+            pageSize: pageSize,
+            pageIndex: pageIndex
+        };
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: cce + "GetListUrboxTrans",
+            data: objData,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            if (result.STATUSCODE === "000000") {
+                deferred.resolve(result.DATA);
+            } else {
+                deferred.reject(result);
+            }
+        }).fail(function (error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    /* Lay danh sach egift cate */
+    var getListEgiftCate = function (cardserno) {
+        var deferred = $.Deferred();
+        var data = {
+            cardserno: cardserno
+        };
+        $.ajax({
+            type: "GET",
+            cache: false,
+            url: cce + "GetListEgiftCate",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    /* Lay danh sach egift theo category */
+    var getListEgiftItem = function (cardserno, cateid) {
+        var deferred = $.Deferred();
+        var data = {
+            cardserno: cardserno,
+            cateid: cateid
+        };
+        $.ajax({
+            type: "GET",
+            cache: false,
+            url: cce + "GetListEgiftItem",
+            beforeSend: sf.setModuleHeaders,
+            data: data
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    /* Ham lay OTP */
+    var getOtpEgift = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: cce + "GetOTP",
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            Util.ShowSuccessMessage(result.result);
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    /* submit form */
+    var registerEgift = function (dataRegister) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            cache: false,
+            url: cce + "RegisterEgift",
+            dataType: 'json',
+            data: dataRegister,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    /* validate urbox */
+    var validateEgift = function (data) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            cache: false,
+            url: cce + "ValidateUrlboxItem",
+            dataType: 'json',
+            data: data,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var validateEgift = function (data) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            cache: false,
+            url: cce + "ValidateUrlboxItem",
+            dataType: 'json',
+            data: data,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var submitUrlboxItem = function (otp) {
+        var param = {
+            otp: otp
+        };
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            cache: false,
+            url: cce + "SubmitUrlboxItem",
+            dataType: 'json',
+            data: param,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var checkAccountClose = function (acctId, accType) {
+        var deferred = $.Deferred();
+        var param = {
+            acctid: acctId,
+            accttype: accType
+        };
+        $.ajax({
+            type: "GET",
+            url: cl + "CheckAccountClose",
+            data: param,
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            if (result.STATUSCODE === "000000") {
+                deferred.resolve(result);
+            } else {
+                deferred.reject();
+            }
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var getCloseAccountInfo = function (acctId) {
+        var deferred = $.Deferred();
+        var param = {
+            acctid: acctId
+        };
+        $.ajax({
+            type: "GET",
+            url: cl + "AccountInfo",
+            data: param,
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            if (result.STATUSCODE === "000000") {
+                deferred.resolve(result);
+            } else {
+                deferred.reject();
+            }
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var submitCloseAcct = function (acctId, otp, settleAccountId) {
+        var deferred = $.Deferred();
+        var param = {
+            acctid: acctId,
+            otp: otp,
+            settleaccountid: settleAccountId
+        };
+        $.ajax({
+            type: "POST",
+            url: cl + "Submit",
+            data: param,
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var getRepaymentSchedule = function (loanNo, ddNo) {
+        var deferred = $.Deferred();
+        var param = {
+            loanNo: loanNo,
+            ddNo: ddNo
+        };
+        $.ajax({
+            type: "GET",
+            url: lc + "RepaymentSchedule",
+            data: param,
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            if (result.STATUSCODE === "000000") {
+                deferred.resolve(result);
+            } else {
+                LogUtil.LogRBAjaxReject(result);
+                deferred.reject();
+            }
+        }).fail(function (error) {
+            LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var getRepaymentHist = function (loanNo, ddNo, ccy) {
+        var deferred = $.Deferred();
+        var param = {
+            loanNo: loanNo,
+            ddNo: ddNo,
+            ccy: ccy
+        };
+        $.ajax({
+            type: "GET",
+            url: lc + "RepaymentHist",
+            data: param,
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            if (result.STATUSCODE === "000000") {
+                deferred.resolve(result);
+            } else {
+                LogUtil.LogRBAjaxReject(result);
+                deferred.reject();
+            }
+        }).fail(function (error) {
+            LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var getLoanOverdue = function (loanNo, ddNo) {
+        var deferred = $.Deferred();
+        var param = {
+            loanNo: loanNo,
+            ddNo: ddNo
+        };
+        $.ajax({
+            type: "GET",
+            url: lc + "Overdue",
+            data: param,
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            if (result.STATUSCODE === "000000") {
+                deferred.resolve(result);
+            } else {
+                LogUtil.LogRBAjaxReject(result);
+                deferred.reject();
+            }
+        }).fail(function (error) {
+            LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var updateStatusCard = function (data) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            data: data,
+            url: scc + "UpdateStatus",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    var getOTPCardSecurity = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: accountController + "Account/GetOtp",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            Util.ShowSuccessMessage(result);
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    var updateStatusCardCardSecurity = function (data) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            data: data,
+            url: cardController + "SelfService/UpdateStatus",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    var cardInfoCardSecurity = function (id) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            data: {
+                id: id
+            },
+            url: cardController + "Card/CardInfo",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    }
+
+    var changePINValidCardNoCardSecurity = function (cardser, pinold, pinnew, action) {
+        var deferred = $.Deferred();
+        var data = {
+            cardser: cardser,
+            pinold: pinold,
+            pinnew: pinnew,
+            action: action,
+        };
+        $.ajax({
+            type: "POST",
+            data: data,
+            url: cardController + "SelfService/ChangePINValidCardNo",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    }
+
+    var changePINValidPINCardSecurity = function (cardser, pinold, pinnew, action) {
+        var deferred = $.Deferred();
+        var data = {
+            cardser: cardser,
+            pinold: pinold,
+            pinnew: pinnew,
+            action: action
+        };
+        $.ajax({
+            type: "POST",
+            data: data,
+            url: cardController + "SelfService/ChangePINValidPIN",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    var changePINSubmitCardSecurity = function (otp, pinnew) {
+        var data = {
+            otp: otp
+        }
+        if (pinnew) {
+            data = {
+                otp: otp,
+                pinnew: pinnew
+            }
+        }
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            data: data,
+            url: cardController + "SelfService/ChangePINSubmit",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    var changePINValidCardNo = function (cardObj) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            data: cardObj,
+            url: cardController + "SelfService/ChangePINValidCardNo",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    var getLisEgiftBranch = function (objData) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: cce + "ListBranch",
+            data: objData,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            if (result.STATUSCODE === "000000") {
+                deferred.resolve(result.DATA);
+            } else {
+                deferred.reject(result);
+            }
+        }).fail(function (error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    var GetListUrlboxItem = function (objData) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: cce + "GetListUrlboxItem",
+            data: objData,
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            if (result.STATUSCODE === "000000") {
+                deferred.resolve(result.DATA);
+            } else {
+                deferred.reject(result);
+            }
+        }).fail(function (error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+
+    var detailRegistedInstallment = function (cardSerNo, id) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: cci + "/DetailRegistedInstallment",
+            data: { cardserno: cardSerNo, id: id },
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result.DATA);
+        }).fail(function (error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    }
+
+    var confirmRegister = function (objRegister) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            url: cci + "ConfirmRegister",
+            data: objRegister,
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject(error);
+        });
+        return deferred.promise();
+    };
+
+    return {
+        Init: init,
+        // GET
+        GetAccountList: getAccountList,
+        GetAccountDetail: getAccountDetail,
+        GetAvgBalance: getAvgBalance,
+        GetTransactionHistoryDetail: getTransactionHistoryDetail,
+        GetCardList: getCardList,
+        CheckAccountClose: checkAccountClose,
+        GetCloseAccountInfo: getCloseAccountInfo,
+        SubmitCloseAcct: submitCloseAcct,
+        GetRepaymentSchedule: getRepaymentSchedule,
+        GetRepaymentHist: getRepaymentHist,
+        GetLoanOverdue: getLoanOverdue,
+        // card statement
+        SendCardStatement: sendCardStatement,
+        GetCardStatement: getCardStatement,
+
+        //PayOff
+        GetAccountTransferPayoff: getAccountTransferPayoff,
+        SubmitPaymentPayoff: submitPaymentPayoff,
+        ValidateTransactionPayoff: validateTransactionPayoff,
+        CardInfo: cardInfo,
+        GetAccountOTP: getAccountOTP,
+
+
+        GetTransactionHistoryList: getTransactionHistoryList,
+
+        // POST
+        // Xu ly card
+        LoadCardInfo: loadCardInfo,
+        LoadTrend: loadTrend,
+        GetCardPoint: getCardPoint,
+        GetOTP: getOTP,
+        CardSecretInfo: cardSecretInfo,
+        //bắt đầu xử lý cardInstallment new
+        InstallmentInfo: installmentInfo,
+        DetailTransForInstallment: detailTransForInstallment,
+        ListRegistedInstallment: listRegistedInstallment,
+        ConfirmRegister: confirmRegister,
+        DetailRegistedInstallment: detailRegistedInstallment,
+        //kết thúc xử lý cardInstallment new
+        // Xu ly doi qua
+        GetListHistoryEgiftTrans: getListHistoryEgiftTrans,
+        GetListUrboxTrans: GetListUrboxTrans,
+        GetListEgiftCate: getListEgiftCate,
+        GetListEgiftItem: getListEgiftItem,
+        GetOtpEgift: getOtpEgift,
+        RegisterEgift: registerEgift,
+        GetListUrlboxItem: GetListUrlboxItem,
+
+        UpdateStatusCard: updateStatusCard,
+        ValidateEgift: validateEgift,
+        SubmitUrlboxItem: submitUrlboxItem,
+
+        //card security
+        GetOTPCardSecurity: getOTPCardSecurity,
+        UpdateStatusCardCardSecurity: updateStatusCardCardSecurity,
+        CardInfoCardSecurity: cardInfoCardSecurity,
+        ChangePINValidCardNoCardSecurity: changePINValidCardNoCardSecurity,
+        ChangePINValidPINCardSecurity: changePINValidPINCardSecurity,
+        ChangePINSubmitCardSecurity: changePINSubmitCardSecurity,
+        ChangePINValidCardNo: changePINValidCardNo,
+        //end card security
+        GetLisEgiftBranch: getLisEgiftBranch,
+
+        GetAccountTransferSendMoreMoney: getAccountTransferSendMoreMoney,
+        ValidateTransferSendMoreMoney: validateTransferSendMoreMoney,
+        GetOTPTransferSendMoreMoney: getOTPTransferSendMoreMoney,
+        SubmitTransferSendMoreMoney: submitTransferSendMoreMoney
+    };
+}();

@@ -1,0 +1,1297 @@
+﻿var curTotalOfNotice = 0;
+var countNoticeChecked = 0;
+var countInboxChecked = 0;
+var selectedInboxCategory = null;
+var flgHasNotice = false;
+var flgHasInbox = false;
+var flgInboxDelAll = false;
+var flgNoticeDelAll = false;
+var lengthDeleteInbox = null;
+var lengthNoticeInbox = null;
+var sf = null;
+var is = null;
+    function initInbox(noteResult, _is, _sf){
+    var deferred = $.Deferred();
+    if (JSON.parse(sessionStorage.getItem('InboxCategories')) == null && noteResult.DATA.Categories.length > 0) {
+        sessionStorage.setItem('InboxCategories', JSON.stringify(noteResult.DATA.Categories));
+    }
+    is = _is;
+    sf = _sf;
+    initInboxEvent();
+    $('.trigger-closed').click(function () {
+        $(".drawer").removeClass('slidebar-open');
+        $(".overlay").remove();
+        $("body").removeClass("not-scroll");
+    });
+    $(document).on("click", ".overlay", function () {
+        $(".drawer").removeClass('slidebar-open');
+        $(".overlay").remove();
+        $("body").removeClass("not-scroll");
+    });
+    $(window).on("load resize ", function () {
+    }).resize();
+    
+    hideLoadingMask();
+    return deferred.promise();
+};
+
+function RestartGetNotice() {
+    GetInboxNotice(1, is, sf).done(function (noteResult) {
+        lengthNoticeInbox = noteResult.DATA;
+        $("#notificationContent").empty();
+        $("#notificationContent").scrollTop(0);
+        if (noteResult && noteResult.DATA.length > 0) {
+            // set flag load more =  true
+            flgHasNotice = true;
+            $.when($("#notificationTemplate").tmpl(noteResult).appendTo($("#notificationContent"))).done(function () {
+                // default hidden button delete
+                $("#notification .group-btn-bottom .notification-del").addClass("display-none");
+                $("#notification .group-btn-bottom .notification-del").removeAttr('style');
+
+                // binder event click to checkbox for
+                // handle event seleted all checkbox
+                curTotalOfNotice = $("#notificationContent .col-checkbox .box-checkbox input[type=checkbox]").length;
+
+                // bind init event for checkbox item notice case del choise 
+                bindEvenNoticeCheckbox(curTotalOfNotice, countNoticeChecked);
+
+                if ($("#notification .group-btn-top .btn-cancel-act").attr('style') == 'display: inline;') {
+                    $("#notificationContent .col-checkbox").css('display', 'block');
+                }
+            });
+            // switch language item
+            $("#notification .group-btn-bottom input[type=checkbox]").next("label").text(VIB.SkinLocalizeString.btnSelectedLabel);
+        } else {
+            // Case: no notice
+            // show message
+            $("#HasnoNotice").removeClass("display-none");
+            // hidden delete button
+            $("#notification .del-item .group-btn-top .btn-del-act").hide();
+            $("#notification .del-item .group-btn-top .btn-cancel-act").hide();
+        }
+        $("#notification .group-btn-top .btn").click(function () {
+            $(this).parents(".del-item").find(".btn").show();
+            $(this).hide();
+            if ($(this).hasClass("btn-del-act")) {
+
+                $("#notificationContent .col-checkbox").show();
+                $(this).parents(".del-item").find(".group-btn-bottom").removeClass("display-none");
+                $(this).parents(".del-item").parents("#notification").find("ul").removeClass("open-check");
+                // change language btn delete
+                $(this).text(VIB.SkinLocalizeString.Delete);
+                // reset seletect all checkbox
+                $("#notification .group-btn-bottom input[type=checkbox]").prop("checked", false);
+                $("#notification .group-btn-bottom .box-checkbox > label").text(VIB.SkinLocalizeString.btnSelectedLabel);
+                // hidden button delete
+                $("#notification .group-btn-bottom .notification-del").addClass("display-none");
+                $("#notification .group-btn-bottom .notification-del").removeAttr('style');
+                BindCheckboxDeleteNotice();
+            } else {
+                $("#notificationContent .col-checkbox").hide();
+                $(this).parents(".del-item").find(".group-btn-bottom").addClass("display-none");
+                $(this).parents(".del-item").parents("#notification").find("ul").addClass("open-check");
+                $("#notification .group-btn-top .btn-del-act").html("");
+
+                // change language btn cancel
+                $(this).text(VIB.SkinLocalizeString.Cancel);
+                // reset all checkbox selected
+                $("#notificationContent .col-checkbox input[type=checkbox]").prop("checked", false);
+            }
+        });
+
+        // handle event select all notice
+        $("#notification .group-btn-bottom input[type=checkbox]").click(function (e) {
+            //e.preventDefault();
+            if ($(this).prop('checked')) {
+                $("#notificationContent .col-checkbox input[type=checkbox]").prop('checked', true);
+                $(this).next("label").text(VIB.SkinLocalizeString.btnDeSelectedLabel);
+                // show button delete
+                $("#notification .group-btn-bottom .notification-del").removeClass("display-none");
+                $("#notification .group-btn-bottom .notification-del").text(VIB.SkinLocalizeString.Delete);
+                countNoticeChecked = $("#notificationContent .col-checkbox .box-checkbox input[type=checkbox]").length;
+            } else {
+                $("#notificationContent .col-checkbox input[type=checkbox]").prop('checked', false);
+                $(this).next("label").text(VIB.SkinLocalizeString.btnSelectedLabel);
+                // hidden button delete
+                $("#notification .group-btn-bottom .notification-del").addClass("display-none");
+                // reset count seleted = 0
+                countNoticeChecked = 0;
+            }
+        });
+        $('#notification .notification-del').on('click', function (e) {
+            e.preventDefault();
+            var DATA = [];
+            // load all notice selected
+            $.when($("#notificationContent .col-checkbox input[type=checkbox]").each(function () {
+                if ($(this).is(':checked') && $(this).length != 0) {
+                    var item = {};
+                    item.id = $(this).attr("id");
+                    DATA.push(item);
+                }
+            })).done(function () {
+                if (DATA && DATA != [] && DATA.length > 0) {
+                    if ($("#notification .group-btn-bottom input[type=checkbox]").is(':checked')) {
+                        $("#NoticeModalMsg").html(VIB.SkinLocalizeString.CofirmDeleteNoticeAll);
+                        $("#NoticeModal").modal();
+                        $(".modal-backdrop").remove();
+                    }
+                    else {
+                        // var noticeConfirm = (document.documentElement.lang == "en-US" ? ("Are you sure delete ".concat(DATA.length).concat(" notice ?")) : ("Bạn có chắc chắn muốn xoá " + DATA.length + " thông báo ?"));
+                        $("#NoticeModalMsg").html(VIB.SkinLocalizeString.CofirmDeleteNotice);
+                        $("#NoticeModal").modal();
+                        $(".modal-backdrop").remove();
+                    }
+                } else {
+                    var noticeConfirm = (document.documentElement.lang == "en-US" ? ("Please select at least 1 notice") : ("Xin hãy chọn ít nhất 1 thông báo"));
+                    $("#NoticeModalMsg").html(noticeConfirm);
+                    $("#NoticeModal").modal();
+                    $(".modal-backdrop").remove();
+                    return false;
+                }
+            });
+        });
+
+        $("#notification .col-checkbox").hide();
+        if ($("#HasnoNotice").hasClass("display-none")) {
+            $("#notification .btn-del-act").show();
+        } else {
+            $("#notification .btn-del-act").hide();
+        }
+        $("#notification .btn-cancel-act").hide();
+        $("#notification .group-btn-bottom").addClass("display-none");
+        $("#notification .btn-del-act").html('<span class="tooltip-normal tooltip--bottom">' + window.VIB.SkinLocalizeString.Delete + '</span>');
+        $("#notification .col-checkbox input[type=checkbox]").prop("checked", false);
+    });
+
+}
+function RestartGetMsg() {
+    clickHideSlide();
+    GetMessage(is, sf).done(function (messageResult) {
+        lengthDeleteInbox = messageResult.DATA;
+        $("#inboxContent").empty();
+        $("#Hasnoinbox").addClass("display-none");
+        $("#notificationContent").scrollTop(0);
+        if (messageResult && messageResult.DATA.length > 0) {
+            var index = 1;
+            messageResult.DATA.forEach(function (element) {
+                element.index = index++;
+            });
+
+            // set flag load more =  true
+            flgHasInbox = true;
+
+            $.when($("#inboxTempalte").tmpl(messageResult).appendTo($("#inboxContent"))).done(function () {
+                // reset stt action of del button
+                $("#inbox .group-btn-top .btn-del-act").attr('detail-action', 'false');
+                // binder event for checkbox of col
+                binderEventControlInboxRerender(countInboxChecked);
+                if ($("#inbox .group-btn-top .btn-cancel-act").attr('style') == 'display: inline;') {
+                    $("#inboxContent .ul-inbox-liLink .col-checkbox").css('display', 'block');
+                }
+            });
+            // switch language item
+            $("#inbox .group-btn-bottom input[type=checkbox]").next("label").text(VIB.SkinLocalizeString.btnSelectedLabel);
+        } else {
+            // case no data
+            // append template no data and show message alert
+            //$("#inboxContent").html(VIB.SkinLocalizeString.HasNoMessageAlert);
+            $("#Hasnoinbox").removeClass("display-none");
+            // hidden delete button
+            $("#inbox .del-item .group-btn-top .btn").css("display", "none");
+        }
+        $("#inbox .group-btn-top .btn").click(function () {
+
+            if ($(this).hasClass("btn-del-act")) {
+
+                // case on screen detail and delete inbox
+                if ($(this).attr('detail-action') == 'true') {
+                    var DATA = [];
+                    // get current inbox delete id 
+                    var focusId = $($("#InboxDetail .targetDiv")[0]).attr('item-id');
+                    DATA.push(focusId);
+                    if (DATA != [] && DATA.length > 0) {
+
+                        // show dialog confirm
+                        var inboxConfirm = (document.documentElement.lang == "en-US" ? ("Are you sure delete message ?") : ("Bạn có chắc chắn muốn xoá tin nhắn ?"));
+                        $("#InboxModalMsg").html(inboxConfirm);
+                        $("#InboxModal").modal();
+                        $(".modal-backdrop").remove();
+
+                    } else {
+                        var inboxConfirm = (document.documentElement.lang == "en-US" ? ("Please select at least 1 message") : ("Xin hãy chọn ít nhất 1 tin nhắn"));
+                        Util.ShowInfoMessage(inboxConfirm);
+                        $(".modal-backdrop").remove();
+                    }
+                } else {
+                    $(this).parents(".del-item").find(".btn").show();
+                    $(this).addClass('display-none');
+                    $(this).hide();
+
+                    $("#inbox .col-checkbox").show();
+                    $(this).parents(".del-item").find(".group-btn-bottom").removeClass("display-none");
+                    $(this).parents(".del-item").parents("#inbox").find("ul").removeClass("open-check");
+
+                    // change language btn delete
+                    $(this).text(VIB.SkinLocalizeString.Delete);
+                    // reset seletect all checkbox
+                    $("#inbox .group-btn-bottom input[type=checkbox]").prop("checked", false);
+                    $("#inbox .group-btn-bottom .box-checkbox > label").text(VIB.SkinLocalizeString.btnSelectedLabel);
+                    // hidden button delete
+                    $("#inbox .group-btn-bottom .inbox-del").addClass("display-none");
+                    $("#inbox .group-btn-bottom .inbox-del").removeAttr('style');
+                    BindCheckboxDeleteInbox();
+                }
+            } else if ($(this).hasClass("btn-filter-blue") || $(this).hasClass("btn-filterActive")) {
+                if ($("#inbox .btn-del-act").hasClass('display-none')) {
+                    $(this).parents(".del-item").find(".btn-cancel-act").show();
+                } else {
+                    $(this).parents(".del-item").find(".btn-cancel-act").hide();
+                }
+            } else {
+                $("#inbox .btn-del-act").html('<span class="tooltip-normal tooltip--bottom">' + window.VIB.SkinLocalizeString.Delete + '</span>');
+                $(this).parents(".del-item").find(".btn").show();
+                $(this).parents(".del-item").find(".btn-del-act").removeClass('display-none');
+                $(this).hide();
+
+                $("#inbox .col-checkbox").hide();
+                $(this).parents(".del-item").find(".group-btn-bottom").addClass("display-none");
+                $(this).parents(".del-item").parents("#inbox").find("ul").addClass("open-check");
+                $(".form-style-ul").removeClass("open-check");
+                // change language btn cancel
+                $(this).text(VIB.SkinLocalizeString.Cancel);
+                // reset all checkbox selected
+                $("#inboxContent .col-checkbox input[type=checkbox]").prop("checked", false);
+            }
+        });
+        // handle select all inbox
+        $("#inbox .group-btn-bottom input[type=checkbox]").click(function () {
+            if ($(this).prop('checked')) {
+                $("#inbox .col-checkbox input[type=checkbox]").prop('checked', true);
+                $(this).next("label").text(VIB.SkinLocalizeString.btnDeSelectedLabel);
+                // show button delete
+                $("#inbox .group-btn-bottom .inbox-del").removeClass("display-none");
+                $("#inbox .group-btn-bottom .inbox-del").text(VIB.SkinLocalizeString.Delete);
+            } else {
+                $("#inbox .col-checkbox input[type=checkbox]").prop('checked', false);
+                $(this).next("label").text(VIB.SkinLocalizeString.btnSelectedLabel);
+                // show button delete
+                $("#inbox .group-btn-bottom .inbox-del").addClass("display-none");
+                // reset count seleted = 0
+                countInboxChecked = 0;
+            }
+        });
+        bindevenShowDetailInbox(messageResult, is, sf);
+
+
+        $("#inbox .col-checkbox").hide();
+        if ($("#Hasnoinbox").hasClass("display-none")) {
+            $("#inbox .btn-del-act").show();
+        } else {
+            $("#inbox .btn-del-act").hide();
+        }
+        $("#inbox .btn-cancel-act").hide();
+        $("#inbox .group-btn-bottom").addClass("display-none");
+        $("#inbox .btn-del-act").html('<span class="tooltip-normal tooltip--bottom">' + window.VIB.SkinLocalizeString.Delete + '</span>');
+        $("#inbox .col-checkbox input[type=checkbox]").prop("checked", false);
+    });
+}
+
+function initInboxEvent(){
+    $('.icon-bell').click(function () {
+        countNoticeChecked = 0;
+        countInboxChecked = 0;
+        curTotalOfNotice = 0;
+        if ($(".overlay").length === 0) {
+            $("body").addClass("not-scroll");
+            showLoadingMask();
+
+            // bind dialog confirm notice/inbox
+            $("#NoticeModalTemplate").tmpl(null).appendTo($("#NoticeModal"));
+            $("#InboxModalTemplate").tmpl(null).appendTo($("#InboxModal"));
+
+            // reset checkbox select all
+            $("#notification .group-btn-bottom input[type=checkbox]").next("label").text(VIB.SkinLocalizeString.btnSelectedLabel);
+            $("#notification .group-btn-bottom input[type=checkbox]").prop('checked', false);
+            $("#inbox .group-btn-bottom input[type=checkbox]").next("label").text(VIB.SkinLocalizeString.btnSelectedLabel);
+            $("#inbox .group-btn-bottom input[type=checkbox]").prop("checked", false);
+
+            // Load default page 1 Notices
+            var note = GetInboxNotice(1, is, sf);
+            var message = GetMessage(is, sf);
+            $.when(note, message).done(function (noteResult, messageResult) {
+                lengthNoticeInbox = noteResult.DATA;
+                lengthDeleteInbox = messageResult.DATA;
+                // ==========================
+                // Start Notice region
+                // ==========================
+                // reset notice view
+                $("#notificationContent").empty();
+                // case existed notice
+                // append to template
+                if (noteResult && noteResult.DATA.length > 0) {
+                    // set flag load more =  true
+                    flgHasNotice = true;
+                    $.when($("#notificationTemplate").tmpl(noteResult).appendTo($("#notificationContent"))).done(function () {
+                        // default hidden button delete
+                        $("#notification .group-btn-bottom .notification-del").addClass("display-none");
+                        $("#notification .group-btn-bottom .notification-del").removeAttr('style');
+
+                        // binder event click to checkbox for
+                        // handle event seleted all checkbox
+                        curTotalOfNotice = $("#notificationContent .col-checkbox .box-checkbox input[type=checkbox]").length;
+
+                        // bind init event for checkbox item notice case del choise 
+                        bindEvenNoticeCheckbox(curTotalOfNotice, countNoticeChecked);
+
+                        if ($("#notification .group-btn-top .btn-cancel-act").attr('style') == 'display: inline;') {
+                            $("#notificationContent .col-checkbox").css('display', 'block');
+                        }
+                    });
+                    // switch language item
+                    $("#notification .group-btn-bottom input[type=checkbox]").next("label").text(VIB.SkinLocalizeString.btnSelectedLabel);
+                } else {
+                    // Case: no notice
+                    // show message
+                    $("#HasnoNotice").removeClass("display-none");
+                    // hidden delete button
+                    $("#notification .del-item .group-btn-top .btn-del-act").hide();
+                    $("#notification .del-item .group-btn-top .btn-cancel-act").hide();
+                }
+
+                // handle event scroll more notice
+                $("#notificationContent").scroll(function () {
+                    var div = $(this).get(0);
+                    if (div.scrollTop + div.clientHeight >= div.scrollHeight) {
+                        var delState = $("#notification .group-btn-top > .btn-cancel-act").attr('style') == 'display: inline;' ? true : false;
+                        if (flgHasNotice) {
+
+                            $.when(LoadMoreInboxNotice(is, sf)).done(function () {
+                                // show checkbox case active delete button top action
+                                if (delState != undefined && delState) {
+                                    $("#notificationContent > li div.row div.col-checkbox").css('display', 'block');
+                                }
+                                // bind even checkbox select del for new item appended
+                                bindEvenNoticeCheckbox(countNoticeChecked, countNoticeChecked);
+                            });
+                        }
+                    }
+                });
+                // ==========================
+                // End Notice region
+                // ==========================
+
+                // ==========================
+                // Start Message region
+                // ==========================
+                // reset inbox content and fill default data for inbox content
+                $("#inboxContent").empty();
+                // reset drop category inbox
+                $("#inboxCategory").empty();
+
+                // ==========================
+                // Start dropdown list category region
+                // ==========================
+                // load all category name from session
+                var data = JSON.parse(sessionStorage.getItem('InboxCategories'));
+                if (data && data != null && data.length > 0) {
+                    // bind categories inbox
+                    var DATA = [];
+                    // var itemDefault = {};
+                    // itemDefault.id = "-1";
+                    // itemDefault.name = VIB.SkinLocalizeString.All;
+                    // DATA.push(itemDefault);
+
+                    $.each(data, function (index, cat) {
+                        var item = {};
+                        item.id = cat.id;
+                        item.name = cat.name;
+                        DATA.push(item);
+                    });
+                    $("#inboxCategoryTemplate").tmpl({ DATA: DATA}).appendTo($("#inboxCategory"));
+                    $("#inboxCategory .position-relative").on('click', function(){
+                        $(".radio-custom").attr('checked', false);
+                        $(this).children(".radio-custom").attr('checked', true);
+                        $(this).children(".radio-custom")[0].click();
+
+                        selectedInboxCategory = $(this).find("input").attr("id");
+                    });
+                    $("#filterActive").on('click', function(){  
+                        filterInboxCategory(selectedInboxCategory, is, sf);
+                    });
+                }
+
+                // case existed data inbox
+                if (messageResult && messageResult.DATA.length > 0) {
+                    var index = 1;
+                    messageResult.DATA.forEach(function (element) {
+                        element.index = index++;
+                    });
+
+                    // set flag load more =  true
+                    flgHasInbox = true;
+
+                    $.when($("#inboxTempalte").tmpl(messageResult).appendTo($("#inboxContent"))).done(function () {
+
+                        // reset stt action of del button
+                        $("#inbox .group-btn-top .btn-del-act").attr('detail-action', 'false');
+
+                        // binder event for checkbox of col
+                        binderEventControlInboxRerender(countInboxChecked);
+
+                        if ($("#inbox .group-btn-top .btn-cancel-act").attr('style') == 'display: inline;') {
+                            $("#inboxContent .ul-inbox-liLink .col-checkbox").css('display', 'block');
+                        }
+                    });
+
+                    // switch language item
+                    $("#inbox .group-btn-bottom input[type=checkbox]").next("label").text(VIB.SkinLocalizeString.btnSelectedLabel);
+                } else {
+
+                    // case no data
+                    // append template no data and show message alert
+                    //$("#inboxContent").html(VIB.SkinLocalizeString.HasNoMessageAlert);
+                    $("#Hasnoinbox").removeClass("display-none");
+                    // hidden delete button
+                    $("#inbox .del-item .group-btn-top .btn").css("display", "none");
+
+                }
+
+                $('#inboxContent').bind('mousewheel DOMMouseScroll', function (e) {
+                    var e0 = e.originalEvent,
+                        delta = e0.wheelDelta || -e0.detail;
+
+                    this.scrollTop += (delta < 0 ? 1 : -1) * 30;
+                    e.preventDefault();
+                });
+
+                // event scroll mouse load more
+                $("#inboxContent").scroll(function () {
+                    var div = $(this).get(0);
+                    if (div.scrollTop + div.clientHeight >= div.scrollHeight) {
+                        var delState = $("#inbox .group-btn-top > span.btn-cancel-act").attr('style') == 'display: inline;' ? true : false;
+                        if (flgHasInbox) {
+                            $.when(LoadMoreMessage(is, sf)).done(function (inboxDataMore) {
+                                // binder event for checkbox of col
+                                binderEventControlInboxRerender(countInboxChecked);
+                                bindevenShowDetailInbox(inboxDataMore, is, sf);
+                                // show checkbox case active delete button top action
+                                if (delState != undefined && delState) {
+                                    $("#inboxContent > li div.row div.col-checkbox").css('display', 'block');
+                                }
+                            });
+                        }
+                    }
+                });
+                // ==========================
+                // End Message region
+                // ==========================
+
+                // ==========================
+                // End dropdown list category region
+                // ==========================
+
+                // handle event delete button
+                $("#notification .group-btn-top .btn").click(function () {
+                    $(this).parents(".del-item").find(".btn").show();
+                    $(this).hide();
+                    if ($(this).hasClass("btn-del-act")) {
+
+                        $("#notificationContent .col-checkbox").show();
+                        $(this).parents(".del-item").find(".group-btn-bottom").removeClass("display-none");
+                        $(this).parents(".del-item").parents("#notification").find("ul").removeClass("open-check");
+                        // change language btn delete
+                        $(this).text(VIB.SkinLocalizeString.Delete);
+                        // reset seletect all checkbox
+                        $("#notification .group-btn-bottom input[type=checkbox]").prop("checked", false);
+                        $("#notification .group-btn-bottom .box-checkbox > label").text(VIB.SkinLocalizeString.btnSelectedLabel);
+                        // hidden button delete
+                        $("#notification .group-btn-bottom .notification-del").addClass("display-none");
+                        $("#notification .group-btn-bottom .notification-del").removeAttr('style');
+                        BindCheckboxDeleteNotice();
+                    } else {
+                        $("#notificationContent .col-checkbox").hide();
+                        $(this).parents(".del-item").find(".group-btn-bottom").addClass("display-none");
+                        $(this).parents(".del-item").parents("#notification").find("ul").addClass("open-check");
+                        $("#notification .group-btn-top .btn-del-act").html("");
+
+                        // change language btn cancel
+                        $(this).text(VIB.SkinLocalizeString.Cancel);
+                        // reset all checkbox selected
+                        $("#notificationContent .col-checkbox input[type=checkbox]").prop("checked", false);
+                    }
+                });
+
+                // handle event select all notice
+                $("#notification .group-btn-bottom input[type=checkbox]").click(function (e) {
+                    //e.preventDefault();
+                    if ($(this).prop('checked')) {
+                        $("#notificationContent .col-checkbox input[type=checkbox]").prop('checked', true);
+                        $(this).next("label").text(VIB.SkinLocalizeString.btnDeSelectedLabel);
+                        // show button delete
+                        $("#notification .group-btn-bottom .notification-del").removeClass("display-none");
+                        $("#notification .group-btn-bottom .notification-del").text(VIB.SkinLocalizeString.Delete);
+                        countNoticeChecked = $("#notificationContent .col-checkbox .box-checkbox input[type=checkbox]").length;
+                    } else {
+                        $("#notificationContent .col-checkbox input[type=checkbox]").prop('checked', false);
+                        $(this).next("label").text(VIB.SkinLocalizeString.btnSelectedLabel);
+                        // hidden button delete
+                        $("#notification .group-btn-bottom .notification-del").addClass("display-none");
+                        // reset count seleted = 0
+                        countNoticeChecked = 0;
+                    }
+                });
+                // 2 function same
+                $("#inbox .group-btn-top .btn").click(function () {
+                    
+                    if ($(this).hasClass("btn-del-act")) { 
+
+                        // case on screen detail and delete inbox
+                        if ($(this).attr('detail-action') == 'true') {
+                            var DATA = [];
+                            // get current inbox delete id 
+                            var focusId = $($("#InboxDetail .targetDiv")[0]).attr('item-id');
+                            DATA.push(focusId);
+                            if (DATA != [] && DATA.length > 0) {
+
+                                // show dialog confirm
+                                var inboxConfirm = (document.documentElement.lang == "en-US" ? ("Are you sure delete message ?") : ("Bạn có chắc chắn muốn xoá tin nhắn ?"));
+                                $("#InboxModalMsg").html(inboxConfirm);
+                                $("#InboxModal").modal();
+                                $(".modal-backdrop").remove();
+
+                            } else {
+                                var inboxConfirm = (document.documentElement.lang == "en-US" ? ("Please select at least 1 message") : ("Xin hãy chọn ít nhất 1 tin nhắn"));
+                                Util.ShowInfoMessage(inboxConfirm);
+                                $(".modal-backdrop").remove();
+                            }
+                        } else {
+                            $(this).parents(".del-item").find(".btn").show();
+                            $(this).addClass('display-none');
+                            $(this).hide();
+
+                            $("#inbox .col-checkbox").show();
+                            $(this).parents(".del-item").find(".group-btn-bottom").removeClass("display-none");
+                            $(this).parents(".del-item").parents("#inbox").find("ul").removeClass("open-check");
+
+                            // change language btn delete
+                            $(this).text(VIB.SkinLocalizeString.Delete);
+                            // reset seletect all checkbox
+                            $("#inbox .group-btn-bottom input[type=checkbox]").prop("checked", false);
+                            $("#inbox .group-btn-bottom .box-checkbox > label").text(VIB.SkinLocalizeString.btnSelectedLabel);
+                            // hidden button delete
+                            $("#inbox .group-btn-bottom .inbox-del").addClass("display-none");
+                            $("#inbox .group-btn-bottom .inbox-del").removeAttr('style');
+                            BindCheckboxDeleteInbox();
+                        }
+                    } else if ($(this).hasClass("btn-filter-blue") ||  $(this).hasClass("btn-filterActive")){
+                        if($("#inbox .btn-del-act").hasClass('display-none')) {
+                            $(this).parents(".del-item").find(".btn-cancel-act").show();
+                        } else {
+                            $(this).parents(".del-item").find(".btn-cancel-act").hide();
+                        }
+                    } else {
+                        $("#inbox .btn-del-act").html('<span class="tooltip-normal tooltip--bottom">' + window.VIB.SkinLocalizeString.Delete + '</span>');
+                        $(this).parents(".del-item").find(".btn").show();
+                        $(this).parents(".del-item").find(".btn-del-act").removeClass('display-none');
+                        $(this).hide();
+
+                        $("#inbox .col-checkbox").hide();
+                        $(this).parents(".del-item").find(".group-btn-bottom").addClass("display-none");
+                        $(this).parents(".del-item").parents("#inbox").find("ul").addClass("open-check");
+                        $(".form-style-ul").removeClass("open-check");
+                        // change language btn cancel
+                        $(this).text(VIB.SkinLocalizeString.Cancel);
+                        // reset all checkbox selected
+                        $("#inboxContent .col-checkbox input[type=checkbox]").prop("checked", false);
+                    }
+                });
+                // handle select all inbox
+                $("#inbox .group-btn-bottom input[type=checkbox]").click(function () {
+                    if ($(this).prop('checked')) {
+                        $("#inbox .col-checkbox input[type=checkbox]").prop('checked', true);
+                        $(this).next("label").text(VIB.SkinLocalizeString.btnDeSelectedLabel);
+                        // show button delete
+                        $("#inbox .group-btn-bottom .inbox-del").removeClass("display-none");
+                        $("#inbox .group-btn-bottom .inbox-del").text(VIB.SkinLocalizeString.Delete);
+                    } else {
+                        $("#inbox .col-checkbox input[type=checkbox]").prop('checked', false);
+                        $(this).next("label").text(VIB.SkinLocalizeString.btnSelectedLabel);
+                        // show button delete
+                        $("#inbox .group-btn-bottom .inbox-del").addClass("display-none");
+                        // reset count seleted = 0
+                        countInboxChecked = 0;
+                    }
+                });
+                bindevenShowDetailInbox(messageResult, is, sf);
+
+                // handle event delete notice
+                // load all item selected for check selected
+                // show dialog confirm delete
+                $('#notification .notification-del').on('click', function (e) {
+                    e.preventDefault();
+                    var DATA = [];
+                    // load all notice selected
+                    $.when($("#notificationContent .col-checkbox input[type=checkbox]").each(function () {
+                        if ($(this).is(':checked') && $(this).length != 0) {
+                            var item = {};
+                            item.id = $(this).attr("id");
+                            DATA.push(item);
+                        }
+                    })).done(function () {
+                        if (DATA && DATA != [] && DATA.length > 0) {
+                            if($("#notification .group-btn-bottom input[type=checkbox]").is(':checked')){
+                                $("#NoticeModalMsg").html(VIB.SkinLocalizeString.CofirmDeleteNoticeAll);
+                                $("#NoticeModal").modal();
+                                $(".modal-backdrop").remove();
+                            }
+                            else{
+                                // var noticeConfirm = (document.documentElement.lang == "en-US" ? ("Are you sure delete ".concat(DATA.length).concat(" notice ?")) : ("Bạn có chắc chắn muốn xoá " + DATA.length + " thông báo ?"));
+                                $("#NoticeModalMsg").html(VIB.SkinLocalizeString.CofirmDeleteNotice);
+                                $("#NoticeModal").modal();
+                                $(".modal-backdrop").remove();
+                            }
+                        } else {
+                            var noticeConfirm = (document.documentElement.lang == "en-US" ? ("Please select at least 1 notice") : ("Xin hãy chọn ít nhất 1 thông báo"));
+                            $("#NoticeModalMsg").html(noticeConfirm);
+                            $("#NoticeModal").modal();
+                            $(".modal-backdrop").remove();
+                            return false;
+                        }
+                    });
+                });
+            });
+
+
+            // handle event delete inbox
+            // load all item selected for check selected
+            // show dialog confirm delete
+            $('#inbox .inbox-del').on('click', function (e) {
+                e.preventDefault();
+                var DATA = [];
+                // load all inbox selected to DATA list
+                $.when($("#inboxContent .col-checkbox input[type=checkbox]").each(function () {
+                    if ($(this).is(':checked') && $(this).length != 0) {
+                        var item = {};
+                        item.id = $(this).attr("id");
+                        DATA.push(item);
+                    }
+                })).done(function () {
+                    // delete list inbox
+                    if (DATA && DATA != [] && DATA.length > 0) {
+                        if($("#inbox .group-btn-bottom input[type=checkbox]").is(':checked')){
+                            $("#InboxModalMsg").html(VIB.SkinLocalizeString.CofirmDeleteInboxAll);
+                            $("#InboxModal").modal();
+                            $(".modal-backdrop").remove();
+                        }
+                        else{
+                        // var inboxConfirm = (document.documentElement.lang == "en-US" ? ("Are you sure delete ".concat(DATA.length).concat(" message ?")) : ("Bạn có chắc chắn muốn xoá " + DATA.length + " tin nhắn ?"));
+                        $("#InboxModalMsg").html(VIB.SkinLocalizeString.CofirmDeleteInbox);
+                        $("#InboxModal").modal();
+                        $(".modal-backdrop").remove();
+                        }
+                    } else {
+                        var inboxConfirm = (document.documentElement.lang == "en-US" ? ("Please select at least 1 message") : ("Xin hãy chọn ít nhất 1 tin nhắn"));
+                        $("#InboxModalMsg").html(inboxConfirm);
+                        $("#InboxModal").modal();
+                        $(".modal-backdrop").remove();
+                        return false;
+                    }
+                });
+            });
+
+            // handle event delete notice item
+            $('#DeleteNotice').on('click', function (e) {
+                e.preventDefault();
+                var DATA = [];
+                var Notice = null;
+                var rmContrList = [];
+                var countMs = 0;
+                $.when(
+                    // load all notice selected
+                    $("#notificationContent .col-checkbox input[type=checkbox]").each(function () {
+                        countMs++;
+                        if ($(this).is(':checked') && $(this).length != 0) {
+                            var item = {};
+                            item.id = $(this).attr("id");
+                            DATA.push(item);
+                            rmContrList.push($(this).attr("id"));
+                        }
+                    })).done(function () {
+                        // delete list notice
+                        var Notice = null;
+                        if (DATA && DATA != [] && DATA.length > 0) {
+                            // call API delete list notice
+                            Notice = DeleteListNotice(DATA, is, sf);
+
+                            // delete item on view and show dialog success
+                            $.when(Notice).done(function (NoticeResult) {
+                                // delete on view
+                                $.each(rmContrList, function (index, val) {
+                                    $("." + val).remove();
+                                });
+
+                                // show dialog successful
+                                // $(".deleteSucceesModal").attr("id", "deleteSucceesModal");
+                                // $("#deleteSucceesModal").modal();
+                                // $(".modal-backdrop").remove();
+                            });
+
+                            // calculator total checkbox notice
+                            curTotalOfNotice -= DATA.length;
+                        } else {
+                            var noticeConfirm = (document.documentElement.lang == "en-US" ? ("Please select at least 1 notice") : ("Xin hãy chọn ít nhất 1 thông báo"));
+                            $("#NoticeModalMsg").html(noticeConfirm);
+                            $("#NoticeModal").modal();
+                            $(".modal-backdrop").remove();
+                        }
+                        if (countMs == rmContrList.length) {
+                            flgNoticeDelAll = true;
+                        } else {
+                            flgNoticeDelAll = false;
+                        }
+                        $("#notificationContent").scroll();
+                    });
+            });
+
+            // handle event delete inbox item
+            $('#DeleteInbox').on('click', function (e) {
+                //e.preventDefault();
+                var DATA = [];
+                var Notice = null;
+                var rmContrList = [];
+                var countMs = 0;
+                // case on screen detail and delete inbox
+                var delDetail = $("#inbox .group-btn-top .btn-del-act").attr('detail-action');
+                if (delDetail == 'true') {
+                    // get current inbox delete id 
+                    var focusId = $($("#InboxDetail .targetDiv")[0]).attr('item-id');
+                    var item = {};
+                    item.id = focusId;
+                    DATA.push(item);
+                    rmContrList.push(focusId);
+                } else {
+                    $("#inboxContent .col-checkbox input[type=checkbox]").each(function () {
+                        countMs++;
+                        if ($(this).is(':checked')) {
+                            var item = {};
+                            item.id = $(this).attr("id");
+                            DATA.push(item);
+                            rmContrList.push($(this).attr("id"));
+                        }
+                    });
+                }
+                if (DATA && DATA != [] && DATA.length > 0) {
+                    // detele inbox and remove on view
+                    Notice = DeleteListNotice(DATA, is, sf);
+                    $.when(Notice).done(function (NoticeResult) {
+                        // delete on view
+                        $.each(rmContrList, function (index, val) {
+                            $("." + val).remove();
+                        });
+
+                        // show dialog successful
+                        // $(".deleteSucceesModal").attr("id", "deleteSucceesModal");
+                        // $("#deleteSucceesModal").modal();
+                        // $(".modal-backdrop").remove();
+
+                        $(".box-inbox-left ").removeClass('box-inbox-left-hide ');
+                        $(".box-inbox-right ").addClass('box-inbox-right-hide ');
+
+                        // set stt delete action
+                        $("#inbox .group-btn-top .btn-del-act").attr('detail-action', 'false');
+                    }).fail(function () {
+
+                        $(".box-inbox-left ").removeClass('box-inbox-left-hide ');
+                        $(".box-inbox-right ").addClass('box-inbox-right-hide ');
+
+                        // set stt delete action
+                        $("#inbox .group-btn-top .btn-del-act").attr('detail-action', 'false');
+                    });
+                } else {
+                    var inboxConfirm = (document.documentElement.lang == "en-US" ? ("Please select at least 1 message") : ("Xin hãy chọn ít nhất 1 tin nhắn"));
+                    Util.ShowInfoMessage(inboxConfirm);
+                    $(".modal-backdrop").remove();
+
+                    $(".box-inbox-left ").removeClass('box-inbox-left-hide ');
+                    $(".box-inbox-right ").addClass('box-inbox-right-hide ');
+
+                    // set stt delete action
+                    $("#inbox .group-btn-top .btn-del-act").attr('detail-action', 'false');
+                }
+
+                if (countMs == rmContrList.length) {
+                    flgInboxDelAll = true;
+                } else {
+                    flgInboxDelAll = false;
+                }
+                $("#inboxContent").scroll();
+            });
+
+            // handle event action button delete on navigator clicked
+            $("#sidebar-slide .nav-tabs .nav-item").click(function (e) {
+                var curSelected = 0;
+                if ($(this).children().attr("aria-controls") == "notification") {
+                    var countNotice = $("#notificationContent .col-checkbox input[type=checkbox]").length;
+                    // load all notice selected
+                    $.when(
+                        $("#notificationContent .col-checkbox input[type=checkbox]").each(function () {
+                            if ($(this).is(':checked') && $(this).length != 0) {
+                                curSelected++;
+                            }
+                        })).done(function () {
+                            if (curSelected < 1) {
+                                // hidden button delete
+                                $("#notification .group-btn-bottom .notification-del").addClass("display-none");
+                                $("#notification .group-btn-bottom .notification-del").removeAttr('style');
+                            } else if (curSelected == countNotice) {
+                                $("#notification .group-btn-bottom input[type=checkbox]").prop('checked', true);
+                                // show button delete
+                                $("#notification .group-btn-bottom .notification-del").removeClass("display-none");
+                            } else {
+                                $("#notification .group-btn-bottom input[type=checkbox]").prop('checked', false);
+                                // show button delete
+                                $("#notification .group-btn-bottom .notification-del").removeClass("display-none");
+                            }
+                        });
+                } else if ($(this).children().attr("aria-controls") == "inbox") {
+
+                    var countNotice = $("#inboxContent .col-checkbox input[type=checkbox]").length;
+                    // load all notice selected
+                    $.when(
+                        $("#inboxContent .col-checkbox input[type=checkbox]").each(function () {
+                            if ($(this).is(':checked') && $(this).length != 0) {
+                                curSelected++;
+                            }
+                        })).done(function () {
+                            if (curSelected < 1) {
+                                // show button delete
+                                $("#inbox .group-btn-bottom .inbox-del").removeAttr('style');
+                                $("#inbox .group-btn-bottom .inbox-del").addClass("display-none");
+                            } else
+                                if (curSelected == countNotice) {
+                                    $("#inbox .group-btn-bottom  input[type=checkbox]").prop('checked', true);
+                                    // show button delete
+                                    $("#inbox .group-btn-bottom .inbox-del").removeClass("display-none");
+                                } else {
+                                    $("#inbox .group-btn-bottom  input[type=checkbox]").prop('checked', false);
+                                    // show button delete
+                                    $("#inbox .group-btn-bottom .inbox-del").removeClass("display-none");
+                                }
+                        });
+                }
+            });
+
+            $(".drawer").toggleClass('slidebar-open');
+            $("<div class='overlay'></div>").insertAfter("#sidebar-slide");
+            hideLoadingMask();
+        } else {
+            $(".drawer").toggleClass('slidebar-open');
+            $(".overlay").remove();
+        }
+    });
+    $('#modalFilter').on("click", function (e) {
+        e.stopPropagation();
+    });
+    
+}
+
+function GetInboxNotice (pageindex, is, sf) {
+    var deferred = $.Deferred();
+    $.ajax({
+        type: "GET",
+        url: is + "Notice?pageindex=" + pageindex,
+        beforeSend: sf.setModuleHeaders
+    }).done(function (result) {
+        if (result.STATUSCODE === "000000") {
+            deferred.resolve(result);
+        }
+        deferred.reject();
+    }).fail(function () {
+        deferred.reject();
+    });
+    return deferred.promise();
+};
+
+function GetMessage (is, sf, cateid, pageindex) {
+    var deferred = $.Deferred();
+    cateid = cateid || "-1";
+    pageindex = pageindex || "1";
+    $.ajax({
+        type: "GET",
+        url: is + "Message?cateid=" + cateid + "&pageindex=" + pageindex,
+        beforeSend: sf.setModuleHeaders
+    }).done(function (result) {
+        if (result.STATUSCODE === "000000") {
+            deferred.resolve(result);
+        }
+        deferred.reject();
+    }).fail(function () {
+        deferred.reject();
+    });
+    return deferred.promise();
+};
+
+function LoadMoreInboxNotice(is, sf) {
+    var deferred = $.Deferred();
+    var pageindex = Number($("#notificationContentPageIndex").val()) + 1;
+    GetInboxNotice(pageindex, is, sf).done(function (noticeResult) {
+        if (noticeResult.STATUSCODE === "000000") {
+            // set flag no data
+            if (!noticeResult || noticeResult.DATA.length == 0) {
+                flgHasNotice = false;
+                if (flgNoticeDelAll == true) {
+                    $("#HasnoNotice").removeClass("display-none");
+                    // hidden button delete
+                    $("#notification .group-btn-bottom .notification-del").addClass("display-none");
+                    $("#notification .group-btn-bottom .notification-del").removeAttr('style');
+                    $("#notification .group-btn-bottom input[type=checkbox]").prop('checked', false);
+                    $("#notification .group-btn-bottom input[type=checkbox]").next("label").text(VIB.SkinLocalizeString.btnSelectedLabel);
+                } else {
+                    $("#HasnoNotice").addClass("display-none");
+                }
+                deferred.resolve();
+            } else {
+                // calculator total checkbox notice
+                curTotalOfNotice += noticeResult.DATA.length;
+                $("#HasnoNotice").addClass("display-none");
+                $("#notificationContentPageIndex").val(pageindex);
+                $.when($("#notificationTemplate").tmpl(noticeResult).appendTo($("#notificationContent"))).done(function () {
+                    // reset checkbox select all
+                    $("#notification .group-btn-bottom input[type=checkbox]").next("label").text(VIB.SkinLocalizeString.btnSelectedLabel);
+                    $("#notification .group-btn-bottom input[type=checkbox]").prop('checked', false);
+                    deferred.resolve();
+                });
+            }
+        } else {
+            deferred.reject();
+        }
+    });
+    return deferred.promise();
+}
+  
+function filterInboxCategory(selectedInboxCategory, is, sf){
+    // set dropdownlist selected value
+    $('#inboxCategory').val(selectedInboxCategory);
+    var loadInboxDataByCat = GetMessage(is, sf, selectedInboxCategory, 1);
+
+    // reload list inbox data by categories id
+    $.when(loadInboxDataByCat).done(function (inboxDataByCat) {
+        $("#inboxContent").empty();
+        if (inboxDataByCat && inboxDataByCat.DATA.length > 0) {
+            $("#Hasnoinbox").addClass("display-none");
+            $.when($("#inboxTempalte").tmpl(inboxDataByCat).appendTo($("#inboxContent"))
+            ).done(function () {
+                $("#inbox .inbox-tab-detail .col-checkbox").hide();
+                // binder event for checkbox of col
+                binderEventControlInboxRerender(countInboxChecked);
+                bindevenShowDetailInbox(inboxDataByCat, is, sf);
+                if ($("#inbox .group-btn-top .btn-cancel-act").attr('style') == 'display: inline;') {
+                    $("#inboxContent .ul-inbox-liLink .col-checkbox").css('display', 'block');
+                }
+            });
+        }
+        else{
+            $("#Hasnoinbox").removeClass("display-none");
+            $("#inbox .del-item .group-btn-top .btn-del-act").hide();
+            $("#inbox .del-item .group-btn-top .btn-cancel-act").hide();
+        }
+    });
+    $("#inbox .group-btn-bottom").addClass("display-none");
+    $("#inbox .btn-del-act").removeClass("display-none");
+    $("#inbox .btn-del-act").show();
+    $("#inbox .btn-del-act").html('<span class="tooltip-normal tooltip--bottom">' + window.VIB.SkinLocalizeString.Delete + '</span>');
+    $("#inbox .btn-cancel-act").addClass("display-none");
+}
+
+function binderEventControlInboxRerender(countInboxChecked) {
+    countInboxChecked = 0;
+    // default hidden button delete
+    $("#inbox .group-btn-bottom .inbox-del").addClass("display-none");
+    $("#inbox .group-btn-bottom .inbox-del").removeAttr('style');
+
+    // handle event select all or deselect all
+    var curTotalOfInbox = $("#inboxContent .col-checkbox  input[type=checkbox]").length;
+
+
+    // binder event click to checkbox for
+    // handle event seleted all checkbox
+    $("#inboxContent .col-checkbox input[type=checkbox]").on('click', function (e) {
+
+        //e.preventDefault();
+
+        var countAllSeleted = 0;
+        $("#inboxContent .col-checkbox input[type=checkbox]").each(function () {
+            if ($(this).is(':checked')) {
+                countAllSeleted++;
+                
+            }
+        });
+        countInboxChecked = countAllSeleted;
+
+        if ($(this).is(':checked')) {
+            // show button delete
+            $("#inbox .group-btn-bottom .inbox-del").removeClass("display-none");
+
+            // case checked seletected all
+            if (curTotalOfInbox > 0 && countInboxChecked == curTotalOfInbox) {
+                $("#inbox .group-btn-bottom input[type=checkbox]").prop('checked', true);
+                $("#inbox .group-btn-bottom input[type=checkbox]").next("label").text(VIB.SkinLocalizeString.btnDeSelectedLabel);
+            } else {
+                $("#inbox .group-btn-bottom input[type=checkbox]").prop('checked', false);
+                $("#inbox .group-btn-bottom input[type=checkbox]").next("label").text(VIB.SkinLocalizeString.btnSelectedLabel);
+            }
+
+        } else {
+
+            // uncheck select all checkbox
+            $("#inbox .group-btn-bottom input[type=checkbox]").prop('checked', false);
+            $("#inbox .group-btn-bottom input[type=checkbox]").next("label").text(VIB.SkinLocalizeString.btnSelectedLabel);
+
+            // hidden button detele
+            if (countInboxChecked < 1)
+                $("#inbox .group-btn-bottom .inbox-del").addClass("display-none");
+        }
+    });
+}
+
+function bindEvenNoticeCheckbox(curTotalOfNotice) {
+    $("#notificationContent .col-checkbox input[type=checkbox]").on('click', function (e) {
+        if ($(this).is(':checked')) {
+            countNoticeChecked++;
+            // show button delete
+            $("#notification .group-btn-bottom .notification-del").removeClass("display-none");
+
+            // checked select all checkbox
+            if (curTotalOfNotice > 0 && countNoticeChecked == curTotalOfNotice) {
+                $("#notification .group-btn-bottom input[type=checkbox]").prop('checked', true);
+                $("#notification .group-btn-bottom input[type=checkbox]").next("label").text(VIB.SkinLocalizeString.btnDeSelectedLabel);
+            } else {
+                $("#notification .group-btn-bottom input[type=checkbox]").prop('checked', false);
+                $("#notification .group-btn-bottom input[type=checkbox]").next("label").text(VIB.SkinLocalizeString.btnSelectedLabel);
+            }
+        } else {
+            countNoticeChecked--;
+            // uncheck select all checkbox
+            $("#notification .group-btn-bottom input[type=checkbox]").prop('checked', false);
+            $("#notification .group-btn-bottom input[type=checkbox]").next("label").text(VIB.SkinLocalizeString.btnSelectedLabel);
+
+            // hidden button detele
+            if (countNoticeChecked < 1)
+                $("#notification .group-btn-bottom .notification-del").addClass("display-none");
+        }
+    });
+}
+
+function LoadMoreMessage(is, sf) {
+    var deferred = $.Deferred();
+    var pageindex = Number($("#inboxContentPageIndex").val()) + 1;
+    var inboxCategory = $("#inboxCategory").val();
+    GetMessage(is, sf, inboxCategory, pageindex).done(function (messageByCategoryResult) {
+        if (messageByCategoryResult.STATUSCODE === "000000") {
+            // set flag no data
+            if (!messageByCategoryResult || messageByCategoryResult.DATA.length == 0) {
+                flgHasInbox = false;
+                if (flgInboxDelAll == true) {
+                    $("#Hasnoinbox").removeClass("display-none");
+                    // reset seletect all checkbox
+                    $("#inbox .group-btn-bottom input[type=checkbox]").prop("checked", false);
+                    $("#inbox .group-btn-bottom .box-checkbox > label").text(VIB.SkinLocalizeString.btnSelectedLabel);
+                    // hidden button delete
+                    $("#inbox .group-btn-bottom .inbox-del").addClass("display-none");
+                    $("#inbox .group-btn-bottom .inbox-del").removeAttr('style');
+                } else {
+                    $("#Hasnoinbox").addClass("display-none");
+                }
+                deferred.resolve(messageByCategoryResult);
+            } else {
+                flgHasInbox = true;
+                $("#Hasnoinbox").addClass("display-none");
+                $("#inboxContentPageIndex").val(pageindex);
+                $.when($("#inboxTempalte").tmpl(messageByCategoryResult).appendTo($("#inboxContent"))).done(function () {
+                    // reset checkbox select all
+                    $("#inbox .group-btn-bottom input[type=checkbox]").next("label").text(VIB.SkinLocalizeString.btnSelectedLabel);
+                    $("#inbox .group-btn-bottom input[type=checkbox]").prop("checked", false);
+                    deferred.resolve(messageByCategoryResult);
+                });
+            }
+        } else {
+            deferred.reject();
+        }
+    });
+    return deferred.promise();
+}
+
+function bindevenShowDetailInbox(messageResult, is, sf) {
+    $('.ul-inbox .ul-inbox-liLink .inbox-item,.p-toggle').click(function () {
+        if($("#inbox .col-checkbox").css("display") == ("none")){
+            var classes = this.className;
+            var me = $(this);
+            if (classes == 'p-toggle') {
+                me = $(this).prev(".inbox-item");
+            }
+            var id = me.attr('ib-value');
+            var subid = me.attr('subid');
+            var target = $(this).attr('target');
+            var result = [];
+            messageResult.indexDiv = target;
+
+            result = messageResult;
+            subid == undefined ? null : subid;
+
+            var Detail = GetDetailInbox(is, sf, id, subid);
+            $.when(Detail).done(function (DetailResult) {
+                // reset title to status readed
+                me.children('.subjectOfInbox').removeClass('inbox-item-title');
+
+                // set stt delete action
+                $("#inbox .group-btn-top .btn-del-act").attr('detail-action', 'true');
+                var item = $("." + id);
+                result.id = id;
+                result.imageurl = me.attr('banner-url');
+                result.subject = item.find(".subjectOfInbox").text();
+                result.effecteddate = item.find(".note-date").text();
+                result.content = item.find(".content-message").val();
+                result.detailtype = item.find(".detail-type").val();
+                result.luckyurl = me.attr('banner-url');
+                result.expireddate = null;
+                result.description = null;
+
+                var detailUrl = me.attr('detailurl');
+                if (detailUrl && detailUrl != undefined && detailUrl != '' && detailUrl != null)
+                    result.detailurl = me.attr('detailurl');
+                else
+                    result.detailurl = null;
+                if (result.detailtype == "LM") {
+                    
+                    var desc = item.find(".lucky-description").val();
+                    if (desc != undefined && desc != null && desc != '')
+                        result.description = desc;
+
+                }
+
+                var expireddate = me.attr('expireddate');
+                if (expireddate != undefined && expireddate != '' && expireddate != null) {
+                    result.expireddate = expireddate;
+                }
+                result.ctaurl = "";
+                result.ctaname = "";
+                if (DetailResult && DetailResult.DATA != undefined && DetailResult.DATA != null) {
+                    result.ctaurl = DetailResult.DATA.ctaurl;
+                    result.ctaname = DetailResult.DATA.ctaname;
+                }
+
+                $(".box-inbox-left ").addClass('box-inbox-left-hide');
+                $(".box-inbox-right ").removeClass('box-inbox-right-hide ');
+                $('.div'.concat(me.attr('target'))).show();
+                $("#InboxDetail").empty();
+                $.when($("#InboxDetailTemplate").tmpl(result).appendTo($("#InboxDetail"))).done(function () {
+                    $("#banner-message-detail-img").on('click', function (e) {
+                        var strUri = me.attr('url-detail');
+                        if (strUri && strUri != undefined && strUri != '') {
+                            window.open(strUri, '_blank');
+                        }
+                    });
+                });
+                bindeventButtonCtaInboxDetail(result.ctaurl);
+                $(".targetDiv").show();
+            });
+        }
+    });
+}
+
+function GetDetailInbox (is, sf, id, subid) {
+    var deferred = $.Deferred();
+    $.ajax({
+        type: "GET",
+        url: is + "Detail" + "?id=" + id + "&subid=" + subid,
+        beforeSend: sf.setModuleHeaders,
+    }).done(function (result) {
+        if (result.STATUSCODE === "000000") {
+            deferred.resolve(result);
+        }
+        deferred.reject();
+    }).fail(function (error) {
+        deferred.reject();
+    });
+    return deferred.promise();
+}
+
+function clickHideSlide(event) {
+    $(".box-inbox-left ").removeClass('box-inbox-left-hide ');
+    $(".box-inbox-right ").addClass('box-inbox-right-hide ');
+
+    // set stt delete action
+    $("#inbox .group-btn-top .btn-del-act").attr('detail-action', 'false');
+}
+
+function bindeventButtonCtaInboxDetail(strUri) {
+    $("#InboxDetail .btnctaInbox-detail").on('click', function (e) {
+        e.preventDefault();
+        window.open(strUri, '_blank');
+    });
+}
+
+function DeleteListNotice (body, is, sf) {
+    var deferred = $.Deferred();
+    $.ajax({
+        type: "POST",
+        data: JSON.stringify(body),
+        url: is + "Delete",
+        contentType: "application/json",
+        beforeSend: sf.setModuleHeaders,
+    }).done(function (result) {
+        if (result.STATUSCODE === "000000") {
+            deferred.resolve(result);
+        }
+        deferred.reject();
+    }).fail(function (error) {
+        deferred.reject();
+    });
+    return deferred.promise();
+}
+
+function BindCheckboxDeleteNotice(){
+    $("#notificationContent li").off('click').on('click', function(){
+        if($("#notificationContent .col-checkbox").css("display") == ("block")){
+            var checkBoxes = $(this).find(".col-checkbox input[type=checkbox]");
+            checkBoxes.prop("checked", !checkBoxes.prop("checked"));
+            $(".notification-del").removeClass('display-none');
+            var lengthNotice = [];
+            $.when($("#notificationContent .col-checkbox input[type=checkbox]").each(function () {
+                if ($(this).is(':checked') && $(this).length != 0) {
+                    var item = {};
+                    item.id = $(this).attr("id");
+                    lengthNotice.push(item);
+                }
+            })).done(function () {
+                lengthNoticeInbox.length == lengthNotice.length ? $("#notification .group-btn-bottom input[type=checkbox]").prop('checked', true) : $("#notification .group-btn-bottom input[type=checkbox]").prop('checked', false);
+                if (lengthNotice && lengthNotice != [] && lengthNotice.length == 0) {
+                    $(".notification-del").addClass('display-none');
+                }
+            });
+        }
+    });
+}
+                  
+function BindCheckboxDeleteInbox(){
+    $("#inbox li").off('click').on('click', function(){
+        if($("#inboxContent .col-checkbox").css("display") == ("block")){
+            var checkBoxes = $(this).find(".col-checkbox input[type=checkbox]");
+            checkBoxes.prop("checked", !checkBoxes.prop("checked"));
+            $(".inbox-del").removeClass('display-none');
+            var lengthInbox = [];
+            $.when($("#inboxContent .col-checkbox input[type=checkbox]").each(function () {
+                if ($(this).is(':checked') && $(this).length != 0) {
+                    var item = {};
+                    item.id = $(this).attr("id");
+                    lengthInbox.push(item);
+                }
+            })).done(function () {
+                lengthDeleteInbox.length == lengthInbox.length ? $("#inbox .group-btn-bottom input[type=checkbox]").prop('checked', true) : $("#inbox .group-btn-bottom input[type=checkbox]").prop('checked', false);
+                if (lengthInbox && lengthInbox != [] && lengthInbox.length == 0) {
+                    $(".inbox-del").addClass('display-none');
+                }
+            });
+        }
+    });
+}
