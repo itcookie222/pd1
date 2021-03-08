@@ -1,0 +1,269 @@
+﻿var commonService = function () {
+    var sf = null;
+    var bs = null;
+    var ac = null;
+    var me = null;
+    var avatar = null;
+    var init = function (moduleId) {
+        sf = $.ServicesFramework(moduleId);
+        bs = sf.getServiceRoot('UserController') + 'User/';
+        ac = sf.getServiceRoot('AccountController') + 'Account/';
+        avatar = sf.getServiceRoot('IBRBController') + 'Customer/';
+        background = sf.getServiceRoot('UserController') + 'User/'
+    };
+    var validatePassword = function (password) {
+        var deferred = $.Deferred();
+        var datap = {
+            oldpassword: password,
+        };
+        $.ajax({
+            type: "POST",
+            cache: false,
+            url: bs + "ValidatePassword",
+            beforeSend: sf.setModuleHeaders,
+            data: datap,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+    var changePassword = function (oldpassword, newpassword, otp) {
+        var deferred = $.Deferred();
+        var datap = {
+            oldpassword: oldpassword,
+            newpassword: newpassword,
+            otp: otp,
+        };
+        $.ajax({
+            type: "POST",
+            cache: false,
+            url: bs + "ChangePassword",
+            beforeSend: sf.setModuleHeaders,
+            data: datap,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var getOTP = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: ac + "GetOtp",
+            beforeSend: sf.setModuleHeaders
+        }).done(function (result) {
+            Util.ShowSuccessMessage(result);
+            deferred.resolve(result);
+        }).fail(function (error) {
+            //LogUtil.LogRBAjaxError(error);
+            deferred.reject();
+        });
+        return deferred.promise();
+    };
+
+    var uploadAvatar = function (imgurl) {
+        var deferred = $.Deferred();
+        var data = {
+            imgurl: imgurl,
+        };
+        $.ajax({
+            type: "POST",
+            cache: false,
+            url: avatar + "UploadAvatar",
+            beforeSend: sf.setModuleHeaders,
+            data: data,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    }
+
+    var uploadBackground = function (isauto, key) {
+        var deferred = $.Deferred();
+        var data = {
+            isauto: isauto,
+            key: key
+        };
+        $.ajax({
+            type: "POST",
+            cache: false,
+            url: background + "UpdateBackground",
+            beforeSend: sf.setModuleHeaders,
+            data: data,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    }
+
+    var ValidateEmailMobile = function (userName, email) {
+        var deferred = $.Deferred();
+        var data = {
+            email: email ? email : null,
+            mobile: userName ? userName : null
+        };
+        $.ajax({
+            type: "POST",
+            url: background + "ValidateEmailMobile",
+            beforeSend: sf.setModuleHeaders,
+            data: data,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    }
+
+
+    var eKYCCheckSanity = function (params) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            url: background + "eKYCCheckSanity",
+            beforeSend: sf.setModuleHeaders,
+            dataType: 'json',
+            data: params,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    }
+
+    var eKYCCheckTampering = function (params, level) {
+        var deferred = $.Deferred();
+        var data = {
+            type: params.type,
+            level: level,
+            image1: params.image1,
+            image2: params.image2,
+        };
+        $.ajax({
+            type: "POST",
+            url: background + "eKYCCheckTampering",
+            beforeSend: sf.setModuleHeaders,
+            data: data,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    }
+
+
+    var eKYCOcr = function (params) {
+        var deferred = $.Deferred();
+        var data = {
+            image1: params.image1,
+            image2: params.image2,
+            type: params.type,
+        };
+        $.ajax({
+            type: "GET",
+            url: background + "eKYCOcr",
+            beforeSend: sf.setModuleHeaders,
+            data: data,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    }
+
+    var eKYCCheckliveness = function (params) {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "POST",
+            url: background + "eKYCCheckliveness",
+            beforeSend: sf.setModuleHeaders,
+            data: params,
+            contentType: "application/json",
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    }
+
+    var eKYCCompareFaces = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: background + "eKYCCompareFaces",
+            beforeSend: sf.setModuleHeaders,
+
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    }
+
+    var eKYCCheckFaceRetrieval = function () {
+        var deferred = $.Deferred();
+        $.ajax({
+            type: "GET",
+            url: background + "eKYCCheckFaceRetrieval",
+            beforeSend: sf.setModuleHeaders,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    }
+
+
+    var eKYCSubmitChange = function (OTP, Mobile, Email) {
+        var deferred = $.Deferred();
+        var data = {
+            Mobile: Mobile,
+            Email: Email,
+            OTP: OTP
+        };
+
+        $.ajax({
+            type: "POST",
+            url: background + "eKYCSubmitChange",
+            beforeSend: sf.setModuleHeaders,
+            data: data,
+        }).done(function (result) {
+            deferred.resolve(result);
+        }).fail(function (error) {
+            deferred.reject();
+        });
+        return deferred.promise();
+    }
+
+    return {
+        Init: init,
+        ValidatePassword: validatePassword,
+        ChangePassword: changePassword,
+        GetOTP: getOTP,
+        UploadAvatar: uploadAvatar,
+        UploadBackground: uploadBackground,
+        validateEmailMobile: ValidateEmailMobile,
+        eKYCCheckSanity: eKYCCheckSanity,
+        eKYCCheckTampering: eKYCCheckTampering,
+        eKYCOcr: eKYCOcr,
+        eKYCCheckliveness: eKYCCheckliveness,
+        eKYCSubmitChange: eKYCSubmitChange,
+        eKYCCheckFaceRetrieval: eKYCCheckFaceRetrieval,
+        eKYCCompareFaces: eKYCCompareFaces
+    }
+}();

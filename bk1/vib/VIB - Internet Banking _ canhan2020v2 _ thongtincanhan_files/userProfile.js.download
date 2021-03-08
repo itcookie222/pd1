@@ -1,0 +1,1076 @@
+﻿VIB.RegExPassword = "^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[@#$%^&+=<>`{}]).{8,20}$";
+var OTPJSTemplate = "/DesktopModules/MVC/VIB.MVC.Common/Template/OTPJSTemplate2.html?v=1";
+
+var accessKey = '5aa9f470-8022-4336-9d6f-43516ce5037b';
+var secretKey = 'ZKU9tv4mHUrO8orOUWhSMgEVwGuUVfUw';
+var apiUrl = 'https://ekycapi.vib.com.vn/api';
+
+var userManager = {
+    Init: function (moduleid) {
+        $.when(
+            $.get(OTPJSTemplate, function (templates) {
+                $('body').append(templates);
+            })
+        ).then(function () {
+            // Submenu
+            $("#userProfileSubmenuTemplate").tmpl().appendTo($("#leftContent"));
+            $('.submenu .detail-value-number li').click(function () {
+                $(".submenu .detail-value-number li").removeClass("active");
+                $(this).addClass("active");
+            });
+            // Content
+            // $("#rightContent").empty();
+            // $("#userProfileTemplate").tmpl().appendTo($("#rightContent"));
+            userProfile.ShowUserProfile();
+
+            userProfile.apiClient = new trustvisionSdk.default(
+                accessKey,
+                secretKey,
+                apiUrl
+            );
+
+            // start using services
+            userProfile.apiClient.clientSettings().then((result) => {
+            }).catch((error) => {
+                //Util.ShowErrorMessage(error);
+            });
+
+            scrollViewport();
+        });
+    },
+}
+
+var userProfile = {
+    StepPassword: 1,
+    clickElement: null,
+    validOldPassword: false,
+    tv: null,
+    apiClient: null,
+    frontCard: null,
+    backCard: null,
+    dateKey: 'eKycRemain_' + (new Date()).toLocaleDateString(),
+    maxEKyc: 3,
+
+    ShowUserProfile: function () {
+        var data = JSON.parse(sessionStorage.getItem('UserInfo'));
+        $("#rightContent").empty();
+        $("#userProfileTemplate").tmpl().appendTo($("#rightContent"));
+        $("#userName").text(data.CUSTOMNERNAME);
+        $("#userPhone").text(data.MOBILENUMBER);
+        $("#userEmail").text(data.EMAIL);
+        $("#adress").text(data.COREADDRESS);
+        $("#branch").text(data.BRANCH);
+        $("#userUserName").text(data.USERNAME);
+        if(data.IsPassportGobalType === false){
+            $("#editProfileRow").show();
+        }
+    },
+    ShowUserAvatar: function () {
+
+    },
+    ShowUserBackground: function () {
+
+    },
+    onBlur: function (event) {
+        if ($(event).val().length > 0) { $(event).prev().addClass('formTop') } else { $(event).prev().removeClass('formTop') }
+    },
+    onClick: function (event) {
+        $(event).children('input').focus();
+    },
+    onFocus: function (e) {
+        $(e).prev().addClass('formTop');
+    },
+    showModalChangePassword() {
+        $('#change-password').empty();
+        $("#changePasswordTemplate").tmpl().appendTo($("#change-password"));
+        userProfile.StepPassword = 1;
+        $("#btnNext").click(function () {
+            userProfile.showOtp();
+
+        })
+
+        $('.modal[data-in="edit-modal"]').hide();
+        $(event.currentTarget).parents('.row').next().find('.modal[data-in="edit-modal"]').show();
+
+        $('#txtPassword').keyup(function (e) {
+            if (!e.target.value) {
+                Util.SetFieldErrorMessage('txtPassword');
+            }
+            var code = (e.keyCode ? e.keyCode : e.which);
+            if (code === 13) {
+                userProfile.validatePassword(true);
+            }
+        });
+
+        $('#txtPassword').focus(function (e) {
+            Util.SetFieldErrorMessage("txtPassword");
+        });
+
+        $('#txtPassword').blur(function (e) {
+            userProfile.onBlur(e.target);
+            userProfile.validatePassword(true);
+        });
+        $('#txtConfirmPassword').keyup(function (e) {
+            if (!e.target.value) {
+                Util.SetFieldErrorMessage('txtConfirmPassword');
+            }
+            Util.SetFieldErrorMessage('txtConfirmPassword');
+            $("#otpContent").hide();
+            $(".input-section").show();
+        });
+
+        $('#txtConfirmPassword').on("change blur", function () {
+            userProfile.validateConfirmPassword(true);
+        });
+        $('#txtConfirmPassword').on("focus", function () {
+            Util.SetFieldErrorMessage("txtConfirmPassword");
+        })
+
+        $('#txtNewPassword').keyup(function (e) {
+            if (!e.target.value) {
+                Util.SetFieldErrorMessage('txtNewPassword');
+            }
+            var code = (e.keyCode ? e.keyCode : e.which);
+            if (code === 13 && $('#txtNewPassword').val()) {
+                var valid = userProfile.validateNewPassword(true);
+                if (valid) {
+                    //$('#txtConfirmPassword').focus();
+                }
+            }
+        });
+
+        $('#txtNewPassword').on("focus", function () {
+            Util.SetFieldErrorMessage("txtNewPassword");
+        })
+
+        $('#txtNewPassword').on('blur', function (e) {
+            userProfile.validateNewPassword(true)
+            //if (userProfile.validateNewPassword(true) && $('#txtNewPassword').val()) {
+                //$('#txtConfirmPassword').click();
+            //};
+        });
+
+        $(document).mousemove(function (e) {
+            clickElement = $(e.target);
+        });
+
+    },
+
+    ValidatePassword1: function (password) {
+        initAjaxLoading();
+        commonService.ValidatePassword(password).then(function (result) {
+            if (result.STATUSCODE === "000000") {
+                Util.SetFieldErrorMessage('txtPassword');
+
+                //$('#txtNewPassword').focus();
+            } else {
+                Util.SetFieldErrorMessage('txtPassword', VIB.LocalizeString.ChangePassword_InvalidPassword);
+            }
+        }, function (textStatus) {
+            Util.ShowErrorMessage(textStatus);
+        });
+    },
+
+    ChangePassword: function (oldpassword, newpassword, otp) {
+        initAjaxLoading();
+        commonService.ChangePassword(oldpassword, newpassword, otp).then(function(result) {
+                $("#otpDialog").modal("hide");
+                if (result.STATUSCODE === "000000") {
+                    Util.ShowSuccessMessage(VIB.LocalizeString.ChangePassword_SuccessMessage);
+                    userProfile.showModalChangePassword();
+                } else {
+                    Util.ShowErrorMessage(result.MESSAGE
+                        ? result.MESSAGE
+                        : VIB.LocalizeString.ChangePassword_ErrorMessage);
+                }
+            },
+            function(error) {
+                Util.ShowErrorMessage(error);
+            });
+    },
+
+    setIconStatus: function (objIcon, isShow, isValid) {
+        objIcon.attr("src", "/DesktopModules/MVC/VIB.MVC.Authentication/Content/img/" + (isValid ? "checked-black.svg" : "Reset_red2.svg"));
+        if (isShow) {
+            objIcon.show();
+        } else {
+            objIcon.hide();
+        }
+    },
+    clearNewPasswordIndicator: function () {
+        $('#txtConfirmPassword').removeClass("field-error");
+
+        $("p.error").html('');
+        Util.SetFieldErrorMessage('txtNewPassword');
+        Util.SetFieldErrorMessage('txtConfirmPassword');
+
+        $("#otpContent").hide();
+    },
+    showHideModalEdit2: function (event) {
+        $('.modal[data-in="edit-modal"]').hide();
+        $(event.currentTarget).parents('.row').next().find('.modal[data-in="edit-modal"]').show();
+
+        $("#mobilenumberInput").blur(function () {
+            userProfile.validateMobilePhone(true);
+        });
+        $("#emailInput").blur(function () {
+            userProfile.validateEmail(true);
+
+        });
+
+        $("#openPopupValidate").off("click").click(function() {
+            var data = JSON.parse(sessionStorage.getItem(userProfile.dateKey));
+            var notTakeAgain = data && (parseInt(data) >= userProfile.maxEKyc);
+            if (notTakeAgain) {
+                Util.ShowErrorMessage(VIB.LocalizeString.UserInfoMaxeKyc);
+                return;
+            }
+            userProfile.openModalValidateKyc();
+        });
+
+        $("#btnModalValidate").off('click').click(function() {
+            userProfile.tv = new TVWebSDK.SDK({
+                container: document.getElementById('containerKyc'),
+                lang: 'vi',
+            });
+
+            userProfile.frontCard = null;
+            userProfile.backCard = null;
+            userProfile.checkCamera();
+        });
+
+        $("#btnModalRetry").off('click').click(function() {
+            userProfile.frontCard = null;
+            userProfile.backCard = null;
+            var data = JSON.parse(sessionStorage.getItem(userProfile.dateKey));
+            var notTakeAgain = data && (parseInt(data) >= userProfile.maxEKyc);
+            if (notTakeAgain) {
+                Util.ShowErrorMessage(VIB.LocalizeString.UserInfoMaxeKyc);
+                return;
+            }
+            userProfile.checkCamera();
+        });
+
+        $("#btnModalCHKH").click(function() {
+            window.location.href = VIB.LocalizeString.urlTransactionOffices
+        });
+    },
+    openModalValidateKyc: function () {
+        var mobilenumberInput = $("#mobilenumberInput").val();
+        var emailInput = $("#emailInput").val();
+
+        if (!mobilenumberInput && !emailInput) {
+            Util.SetFieldErrorMessage('mobilenumberInput', VIB.LocalizeString.requiredMobilePhone);
+            Util.SetFieldErrorMessage('emailInput', VIB.LocalizeString.requiredEmail);
+            return;
+        }
+        if (mobilenumberInput != "" && !userProfile.validateMobilePhone()) return;
+        if (emailInput != "" && !userProfile.validateEmail()) return;
+
+        // kiểm tra thông tin có bị trùng hay không
+        commonService.validateEmailMobile(mobilenumberInput, emailInput).then(function(res) {
+            $("#otpDialog").modal("hide");
+            if (res.STATUSCODE !== "000000") {
+                Util.ShowErrorMessage(res.MESSAGE);
+            } else {
+                //hiển thị popup hướng dẫn thay đổi thông tin
+                $("#modalValidateKyc").modal();
+            }
+        });
+    },
+
+    checkCamera: function () {
+        userProfile.tv.checkCamera({ frontCamera: true }).then(err => {
+            if (err == null) {
+                userProfile.startExtractIDInfo1();
+                return;
+            }
+            handleErrorCamera(err);
+        });
+    },
+
+    startExtractIDInfo1: function () {
+
+        var data = JSON.parse(sessionStorage.getItem(userProfile.dateKey));
+        if (data) {
+            sessionStorage.setItem(userProfile.dateKey, 1);
+        }
+        sessionStorage.setItem(userProfile.dateKey, parseInt(data + 1));
+
+        userProfile.tv.openCamera({
+            frontCamera: false,
+            title: VIB.LocalizeString.changeProfileTitleFrontView,
+            description: VIB.LocalizeString.changeProfilePictureDesc,
+            onImageTaken: userProfile.handleImageTaken1
+        });
+    },
+
+
+    handleImageTaken1: function(img) {
+        userProfile.tv.destroyView();
+
+        userProfile.tv = new TVWebSDK.SDK({
+            container: document.getElementById('containerKyc'),
+            lang: 'vi',
+        });
+        userProfile.startExtractIDInfo2();
+
+        userProfile.apiClient
+            .uploadImage({
+                file: img,
+                label: 'id_card.vn.national_id.front',
+            })
+            .then((result) => {
+                userProfile.frontCard = result.data.image_id;
+                userProfile.checkCard();
+            })
+            .catch((error) => {
+                userProfile.tv.destroyView();
+                Util.ShowErrorMessage(error);
+            });
+    },
+
+    startExtractIDInfo2: function () {
+        userProfile.tv.openCamera({
+            frontCamera: false,
+            title: VIB.LocalizeString.changeProfileBackSide,
+            description: VIB.LocalizeString.changeProfilePictureDesc,
+            onImageTaken: userProfile.handleImageTaken2
+        })
+    },
+    tempImage: null,
+    handleImageTaken2: function (img) {
+        userProfile.tempImage = img;
+        showLoadingMask();
+        userProfile.apiClient
+            .uploadImage({
+                file: img,
+                label: 'id_card.vn.national_id.back',
+            })
+            .then((result) => {
+                userProfile.backCard = result.data.image_id
+                userProfile.checkCard();
+            })
+            .catch((error) => {
+                hideLoadingMask();
+                userProfile.tv.destroyView();
+                Util.ShowErrorMessage(error);
+            });
+
+    },
+
+
+    checkCard: function () {
+        if (userProfile.frontCard && userProfile.backCard) {
+            hideLoadingMask();
+            var params = {
+                image1: userProfile.frontCard,
+                image2: userProfile.backCard,
+                type: "IDCARD"
+            }
+            commonService.eKYCCheckSanity(params).then(function (result) {
+
+                if (result.STATUSCODE === '000000') {
+                    if (result.IsValid) {
+                        // eKYCCheckTampering
+                        $.when(userProfile.eKYCCheckTamperingOcr(params)).done(function(result) {
+                            hideLoadingMask();
+                            userProfile.tv.destroyView();
+                            if (result === true) {
+                                userProfile.startLivenessDetection();
+                            }
+                        });
+                        // end eKYCCheckTampering
+                    } else {
+                        hideLoadingMask();
+                        userProfile.tv.destroyView();
+                        userProfile.showModalValidateFail();
+                    }
+                } else {
+                    hideLoadingMask();
+                    userProfile.tv.destroyView();
+                    Util.ShowErrorMessage(result.MESSAGE);
+                }
+            });
+        } else {
+            //showLoadingMask()
+        }
+    },
+
+    eKYCCheckTamperingOcr(params) {
+        var deferred = $.Deferred();
+
+        var data = {
+            type: "IDCARD",
+            image1: params.image1,
+            image2: params.image2,
+        };
+
+        var tam1 = commonService.eKYCCheckTampering(data, 1);
+        var tam2 = commonService.eKYCCheckTampering(data, 2);
+        var tam3 = commonService.eKYCCheckTampering(data, 3);
+        var ocr = commonService.eKYCOcr(data);
+
+        $.when(tam1, tam2, tam3, ocr).done(function (result1, result2, result3, resultOrc) {
+            if (result3.STATUSCODE != '000000') {
+                Util.ShowErrorMessage(result3.MESSAGE);
+                deferred.resolve(false);
+                return;
+            }
+
+            if (!result3.IsValid) {
+                userProfile.showModalValidateFail(result3.MESSAGE);
+                deferred.resolve(false);
+                return
+            }
+
+            if (resultOrc.STATUSCODE != '000000') {
+                Util.ShowErrorMessage(resultOrc.MESSAGE);
+                deferred.resolve(false);
+                return;
+            }
+
+            if (!resultOrc.IsValid) {
+                userProfile.showModalValidateFail(resultOrc.MESSAGE);
+                deferred.resolve(false);
+                return
+            }
+
+            if (result1.STATUSCODE != '000000') {
+                Util.ShowErrorMessage(result1.MESSAGE);
+                deferred.resolve(false);
+                return;
+            }
+
+            if (!result1.IsValid) {
+                userProfile.showModalValidateFail(result1.MESSAGE);
+                deferred.resolve(false);
+                return
+            }
+
+            if (result2.STATUSCODE != '000000') {
+                Util.ShowErrorMessage(result2.MESSAGE);
+                deferred.resolve(false);
+                return
+            }
+
+            if (!result2.IsValid) {
+                userProfile.showModalValidateFail(result2.MESSAGE);
+                deferred.resolve(false);
+                return;
+            }
+
+            return deferred.resolve(true);
+        });
+
+
+        return deferred.promise();
+    },
+
+    uploadEmailSelfie: function (img) {
+        var deferred = $.Deferred();
+        showLoadingMask()
+        userProfile.apiClient
+            .uploadImage({
+                file: img,
+                label: 'portrait',
+            })
+            .then((result) => {
+                showLoadingMask()
+                deferred.resolve(result);
+            })
+            .catch((error) => {
+                hideLoadingMask();
+                userProfile.tv.destroyView();
+                Util.ShowErrorMessage(error);
+                deferred.reject();
+            });
+
+        return deferred.promise();
+    },
+
+    showModalValidateFail: function (message) {
+
+        hideLoadingMask();
+        userProfile.tv.destroyView();
+        $("#modalValidateKycFail").modal();
+        $("#errorMessageKyc").text(message)
+    },
+
+    startLivenessDetection: function() {
+        userProfile.tv.livenessDetection({
+        apiCheck: false,
+        mode: 'active',
+        accessKey: accessKey,
+        secretKey: secretKey,
+        apiUrl: apiUrl,
+        onLivenessDetectionDone: userProfile.handleLivenessDetectionDone,
+        onError: e => alert(e.code)
+    })
+    },
+
+    handleLivenessDetectionDone: function (result) {
+        // xử lý hình ảnh selfie
+        const { steps, frontalFaces } = result
+        var promiss = [];
+        var images = [];
+
+        // không được thay đổi vị trí
+        var keyImage = [
+            "up",
+            "left",
+            "right",
+            "frontal",
+        ];
+
+        setTimeout(function() {
+                userProfile.tv.destroyView();
+
+                var imageRand = [];
+                var imageStep = [];
+
+                frontalFaces.forEach(function(s) {
+                    if (s) {
+                        imageRand.push(s);
+                    }
+                })
+
+                steps.forEach(function(s) {
+                    if (s.image.blob) {
+                        imageStep.push(s.image.blob);
+                    }
+                });
+
+                if (imageRand.length < 2 || imageRand.length > 4 || imageStep.length !== keyImage.length) {
+                    userProfile.showModalValidateFail();
+                    return;
+                }
+
+                imageRand.forEach(function(s) {
+                    promiss.push(userProfile.uploadEmailSelfie(s));
+                });
+
+                imageStep.forEach(function(s) {
+                    promiss.push(userProfile.uploadEmailSelfie(s));
+                });
+
+                $.when.apply($, promiss).then(function(result) {
+                    var schemas = Object.values(arguments)
+
+                    schemas.forEach(function(data, index) {
+                        if (index < promiss.length - keyImage.length) {
+                            images.push(
+                                {
+                                    type: "frontalFace" + (index + 1),
+                                    image1: data.data.image_id
+                                }
+                            );
+                        } else {
+                            images.push(
+                                {
+                                    type: keyImage[index - imageRand.length],
+                                    image1: data.data.image_id
+                                }
+                            );
+                        }
+                    });
+
+                    // kiểm tra giả mạo
+                    var params = {
+                        image1: images.filter(function (image) { return image.type ===  "frontal"; })[0].image1,
+                        type: "SELFIE"
+                    }
+                    commonService.eKYCCheckSanity(params).then(function (result) {
+                        if (result.STATUSCODE === '000000') {
+                            if (result.IsValid) {
+                                userProfile.eKYCCheckliveness(JSON.stringify(images)).then(function (result2) {
+                                    if (result2) {
+                                        // so sánh ảnh
+                                        userProfile.eKYCCompareFaces().then(function (result3) {
+                                            if (result3) {
+                                                userProfile.eKYCCheckFaceRetrieval().then(function (result4) {
+                                                    if (result4) {
+                                                        // hiển thị otp
+                                                        userProfile.showOpt();
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    }
+                                });
+                            } else {
+                                hideLoadingMask();
+                                userProfile.tv.destroyView();
+                                userProfile.showModalValidateFail();
+                            }
+                        } else {
+                            hideLoadingMask();
+                            userProfile.tv.destroyView();
+                            Util.ShowErrorMessage(result.MESSAGE);
+                        }
+                    });
+                });
+            }, 500);
+    },
+
+    eKYCCheckSanity:  function (data) {
+        var deferred = $.Deferred();
+
+        commonService.eKYCCheckSanity(data).then(function (result) {
+            if (result.STATUSCODE === "000000" && result.IsValid) {
+                deferred.resolve(true);
+                return;
+            }
+            userProfile.showModalValidateFail(result.MESSAGE);
+            deferred.resolve(false);
+        })
+        return deferred.promise();
+    },
+
+    eKYCCheckliveness: function (data) {
+        var deferred = $.Deferred();
+
+        commonService.eKYCCheckliveness(data).then(function (result) {
+            if (result.STATUSCODE === "000000" && result.IsValid) {
+                deferred.resolve(true);
+                return;
+            }
+            userProfile.showModalValidateFail(result.MESSAGE);
+            deferred.resolve(false);
+        })
+        return deferred.promise();
+    },
+
+    eKYCCompareFaces: function () {
+        var deferred = $.Deferred();
+
+        commonService.eKYCCompareFaces().then(function (result) {
+            if (result.STATUSCODE === "000000" && result.IsValid) {
+                deferred.resolve(true);
+                return;
+            }
+            userProfile.showModalValidateFail(result.MESSAGE);
+            deferred.resolve(false);
+        })
+        return deferred.promise();
+    },
+
+    eKYCCheckFaceRetrieval: function () {
+        var deferred = $.Deferred();
+
+        commonService.eKYCCheckFaceRetrieval().then(function (result) {
+            if (result.STATUSCODE === "000000" && result.IsValid) {
+                deferred.resolve(true);
+                return;
+            }
+            userProfile.showModalValidateFail(result.MESSAGE)
+            deferred.resolve(false);
+        })
+        return deferred.promise();
+    },
+
+    showOpt: function () {
+        var userinfo = JSON.parse(sessionStorage.getItem('UserInfo'));
+        if (userinfo) {
+            var renderData = {
+                IsPopup: true
+            }
+            $("#otp").empty();
+            $("#otpTemplate").tmpl(renderData).appendTo("#otp");
+            $("#otpDialog").modal("show");
+            Util.RegisterOTPEvent();
+            $("#btnGetOTP").click(function () {
+                commonService.GetOTP();
+            })
+            $("#btnSubmitOTP").click(function () {
+                var otp = $('#txtOtp1').val() + $('#txtOtp2').val() + $('#txtOtp3').val() + $('#txtOtp4').val() + $('#txtOtp5').val() + $('#txtOtp6').val();
+                if (otp.length != 6) {
+                    Util.SetOTPErrorMessage(true, VIB.LocalizeString.EMPTY_OTP);
+                    return;
+                } else {
+
+                    // submit otp
+                    var mobilenumberInput = $("#mobilenumberInput").val();
+                    var emailInput = $("#emailInput").val();
+                    commonService.eKYCSubmitChange(otp, mobilenumberInput, emailInput).then(function (res) {
+                        if (res.STATUSCODE !== "000000") {
+                            if (res.ALLOWRETRYOTP) {
+                                Util.SetOTPErrorMessage(true, res.MESSAGE);
+                            } else {
+                                $("#otpDialog").modal("hide");
+                                Util.ShowErrorMessage(VIB.LocalizeString.changeProfileFailChanged);
+                            }
+                        } else {
+                            $("#otpDialog").modal("hide");
+                            $("#profileModal").hide();
+                            Util.ShowSuccessMessage(VIB.LocalizeString.changeProfileSuccessChanged);
+                            $("#successMessageModal button").click(function (e) {
+                                sessionStorage.removeItem('UserInfo');
+                                $(e.target).off("click");
+                                window.location.reload();
+                            });
+                        }
+                    })
+                }
+            })
+        }
+    },
+
+    validateMobilePhone: function (change = false) {
+        var sdt = $("#mobilenumberInput").val();
+        if (sdt !== "") {
+            var patt = new RegExp("(09|01[2|6|8|9|3]|03|07|08)+([0-9]{8})");
+            var res = patt.test(sdt);
+            if (res === false) {
+                Util.SetFieldErrorMessage('mobilenumberInput', VIB.LocalizeString.InvalidFormat)
+                return false
+            } else {
+                Util.SetFieldErrorMessage('mobilenumberInput');
+                return true;
+            }
+        }
+        if (!change) {
+            Util.SetFieldErrorMessage('mobilenumberInput', VIB.LocalizeString.requiredMobilePhone);
+            //$("#mobilenumberInput").focus();
+        } else {
+            Util.SetFieldErrorMessage('mobilenumberInput');
+        }
+        return false;
+    },
+
+    validateEmail: function (change = false) {
+        var email = $("#emailInput").val();
+        if (email !== "") {
+            var patt = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+            var res = patt.test(email);
+            if (res === false) {
+                Util.SetFieldErrorMessage('emailInput', VIB.LocalizeString.InvalidFormat)
+                return false
+            } else {
+                Util.SetFieldErrorMessage('emailInput');
+                return true;
+            }
+        }
+        if (!change) {
+            Util.SetFieldErrorMessage('emailInput', VIB.LocalizeString.requiredEmail);
+            //$("#emailInput").focus();
+        } else {
+            Util.SetFieldErrorMessage('emailInput');
+        }
+        return false;
+    },
+
+    showHideModalEditClosed: function (event) {
+        $(event.currentTarget).parents('.modal[data-in="edit-modal"]').toggle();
+    }
+    ,
+    setBtnChangeStatus: function (isEnable) {
+        if (isEnable) {
+            $("#btnNext").removeClass("btn-disable-yellow");
+            $('#btnNext').prop('disabled', false);
+        } else {
+            $("#btnNext").addClass("btn-disable-yellow");
+            $('#btnNext').prop('disabled', true);
+        }
+    },
+    showOtp: function () {
+        //validate new password
+        if (!userProfile.validatePassword()) return;
+        if (!userProfile.validateNewPassword()) return;
+        if (!userProfile.validateConfirmPassword()) return;
+        //show otp section
+
+        var userInfo = JSON.parse(sessionStorage.getItem('UserInfo'));
+        if (userInfo) {
+            var renderData = {
+                IsPopup: true,
+            }
+            $("#otpChangePassword").empty();
+            $("#otpTemplate").tmpl(renderData).appendTo("#otpChangePassword");
+            $("#otpDialog").modal("show");
+            Util.RegisterOTPEvent();
+            $("#btnGetOTP").click(function () {
+                userProfile.GetOTP();
+            })
+        }
+        
+        $("#btnSubmitOTP").click(function () {
+            var otp = $('#txtOtp1').val() + $('#txtOtp2').val() + $('#txtOtp3').val() + $('#txtOtp4').val() + $('#txtOtp5').val() + $('#txtOtp6').val();
+            if (otp.length != 6) {
+                Util.SetOTPErrorMessage(true, VIB.LocalizeString.UserProfile_requiredOtp);
+                return;
+            } else {
+                // submit otp
+                var oldPassword = $('#txtPassword').val();
+                var newPassword = $('#txtNewPassword').val();
+                userProfile.ChangePassword(oldPassword, newPassword, otp);
+            }
+        })
+    },
+    GetOTP: function () {
+        return commonService.GetOTP();
+    },
+
+    validatePassword(change = false) {
+        var password = $("#txtPassword").val();
+        if ((!password || password.trim() === '')) {
+            if (!change) {
+                //$('#txtPassword').focus();
+                Util.SetFieldErrorMessage('txtPassword', VIB.LocalizeString.UserProfile_requiredPassWord);
+            } else {
+                Util.SetFieldErrorMessage('txtPassword');
+            }
+            return false;
+        } else if (change) {
+            initAjaxLoading();
+            commonService.ValidatePassword(password).then(function (result) {
+                if (result.STATUSCODE === "000000") {
+                    userProfile.validateOldPassword = true;
+                    Util.SetFieldErrorMessage('txtPassword');
+                    //$('#txtNewPassword').click();
+                } else {
+                    userProfile.validateOldPassword = false;
+                    //$('#txtPassword').focus();
+                    Util.SetFieldErrorMessage('txtPassword', VIB.LocalizeString.ChangePassword_InvalidPassword);
+                    //userProfile.setIconStatus($('#icoCheckPassword'), true, false);
+                }
+            }, function (textStatus) {
+                userProfile.validateOldPassword = false;
+                Util.ShowErrorMessage(textStatus);
+            });
+        } else {
+            if (!userProfile.validateOldPassword) {
+                //$('#txtPassword').focus();
+                Util.SetFieldErrorMessage('txtPassword', VIB.LocalizeString.ChangePassword_InvalidPassword)
+                return false;
+            }
+        }
+        Util.SetFieldErrorMessage('txtPassword');
+        //$('#txtNewPassword').click();
+        return true;
+    },
+
+    validateNewPassword(change = false) {
+        var newPassword = $("#txtNewPassword").val();
+        if (!newPassword || newPassword.trim() === '') {
+            if (!change) {
+                Util.SetFieldErrorMessage('txtNewPassword', VIB.LocalizeString.UserProfile_requiredNewPassWord);
+                return false;
+            }
+        } else if (!newPassword.match(VIB.RegExPassword)) {
+            Util.SetFieldErrorMessage('txtNewPassword', VIB.LocalizeString.ChangePassword_InvalidNewPassword);
+            return false;
+        }
+        Util.SetFieldErrorMessage('txtNewPassword');
+        return true;
+    },
+
+    validateConfirmPassword(change = false) {
+        var password1 = $('#txtNewPassword').val();
+        var password2 = $('#txtConfirmPassword').val();
+        if (!password2 || password2.trim() === '') {
+            if (!change) {
+                //$('#txtConfirmPassword').focus();
+                Util.SetFieldErrorMessage('txtConfirmPassword', VIB.LocalizeString.UserProfile_requiredConfirmPassWord);
+                return false;
+            }
+        } else if (password1 !== password2) {
+            //$('#txtConfirmPassword').focus();
+            Util.SetFieldErrorMessage('txtConfirmPassword', VIB.LocalizeString.Confirm_Invalid);
+            return false;
+        }
+        Util.SetFieldErrorMessage('txtConfirmPassword');
+        return true;
+    }
+}
+
+var userAvatar = {
+    ShowUserAvatar: function () {
+        commonFunction.ClearRightContent();
+        $("#userAvatarTemplate").tmpl().appendTo($("#rightContent"));
+        scrollViewport();
+        commonFunction.CheckImg();
+        $('#btnUploadAvatar,#btnUploadAvatar1').off('change').on('change', function () {
+            var size = (this.files[0].size / 1024 / 1024).toFixed(2);
+            if (size > 3) {
+                Util.ShowErrorMessage(VIB.LocalizeString.UploadErrorSize);
+            } else {
+                $(".top-info .Uploadbtn").addClass('active');
+                var reader = new FileReader();
+                var imageUrl = "";
+                reader.onload = function (e) {
+                    imageUrl = e.target.result;
+                    $(".Uploadbtn img").attr('src', imageUrl);
+                    $('.list-avatar').find('.avatar').removeClass('active');
+                }
+                reader.readAsDataURL(this.files[0]);
+            }
+        }); 
+    },
+
+    UploadImage: function () {
+        var imageUrl;
+        if ($(".list-avatar .avatar.active img").attr("src")) {
+            imageUrl = $(".list-avatar .avatar.active img").attr("src");
+        } else {
+            imageUrl = $(".Uploadbtn img").attr("src");
+        }
+        if (!imageUrl) {
+            Util.ShowErrorMessage(VIB.LocalizeString.ErrorSelectAvatar);
+            return;
+        }
+        $.when(commonService.UploadAvatar(imageUrl)).done(function (result) {
+            if (result.STATUSCODE === "000000") {
+                $(".header-content .avatar.dropdown-toggle img").attr("src", imageUrl);
+                $(".profile .col-img .avatar img").attr("src", imageUrl);
+                Util.ShowSuccessMessage(VIB.LocalizeString.UserAvatar_SuccessMessage);
+            }
+            else {
+                Util.ShowErrorMessage(VIB.LocalizeString.UserAvatar_ErrorMessage);
+            }
+            userAvatar.ResetUploadImage();
+        }).fail(function(error) {
+            Util.ShowErrorMessage(VIB.LocalizeString.UserAvatar_ErrorMessage);
+        });
+    },
+
+    ChooseAvatar: function () {
+        userAvatar.ResetUploadImage();
+        $(event.currentTarget).addClass('active');
+        // $(".Uploadbtn img").attr('src', $(".list-avatar .avatar.active img").attr("src"));
+        // $(".top-info .Uploadbtn").addClass('active');
+        $("#btnSaveAvatar").prop("disabled", false);
+    },
+
+    ChangeAvatar: function (event) {
+        $(event.currentTarget).change(function (e) {
+            var file;
+            var reader = new FileReader();
+            var imageUrl = "";
+            if ((file = this.files[0]) && file.size < 3145728) {
+                reader.onload = function (e) {
+                    imageUrl = e.target.result;
+                    $(".Uploadbtn img").attr('src', imageUrl);
+                    $('.list-avatar').find('.avatar').removeClass('active');
+                }
+                reader.readAsDataURL(file);
+                $(".top-info .Uploadbtn").addClass('active');
+            } else {
+                console.log("File Error <3mb");
+            }
+            $("#btnSaveAvatar").prop("disabled", false);
+        });
+    },
+
+    ResetUploadImage: function () {
+        $('.list-avatar').find('.avatar').removeClass('active');
+        $(".Uploadbtn .input-upload").val('');
+        $(".Uploadbtn img").attr("src", "");
+        $(".top-info .Uploadbtn").removeClass('active');
+    }
+
+}
+
+var data = JSON.parse(sessionStorage.getItem('UserInfo'));
+var keyBG = "";
+var isauto = false;
+var userBackground = {
+    ShowUserBackground: function () {
+        data = JSON.parse(sessionStorage.getItem('UserInfo'));
+        isauto = data.IsAutoBackground;
+        var listBackground = data.BACKGROUNDIMAGE;
+        commonFunction.ClearRightContent();
+        $("#userBackgroundTemplate").tmpl({ DATA: listBackground }).appendTo($("#rightContent"));
+        if (isauto) {
+            $('.switch input').prop("checked", true);
+        } else {
+            $('.switch input').prop("checked", false);
+        }
+        // $("#checkAutoTheme").change(function () {
+        //     userBackground.ActiveAutoTheme();
+        // });
+        scrollViewport();
+        commonFunction.CheckImg();
+    },
+
+    UploadBackground: function () {
+        isauto = $('.switch input').prop("checked");
+        var key = keyBG;
+        $.when(commonService.UploadBackground(isauto, key)).done(function (result) {
+            if (result.STATUSCODE === "000000") {
+                Util.ShowSuccessMessage(VIB.LocalizeString.UserBackground_SuccessMessage);
+                sessionStorage.setItem('UserInfo', null);
+                $("#successMessageModal").click(function () {
+                    showLoadingMask();
+                    location.reload();
+                });
+            }
+            else {
+                Util.ShowErrorMessage(VIB.LocalizeString.UserBackground_ErrorMessage);
+            }
+        });
+    },
+
+    ChangeTheme: function (event, key) {
+        $(event.currentTarget).parents('.list-theme').find('.avatar').removeClass('active');
+        $(event.currentTarget).addClass('active');
+        var imageUrl = $(event.currentTarget).children('div[data-img="theme"]').find('img').attr('data-image-url');
+        $(".sidebar").css("background-image", "url(" + imageUrl + ")");
+        keyBG = key;
+        $("#btnSaveBackground").prop("disabled", false);
+    },
+
+    ActiveAutoTheme() {
+        isauto = $('.switch input').prop("checked");
+        $('.list-theme').find('.avatar').removeClass('active');
+        if (isauto == true) {
+            $("#btnSaveBackground").prop("disabled", false);
+        } else {
+            $("#btnSaveBackground").prop("disabled", true);
+        }
+    }
+}
+
+// Common Function
+var commonFunction = {
+    ClearRightContent: function () {
+        $("#rightContent").empty();
+    },
+
+    CheckImg: function () {
+        $('.content .avatar img').each(function () {
+            var x = $(this).width();
+            var y = $(this).height();
+            if (x > y) {
+                $(this).css({ "width": "auto", "height": "100%", "left": "50%", "transform": "translateX(-50%)", "top": "auto" });
+            }
+            else {
+                $(this).css({ "width": "100%", "height": "auto", "top": "50%", "transform": "translateY(-50%)", "left": "auto" });
+            }
+        });
+    }
+}
+
+function handleErrorCamera(err) {
+    userProfile.tv.destroyView();
+    switch (err.code) {
+        case 'no_permission':
+            $('#errorNotSupportHeader').html(VIB.LocalizeString.BrowserNotSupported);
+            $('#errorNotSupportBody').html(VIB.LocalizeString.BrowserNotSupportedDesc);
+            $('#intro-popup-error-sdk').modal();
+            break;
+        case 'not_supported':
+            $('#errorNotSupportHeader').html(VIB.LocalizeString.BrowserNotSupported);
+            $('#errorNotSupportBody').html(VIB.LocalizeString.BrowserNotSupportedDesc);
+            $('#intro-popup-error-sdk').modal();
+            break;
+        case 'NotFoundError':
+            $('#intro-popup-error-sdk').modal();
+            break;
+        default:
+            $('#errorNotSupportHeader').html(VIB.LocalizeString.BrowserNotSupported);
+            $('#errorNotSupportBody').html(VIB.LocalizeString.BrowserNotSupportedDesc);
+            $('#intro-popup-error-sdk').modal();
+            break;
+    }
+}
