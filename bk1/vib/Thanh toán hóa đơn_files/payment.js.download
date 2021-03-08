@@ -1,0 +1,329 @@
+﻿var payment = {
+    sf: null,
+    bs: null,
+    Init: function (moduleid) {
+        this.sf = $.ServicesFramework(moduleid);
+        this.bs = this.sf.getServiceRoot('Payment2Controller') + 'WebAPI/';
+        $(document).ajaxStart(function () { $.showprogress('Get information', 'Loading.....', '<img src="/Images/loadingfinal.gif"/>') }).ajaxStop(function () { $.hideprogress() });
+    },
+    InitInput: function () {
+        $('#txtInputAmount').autoNumeric({ vMax: 999999999, vMin: 0 });
+        var txtDesc = $("#txtDescription");
+        txtDesc.attr("maxlength", 120);
+        var descVal = "";
+        var charCounter = 0;
+        if (txtDesc) descVal = txtDesc.val();
+        if (descVal)
+            charCounter = descVal.length;
+        $("#spanTextCounter").html("" + charCounter + "/" + vibmessage.TranDesc_character_limit);
+        $("#txtDescription").keyup(function () {
+
+            var val = $(this).val();
+            var orignalValue = val;
+            val = val.replace(vibmessage.RegDescription, '');
+            if (val != '') {
+                orignalValue = orignalValue.replace(vibmessage.RegDescription, '');
+                $(this).val(orignalValue);
+            } else {
+                $(this).val(val);
+            }
+            $("#spanTextCounter").html("" + val.length + "/" + vibmessage.TranDesc_character_limit);
+        });
+
+        $("#txtDescription").blur(function () {
+            var val = $(this).val();
+            var orignalValue = val;
+            val = val.replace(vibmessage.RegDescription, '');
+            if (val != '') {
+                orignalValue = orignalValue.replace(vibmessage.RegDescription, '');
+                $(this).val(orignalValue);
+            } else {
+                $(this).val(val);
+            }
+            $("#spanTextCounter").html("(" + val.length + "/" + vibmessage.TranDesc_character_limit + ")");
+        });
+        $("span.chkautobill input").click(function () {
+            payment.CalcAutoBillChecked();
+        });
+        payment.CalcAutoBillChecked();
+        if ($("#lnkNext").html() && $("#hdfAction").val() === "BULKQUERYBILL|0") {
+            var trans = [];
+            $("span.chkautobill input").each(function() {
+                if ($(this).is(":checked")) {
+                    //trans.push($(this).closest("span").attr("CustID"));
+                    trans.push($(this).closest("span").attr("NotID"));
+                }
+            });
+            
+            payment.ValidBill(trans);
+        }
+        if ($("#lnkNext").html() && $("#hdfAction").val() === "BULKQUERYBILL|1") {
+            payment.GetCheckedBill();
+        }
+        if (dnn.getVar("UserRegisterOnline") === "Y") {
+            $("<a href='#divPopup'/>").fancybox({
+                helpers: {
+                    overlay: { closeClick: false } //Disable click outside event
+                },
+                width: 400,
+                height: 100,
+                autoSize: false,
+                wrapCSS: "userregisteronline"
+            }).trigger("click");
+        }
+    },
+    FormatAmountVND: function (amount) {
+        if (!$("#hdfFormatAmount").val()) {
+            $('<input>').attr({
+                type: 'hidden',
+                id: 'hdfFormatAmount',
+                name: 'hdfFormatAmount'
+            }).appendTo('form');
+            $('#hdfFormatAmount').autoNumeric({ vMax: 9999999999, vMin: 0 });
+        }
+        $('#hdfFormatAmount').autoNumericSet(amount);
+        return $('#hdfFormatAmount').val();
+    },
+    CalcAutoBillChecked: function () {
+        var soluong = 0;
+        var amount = 0;
+        $("span.chkautobill input").each(function () {
+            if ($(this).is(":checked")) {
+                var ele = $(this).closest("span");
+                amount = amount + parseFloat(ele.attr("amount"));
+                soluong++;
+            }
+        });
+        $("#spAutoBillSelected").html(vibmessage.SoBillChon.replace("{{SoLuong}}", soluong).replace("{{TongTien}}", payment.FormatAmountVND(amount)));
+        var max = parseInt(dnn.getVar("AUTOBILLMAXSELECTED"));
+        if (soluong > max) {
+            alert(vibmessage.msgMaxSelected);
+        }
+    },
+    ValidBill: function (lstcustid) {
+        if (lstcustid.length === 0) return;
+        var datap = {
+            fromacct: payment.GetValueRadCombobox(vibmessage.cmbCurrentAccounts_ClientID),
+            custid: JSON.stringify(lstcustid)
+        };
+        $.ajax({
+            type: "POST",
+            url: this.bs + "SetBillInq",
+            beforeSend: this.sf.setModuleHeaders,
+            data: datap,
+            success: function (result) {
+                if (result.STATUSCODE === "000000") {
+                    dnn.setVar("TOTALPAYAMT", "0");
+                    $("#divAutoBillInq").show();
+                    payment.GetBillInfo();
+                }
+            },
+            error: function (xhr, textStatus) {
+                RBAjaxError(xhr, textStatus);
+            }
+        });
+    },
+    GetBillInfo: function () {
+        $.ajax({
+            type: "GET",
+            cache: false,
+            url: this.bs + "GetBillInfo",
+            beforeSend: this.sf.setModuleHeaders,
+            success: function (result) {
+                if (result.STATUSCODE !== "DONE" && result.STATUSCODE !== "DONE-ERROR") {
+                    if (result.data != null) {
+                        var html = "<tr id='" + result.data.ID + "' cust='" + result.data.CustID + "' bill='" + result.data.CurrentBillNo + "'>";
+                        html += "<td>" + result.data.SupplierName+" - ";
+                        html += result.data.CustID ;
+                        if (result.data.CustomerName != null && result.data.CustomerName!=="") {
+                            html +=  " - "+ result.data.CustomerName;
+                        }
+                        html += " - " + result.data.strAmount + "</td>";
+                        html += "<td> <a href='javascript:void(0)' class='remove' onclick='payment.RemoveBill(\"" + result.data.ID + "\")'>" + vibmessage.aRemove + "</a></td>";
+                        html += "</tr>";
+                        $("#tblAutoBillDetail tbody").append(html);
+                        var total = parseFloat(dnn.getVar("TOTALPAYAMT")) + result.data.Amount;
+                        dnn.setVar("TOTALPAYAMT", total.toString());
+                    }
+                    payment.GetBillInfo();
+                }else {
+                    $("#divAmount").html(result.strTotalAmount);
+                    if (result.STATUSCODE === "DONE") {
+                        if (result.TotalAmount > 0)
+                            $("#button_next").show();
+                        else $("#button_next").hide();
+                    } else {
+                        $("#button_next").hide();
+                        alert(result.MESSAGE);
+                    }
+                }
+            },
+            error: function (xhr, textStatus) {
+                RBAjaxError(xhr, textStatus);
+            }
+        });
+    },
+    GetValueRadCombobox: function (id) {
+        var control = document.getElementById(id).control;
+        var idx = control._selectedIndex;
+        var value = control._itemData[idx].value;
+        return (value == undefined) ? "" : value;
+    },
+    RemoveBill: function (billid) {
+        var datap = {
+            billid: billid
+        };
+        $.ajax({
+            type: "POST",
+            url: this.bs + "RemoveBill",
+            beforeSend: this.sf.setModuleHeaders,
+            data: datap,
+            success: function (result) {
+                if (result.STATUSCODE === "000000") {
+                    $("#" + billid).remove();
+                    $("#divAmount").html(result.strTotalAmount);
+                    if (result.TotalAmount > 0)
+                        $("#button_next").show();
+                    else $("#button_next").hide();
+                }
+            },
+            error: function (xhr, textStatus) {
+                RBAjaxError(xhr, textStatus);
+            }
+        });
+    },
+    InitConfirm:function() {
+        $("#aGetOtp").click(function () {
+            payment.GetOTP();
+        });
+            
+        $("input.nhap-otp").numeric(false, function () { this.value = ""; this.focus(); });            
+        $("input.nhap-otp").keyup(function (event) {                
+            var currentIndex = $(this).attr("id").replace('txtOtp', '');
+               
+            var nextIndex = parseInt(currentIndex) + 1;
+            if (nextIndex > 6) return;
+            $("#txtOtp" + nextIndex).focus();                
+        });
+        $("#aConfirmBulk").click(function() {
+            payment.BulkPaySubmit();
+        });
+    },
+    GetOTP:function() {
+        $.ajax({
+            type: "GET",
+            cache: false,
+            url: this.bs + "GetOTP",
+            beforeSend: this.sf.setModuleHeaders,
+            success: function (data) {
+                alert(data);
+                $("#txtOtp1").focus();
+                $('#aGetOtp').fadeOut("slow");
+                setTimeout(function () {
+                    $('#aGetOtp').fadeIn("slow");
+                }, vibmessage.ThoiGianDisablebtnGetOTP);
+
+            },
+            error: function () {
+                alert(vibmessage.ErrTimeOutTransaction);
+                $('#aGetOtp').fadeOut("slow");
+                setTimeout(function () {
+                    $('#aGetOtp').fadeIn("slow");
+                }, vibmessage.ThoiGianDisablebtnGetOTP);
+            }
+        });
+    },
+    BulkPaySubmit:function() {
+        var otp = "";
+        for (var i = 1; i < 7; i++) {
+            otp += $("#txtOtp" + i).val();
+        }
+        if (otp.length != 6) {
+            alert(vibmessage.msgOtpInvalid);
+            return;
+        }
+        var datap = {
+            otp: otp
+        };
+        $.ajax({
+            type: "POST",
+            url: this.bs + "BulkPaySubmit",
+            beforeSend: this.sf.setModuleHeaders,
+            data: datap,
+            success: function (result) {
+                if (result.STATUSCODE === "000000") {
+                    payment.BulkPay();
+                } else {
+                    alert(result.MESSAGE);
+                }
+            },
+            error: function (xhr, textStatus) {
+                RBAjaxError(xhr, textStatus);
+            }
+        });
+    },
+    BulkPay:function() {
+        var otp = "";
+        for (var i = 1; i < 7; i++) {
+            otp += $("#txtOtp" + i).val();
+        }
+        var datap = {
+            otp: otp
+        };
+        $.ajax({
+            type: "POST",
+            url: this.bs + "BulkPay",
+            beforeSend: this.sf.setModuleHeaders,
+            data: datap,
+            success: function (result) {
+                if (result.STATUSCODE !== "DONE" && result.STATUSCODE !== "DONE-ERROR") {
+                    payment.BulkPay();
+                } else {
+                    if (result.STATUSCODE === "DONE") {
+                        $("#aConfirmBulk").hide();
+                        window.location = result.NextURL;
+                    } else {
+                        alert(result.MESSAGE);
+                    }
+                }
+            },
+            error: function (xhr, textStatus) {
+                RBAjaxError(xhr, textStatus);
+            }
+        });
+    },
+    GetCheckedBill:function() {
+        $.ajax({
+            type: "GET",
+            cache: false,
+            url: this.bs + "GetCheckedBillInfo",
+            beforeSend: this.sf.setModuleHeaders,
+            success: function (result) {
+                if (result.STATUSCODE === "000000") {
+                    if (result.data != null) {
+                        $.each(result.data, function (i, o) {
+                            var html = "<tr id='" + o.ID + "' cust='" +o.CustID + "' bill='" + o.CurrentBillNo + "'>";
+                        html += "<td>" + o.SupplierName + " - ";
+                        html += o.CustID + " - ";
+                        html += (o.CustomerName == null ? "" : o.CustomerName) + " - ";
+                        html += o.strAmount + " - ";
+                        html += "<td> <a href='javascript:void(0)' class='remove' onclick='payment.RemoveBill(\"" + o.ID + "\")'>Remove</a></td>";
+                        html += "</tr>";
+                        $("#tblAutoBillDetail tbody").append(html);
+                        });
+                        
+                    }
+                    $("#divAmount").html(result.strTotalAmount);
+                    $("#divAutoBillInq").show();
+                        if (result.TotalAmount > 0)
+                            $("#button_next").show();
+                        else $("#button_next").hide();
+                   
+                }
+            },
+            error: function (xhr, textStatus) {
+                RBAjaxError(xhr, textStatus);
+            }
+        });
+    }
+};

@@ -1,0 +1,696 @@
+﻿var ClrowId = 0;
+function GetRowClass() {
+    ClrowId++;
+    var rowClass = ClrowId % 2 == 0 ? "ef" : "of";
+    return rowClass;
+}
+
+var isInit = false;
+var isPaging = false;
+var sf = null;
+var bs = null;
+var params = {};
+var vibcode = {};
+var lastSortList = [[5, 1]];
+
+var myPageName = "#page-"; // a number will follow for each page
+// EDIT: extra stuff to cover url fragments (i.e. #page-3)
+// is more thoroughly commented (to explain the regular expression)
+// we'll create a function to check the url fragment and change page
+// we're storing this function in a variable so we can reuse it
+var checkFragment = function (pageIndex) {
+    // if there's no hash, make sure we go to page 1
+    pageIndex = pageIndex || 1;
+    var hash = window.location.hash || (myPageName + pageIndex);
+    // we'll use regex to check the hash string
+    var re = new RegExp("^" + myPageName + "(\\d+)$");
+    hash = hash.match(re);
+    if (hash) {
+        // the selectPage function is described in the documentation
+        // we've captured the page number in a regex group: (\d+)
+        $("#pagination").pagination("selectPage", parseInt(hash[1]));
+    }
+};
+
+// we'll call this function whenever the back/forward is pressed
+jQuery(window).bind("popstate", checkFragment);
+
+function pageLoadLMList(args) {
+    sf = $.ServicesFramework(args.moduleid);
+    bs = sf.getServiceRoot('PayAnyOne') + 'WebAPI/';
+    vibcode = {
+        SoGiaoDich: args.sogdText,
+        KhongTimThayGiaoDich: args.kotimthaygd
+    };
+
+    vibcode.SoGiaoDich = vibcode.SoGiaoDich.replace("{dangxem}", "").replace("1-", "");
+
+    $.ajax({
+        type: "GET",
+        url: bs + 'GetEventList',
+        beforeSend: sf.setModuleHeaders,
+        contentType: "application/json; charset=utf-8",
+        cache: false,
+        success: function (result) {
+            if (typeof result !== "undefined" && result != null) {
+                if (result.STATUSCODE === "000000") {
+                    $('#eventSelect').empty();
+                    $('#eventSelect').append($("<option />").val("").text($("#hdfAllEventTextLang").val()));
+
+                    $.each(result.data, function () {
+                        $('#eventSelect').append($("<option />").val(this.EventID).text(this.Name));
+                    });
+
+                    var selectedEvent = $("#hdfEventId").val();
+                    $('#eventSelect').val(selectedEvent);
+
+                    // enable to keep index when back
+                    var pageIndex = 1; //parseInt(args.pageIndex) || 1;
+                    var data = {
+                        eventId: $('#eventSelect').val(),
+                        pageIndex: pageIndex
+                    };
+
+                    loadGrid(data);
+                } else {
+                    alert(result.MESSAGE);
+                }
+            }
+        },
+        error: function (xhr, textStatus) {
+            RBAjaxError(xhr, textStatus);
+        }
+    });
+}
+
+function loadGrid(data, refresh) {
+    if (params.eventId != data.eventId || params.pageIndex != data.pageIndex) {
+        isPaging = true;
+        params = data;
+        getLMList(data, refresh);
+    }
+    //else if (!isPaging) {
+    //    isPaging = true;
+    //    params = data;
+    //    getLMList(data, refresh);
+    //}
+
+    setTimeout(function () {
+        isPaging = false;
+    }, 600);
+}
+
+function getLMList(data, refresh) {
+    $.ajax({
+        type: "GET",
+        url: bs + 'GetLMList',
+        beforeSend: sf.setModuleHeaders,
+        data: params,
+        contentType: "application/json; charset=utf-8",
+        cache: false,
+        success: function (result) {
+            if (typeof result !== "undefined" && result != null) {
+                if (result.STATUSCODE === "000000") {
+                    var numItems = result.TotalItem;
+                    var perPage = result.PageSize;
+
+                    if (numItems == 0) {
+                        $("#pagination").hide();
+                    } else {
+                        $("#pagination").show();
+                    }
+
+                    $("#tab-content-transaction-lucky tbody").html("");
+                    $("#tmpList").tmpl(result.data).appendTo($("#tab-content-transaction-lucky tbody"));
+                    initPaging(numItems, perPage, data.pageIndex);
+
+                    if (refresh) {
+                        $("#pagination").pagination("updateItems", numItems);
+                        var page = Math.min(
+                            $("#pagination").pagination("getCurrentPage"),//data.pageIndex,
+                            $("#pagination").pagination("getPagesCount")
+                        );
+
+                        $("#pagination").pagination("selectPage", page);
+                    }
+
+                    if (numItems === 0) {
+                        $("#spSoGiaoDich").html(vibcode.KhongTimThayGiaoDich);
+                    } else {
+                        var index = 1;
+                        if (params.pageIndex == 0) {
+                            index = 1;
+                        }
+                        else {
+                            index = params.pageIndex;
+                        }
+
+                        var currentEndRecord = index * perPage;
+                        if (currentEndRecord > numItems) {
+                            currentEndRecord = numItems;
+                        }
+
+                        var currentStartRecord = (currentEndRecord - result.data.length) + 1;
+                        if (currentStartRecord < 1) {
+                            currentStartRecord = 1;
+                        }
+
+                        var indexTotal = $("#pagination").pagination("getPagesCount");
+                        $(".paginate_button.prev").show();
+                        $(".paginate_button.next").show();
+
+                        if (index == 1) {
+                            $(".paginate_button.prev").hide();
+                        }
+
+                        if (index == indexTotal) {
+                            $(".paginate_button.next").hide();
+                        }
+                        //if (numItems <= perPage) {
+                        //    $(".paginate_button.prev").hide();
+                        //    $(".paginate_button.next").hide();
+                        //}
+
+                        $("#spSoGiaoDich").html(vibcode.SoGiaoDich.replace("{tongcong}", numItems) + currentStartRecord + "-" + currentEndRecord);
+                    }
+
+                    return;
+                } else {
+                    alert(result.MESSAGE);
+                }
+            }
+        },
+        error: function (xhr, textStatus) {
+            RBAjaxError(xhr, textStatus);
+        }
+    });
+}
+
+function initPaging(numItems, perPage, pageIndex) {
+
+    if (!isInit) {
+        $.tablesorter.addParser({
+            id: "datetime",
+            is: function (s) {
+                return false;
+            },
+            format: function (s, table) {
+                s = s.replace(/\-/g, "/");
+                s = s.replace(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/, "$3/$2/$1");
+                return $.tablesorter.formatFloat(new Date(s).getTime());
+            },
+            type: "numeric"
+        });
+
+        $("#tab-content-transaction-lucky").tablesorter({
+            dateFormat: 'dd/mm/yyyy',
+            sortList: lastSortList,
+            headers: {
+                5: { sorter: 'datetime' }
+            }
+        });
+
+        var hdfNextTextLang = $("#hdfNextTextLang").val();
+        var hdfPrevTextLang = $("#hdfPrevTextLang").val();
+        // now setup pagination
+        $("#pagination").pagination({
+            prevText: hdfPrevTextLang,
+            nextText: hdfNextTextLang,
+            items: numItems,
+            itemsOnPage: perPage,
+            itemsPerPage: perPage,
+            displayedPages: 3,
+            edges: 1,
+            cssStyle: "light-theme",
+            hrefTextPrefix: myPageName,
+            onPageClick: function (pageNumber) {
+                //var showFrom = perPage * (pageNumber - 1);
+                //var showTo = showFrom + perPage;
+                var data = {
+                    eventId: $('#eventSelect').val(),
+                    pageIndex: pageNumber
+                };
+                
+                loadGrid(data);
+            }
+            //currentPage: 1,
+            //onInit: function () { pageOne() },
+        });
+
+    }
+
+    checkFragment(pageIndex);
+
+    $("#tab-content-transaction-lucky").trigger("update");
+    if (numItems > 0) {
+        // this keeps sort order
+        //lastSortList = $("#tab-content-transaction-lucky")[0].config.sortList;
+        setTimeout(function () {
+            $("#tab-content-transaction-lucky").trigger("sorton", [lastSortList]);
+        }, 100);
+    } else {
+        // use built in clear function
+        if (typeof $.tablesorter != "undefined") {
+            $.tablesorter.clearTableBody($("#tab-content-transaction-lucky")[0]);
+        }
+    }
+
+    isInit = true;
+}
+
+$('#eventSelect').bind('change', function () {
+    var data = {
+        eventId: this.value,
+        pageIndex: 1
+    };
+
+    $("#hdfEventId").val(this.value);
+
+    window.location.hash = "";// myPageName + "1";
+
+    loadGrid(data, true);
+});
+
+function pageLoadLMDetail(moduleid) {
+
+    sf = $.ServicesFramework(moduleid);
+    bs = sf.getServiceRoot('PayAnyOne') + 'WebAPI/';
+    var toAccountName = $("#ltrToAccount").text();
+    var phone = $("#ltrPhone").text();
+    var eventName = $("#ltrEventName").text();
+    var msg = $("#ltrECard").text();
+    var ecard = $("#imgCard").attr('src');
+    //$("#divRemoveEventName2").text(eventName);
+    $("#divResendReceiverName").text(toAccountName);
+    $("#divResendPhone").text(phone);
+    $("#divRemoveEventName").text(eventName);
+    $("#divUnlockEventName1").text(eventName);
+    $("#divUnlockReceiverName1").text(toAccountName);
+    $("#divUnlockPhone1").text(phone);
+    $("#divUnlockEventName2").text(eventName);
+    $("#divUnlockReceiverName2").text(toAccountName);
+    $("#divUnlockReceiverName3").text(toAccountName);
+    $("#divUnlockPhone2").text(phone);
+
+    $("#divShowCardPopupEventName").text(eventName);
+    $("#divShowCardPopupMessage").text(msg);
+    $("#divShowCardPopupReceiverName").text(toAccountName);
+    $("#divShowCardPopupEcard").attr("src", ecard);
+    
+}
+
+$("#lbtCopy").click(function (e) {
+    var para = document.getElementById("link-gift");
+    selectElementText(para); // select the element's text we wish to read
+    var paratext = getSelectionText(); // read the user selection
+    para.focus();
+    var copysuccess = copySelectionText();
+    if (copysuccess) {
+        alert($("#hdfCopyTextLang").val());
+    } else {
+        alert('Fail');
+    }
+});
+$("#lbtRemove").click(function (e) {
+    return showRemovePopup();
+});
+$("#lbtResend").click(function (e) {
+    return showResendPopup();
+});
+$("#lbtCheck").click(function (e) {
+    return checkConstraint();
+});
+$("#lbtUnlock").click(function (e) {
+    return showUnlockPopup();
+});
+$("#lbtCancel").click(function (e) {
+    return showCancelPopup();
+});
+
+function showUnlockPopup() {
+
+    $('#divUnlockTable1').show();
+    $('#divUnlockTable2').hide();
+
+    $.fancybox({
+        'type': 'inline',
+        'href': '#divUnlock',
+        helpers: {
+            overlay: { closeClick: false }
+        },
+    });
+
+    return false;
+}
+
+function showRemovePopup() {
+    $('#divRemoveTable1').show();
+    $('#divRemoveTable2').hide();
+
+    $.fancybox({
+        'type': 'inline',
+        'href': '#divRemove',
+        helpers: {
+            overlay: { closeClick: false }
+        },
+    });
+
+    return false;
+}
+
+function showResendPopup() {
+    $('#divResend1').show();
+    $('#divResend2').hide();
+    
+    $.fancybox({
+        'type': 'inline',
+        'href': '#divResend',
+        helpers: {
+            overlay: { closeClick: false }
+        },
+    });
+
+    return false;
+}
+
+function showCancelPopup() {
+    
+    $('#divCancel1').show();
+    $('#divCancel2').hide();
+
+    $.fancybox({
+        'type': 'inline',
+        'href': '#divCancel',
+        helpers: {
+            overlay: { closeClick: false }
+        },
+    });
+
+    return false;
+}
+
+function checkConstraint() {
+    var datap = {
+        accountNo: $('#hdfAccountNo').val(),
+        tranSeqNo: $('#hdfTranSeqNo').val()
+    };
+
+    $.ajax({
+        type: "POST",
+        url: bs + "CheckTrans",
+        beforeSend: sf.setModuleHeaders,
+        data: datap,
+        success: function (res) {
+            if (typeof res !== "undefined" && res != null) {
+                if (res.STATUSCODE === "000000") {
+                    $("#divCheckResult").text(res.data);
+
+                    $.fancybox({
+                        'type': 'inline',
+                        'href': '#divCheck',
+                        helpers: {
+                            overlay: { closeClick: false }
+                        },
+                    });
+                } else {
+                    alert(res.MESSAGE);
+                }
+            }
+        },
+        error: function (xhr, textStatus) {
+            RBAjaxError(xhr, textStatus);
+        }
+    });
+
+    return false;
+}
+
+function getLMDetail (datap) {
+    $.ajax({
+        type: "POST",
+        url: bs + "GetLMDetail",
+        beforeSend: sf.setModuleHeaders,
+        data: datap,
+        success: function (res) {
+            if (typeof res !== "undefined" && res != null) {
+                if (res.STATUSCODE === "000000") {
+                    var d = res.data;
+                    if (d && d.CurrentStatusText) {
+                        $('#ltrStatus').html(d.CurrentStatusText);
+                    }
+                } else {
+                    alert(res.MESSAGE);
+                }
+            }
+        },
+        error: function (xhr, textStatus) {
+            RBAjaxError(xhr, textStatus);
+        }
+    });
+}
+
+$("#divCancellbtYes").click(function () {
+    var datap = {
+        transID: $('#hdfTransId').val()
+    };
+    $.ajax({
+        type: "POST",
+        url: bs + "CancelTrans",
+        beforeSend: sf.setModuleHeaders,
+        data: datap,
+        success: function (res) {
+            if (typeof res !== "undefined" && res != null) {
+                if (res.STATUSCODE === "000000") {
+                    $('#divCancel1').hide();
+                    $('#divCancel2').show();
+
+                    var d = res.data;
+                    if (d && d.CurrentStatusText) {
+                        $('#ltrStatus').html(d.CurrentStatusText);
+                        $("#lbtResend").hide();
+                        $("#lbtUnlock").hide();
+                        $("#lbtCheck").hide();
+                        $("#lbtCancel").hide();
+                        $("#lbtCopy").hide();
+                        $("#lbtRemove").hide();
+                    }
+                } else {
+                    alert(res.MESSAGE);
+                    $.fancybox.close(true);
+                }
+            }
+        },
+        error: function (xhr, textStatus) {
+            $.fancybox.close(true);
+            RBAjaxError(xhr, textStatus);
+        }
+    });
+
+});
+
+$("#divResendlbtResend").click(function () {
+    var datap = {
+        transID: $('#hdfTransId').val()
+    };
+    $.ajax({
+        type: "POST",
+        url: bs + "SendUrlTrans",
+        beforeSend: sf.setModuleHeaders,
+        data: datap,
+        success: function (res) {
+            if (typeof res !== "undefined" && res != null) {
+                if (res.STATUSCODE === "000000") {
+                    $('#divResend1').hide();
+                    $('#divResend2').show();
+                } else {
+                    alert(res.MESSAGE);
+                    $.fancybox.close(true);
+                }
+            }
+        },
+        error: function (xhr, textStatus) {
+            $.fancybox.close(true);
+            RBAjaxError(xhr, textStatus);
+        }
+    });
+
+});
+
+$("#divRemovelbtRemove").click(function () {
+
+    var datap = {
+        transID: $('#hdfTransId').val()
+    };
+    $.ajax({
+        type: "POST",
+        url: bs + "RemoveTrans",
+        beforeSend: sf.setModuleHeaders,
+        data: datap,
+        success: function (res) {
+            if (typeof res !== "undefined" && res != null) {
+                if (res.STATUSCODE === "000000") {
+                    $('#divRemoveTable1').hide();
+                    $('#divRemoveTable2').show();
+                    var d = res.data;
+                    if (d && d.CurrentStatusText) {
+                        $('#ltrStatus').html(d.CurrentStatusText);
+                        $("#lbtResend").hide();
+                        $("#lbtUnlock").hide();
+                        $("#lbtCheck").hide();
+                        $("#lbtCancel").hide();
+                        $("#lbtCopy").hide();
+                        $("#lbtRemove").hide();
+                    }
+                } else {
+                    alert(res.MESSAGE);
+                    $.fancybox.close(true);
+                }
+            }
+        },
+        error: function (xhr, textStatus) {
+            $.fancybox.close(true);
+            RBAjaxError(xhr, textStatus);
+        }
+    });
+});
+
+$("#divUnlocklbtUnlock").click(function () {
+    var datap = {
+        transID: $('#hdfTransId').val()
+    };
+    $.ajax({
+        type: "POST",
+        url: bs + "UnlockTrans",
+        beforeSend: sf.setModuleHeaders,
+        data: datap,
+        success: function (res) {
+            if (typeof res !== "undefined" && res != null) {
+                if (res.STATUSCODE === "000000") {
+                    $('#divUnlockTable1').hide();
+                    $('#divUnlockTable2').show();
+                    //getLMDetail(datap);
+                    var d = res.data;
+                    if (d && d.CurrentStatusText) {
+                        $('#ltrStatus').html(d.CurrentStatusText);
+                        $("#lbtUnlock").hide();
+                        $("#lbtCheck").hide();
+                        $("#lbtRemove").hide();
+                    }
+                } else {
+                    alert(res.MESSAGE);
+                    $.fancybox.close(true);
+                }
+            }
+        },
+        error: function (xhr, textStatus) {
+            $.fancybox.close(true);
+            RBAjaxError(xhr, textStatus);
+        }
+    });
+
+});
+
+$("#divUnlocklbtCancel").click(function () {
+    $.fancybox.close(true);
+});
+
+$("#divResendlbtCancel1").click(function () {
+    $.fancybox.close(true);
+});
+
+$("#divResendlbtCancel2").click(function () {
+    $.fancybox.close(true);
+});
+
+$("#divRemovelbtCancel").click(function () {
+    $.fancybox.close(true);
+});
+
+$("#divRemovelbtDone").click(function () {
+    $.fancybox.close(true);
+});
+
+$("#divUnlocklbtDone").click(function () {
+    $.fancybox.close(true);
+});
+
+$("#divCancellbtNo").click(function () {
+    $.fancybox.close(true);
+});
+
+$("#divChecklbtCancel").click(function () {
+    $.fancybox.close(true);
+});
+
+$("#divCancellbtNo").click(function () {
+    $.fancybox.close(true);
+});
+
+$("#divCancellbtCancel").click(function () {
+    $.fancybox.close(true);
+});
+
+function showEcard() {
+    $.fancybox({
+        'type': 'inline',
+        'href': '#divShowCardPopup',
+        'minWidth': 600,
+        'closeBtn': false,
+        helpers: {
+            overlay: { closeClick: false }
+        },
+    });
+
+    $('#divShowCardPopup').parent().parent().parent().parent().find(".fancybox-skin").addClass("fancybox-skin-card");
+}
+$(".boximg").click(function () {
+    showEcard();
+});
+$(".mail-open-bottom").click(function () {
+    showEcard();
+});
+
+$(".popup-card-button").click(function () {
+    $.fancybox.close();
+});
+
+function copySelectionText() {
+    var copysuccess;
+    try {
+        copysuccess = document.execCommand("copy");
+    } catch (e) {
+        copysuccess = false;
+    }
+    return copysuccess;
+}
+
+function getSelectionText() {
+    var text = "";
+    var activeEl = document.activeElement;
+    var activeElTagName = activeEl ? activeEl.tagName.toLowerCase() : null;
+    if (
+      (activeElTagName == "textarea" || activeElTagName == "input") &&
+      /^(?:text|search|password|tel|url)$/i.test(activeEl.type) &&
+      (typeof activeEl.selectionStart == "number")
+    ) {
+        text = activeEl.value.slice(activeEl.selectionStart, activeEl.selectionEnd);
+    } else if (window.getSelection) {
+        text = window.getSelection().toString();
+    }
+    return text;
+}
+
+function selectElementText(el) {
+    var range = document.createRange(); // create new range object
+    range.selectNodeContents(el); // set range to encompass desired element text
+    var selection = window.getSelection(); // get Selection object from currently user selected text
+    selection.removeAllRanges(); // unselect any user selected text (if any)
+    selection.addRange(range); // add range to Selection object to select it
+}
+
+//$(".manage-transaction-tab ul li").click(function () {
+//    $(".manage-transaction-tab ul li").removeClass('active');
+//    $(this).addClass('active');
+//    $(".tab-content-transaction").addClass('hidden');
+//    $("." + $(this).attr("title")).removeClass('hidden');
+//});

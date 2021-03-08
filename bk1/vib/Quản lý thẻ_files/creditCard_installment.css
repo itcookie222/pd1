@@ -1,0 +1,663 @@
+@font-face {
+    font-family: MyriadProR;
+    src: url(../font/MyriadPro-Regular.otf);
+}
+@font-face {
+    font-family: MyriadProB;
+    src: url(../font/MyriadPro-Bold.otf);
+}
+b{
+	font-family: MyriadProB;
+}
+.left_container{
+	width:692px;
+	float:left;
+}
+.right_container{
+	width:258px;
+	float:right;
+}
+#credit_card_box{
+	margin-top:20px;
+}
+.list_services-card{
+	clear:both;
+	padding-top:20px;
+}
+.list_services-card a{
+	border:1px solid #b6b6b6;
+	width:125px;
+	height:45px;
+	float:left;
+	border-radius:5px;
+	background-image: linear-gradient(#ffffff, #ebebeb);
+	text-align:center;
+	display:table;
+	margin-left:14px;
+	font-size:12px;
+	font-family:MyriadProR;vertical-align:top;
+}
+.list_services-card::after{
+	clear:both;
+	content:"";
+	display:block;
+	height:0;
+}
+.list_services-card a:first-child{
+	margin-left:0;
+}
+.list_services-card a span{
+	display:table-cell;
+	vertical-align:middle;
+}
+.left_img_card{
+	float:left;
+	width:250px;
+}
+.main_card_status{
+	font-size:12px;
+	font-family:MyriadProR;
+	text-align:center;
+	padding-top:10px;
+	color:#000;
+	opacity:0.5;
+}
+.box_content_img_card div{
+	text-align:center;
+	height:142px;
+	display:table-cell;
+	vertical-align:middle;
+	width:250px
+}
+.box_content_img_card p{
+	font-size:14px;
+	color:#000;
+	opacity:0.5;
+	padding-top:10px;
+}
+.box_list_img_card{
+	height:142px;
+	background:#f6f6f6;
+	margin-top:30px;
+	overflow-y:auto;
+}
+.right_info_card{
+	width:415px;
+	float:right;
+	font-family:MyriadProR;
+}
+.right_info_card .fl-account-information-col{
+	width:49%;
+}
+.right_info_card .fl-account-information-total{
+	height:75px;
+}
+.right_info_card .fl-account-information-col .fl-information-title{
+	font-size:12px;
+	margin-top:10px;
+}
+.card_information{
+	margin-top:10px;
+}
+.card_information h3{
+	font-size:16px;
+	color:#f5821f;
+	border-bottom:1px solid #f5821f;
+	position:relative;
+	line-height:44px;
+}
+.line_card_infomation::after{
+	content:"";
+	display:block;
+	clear:both;
+}
+.line_card_infomation{
+	line-height:44px;
+	border-bottom:1px solid #d0d0d0;
+}
+.txt_left_info{
+	float:left;
+	font-size:12px;
+	color:#000;
+	opacity:0.5;
+}
+.txt_right_info{
+	float:right;
+	text-align:right;
+	font-size:14px;
+	color:#000;
+}
+.txt_right_info span{
+	color:#d0021b;
+}
+.more_active{
+	position:absolute;
+	top:20px;
+	right:0;
+}
+.history_transaction{
+	clear:both;
+	margin:20px 0;
+}
+a.advance-search,a.advance-search:hover{
+	position:absolute;
+	top:20px;
+	right:20px;
+	color:#fff;
+	font-size:12px;
+	text-decoration:underline;
+	font-weight:normal;
+}
+.history_transaction .fl-home-my-account-content{
+	border-radius:5px 5px 0 0;
+}
+.history_transaction .fl-home-all-history-tranaction-header{
+	padding-top:20px;
+	height:39px;
+}
+.history_transaction .fl-home-transaction-arrow{
+	margin-left:auto;
+	margin-right:auto;
+	float:none;
+	margin-top:0;
+}
+.billize_d{
+	float:left;
+	padding:0 15px;
+	border-left:1px solid #d5d5d5;
+	height:55px;
+}
+.billize_d:first-child{
+	border:none;
+}
+.billize_d h5{
+	margin-top:13px;
+	color:#000;
+	opacity:0.5;
+	font-weight:bold;
+	font-size:10px;
+	padding-bottom:3px;
+}
+.billize_d span{
+	color:#000;
+	font-size:10px;
+}
+.transaction_detail{
+	height:55px;
+	background:#e9e9e9;
+	border:1px solid #e9e9e9;
+	border-radius:0 0 5px 5px;
+	box-shadow:0px 2px 3px #d8d8d8;
+}
+span.out{
+	color:#f4b577;
+} 
+span.in{
+	color:#0066B2;
+} 
+.print_d{
+	width:27px;
+	height:27px;
+	border-radius:50%;
+	background:#fff;
+	text-align:center;
+	float:right;
+	margin-top:15px;
+	margin-right:15px;
+}
+.print_d img{
+	padding-top:7px;
+}
+.transaction_active{
+	padding:0 !important;
+}
+.transaction_active .fl-transaction-quick-view{
+	padding:10px;
+	box-shadow:0 1px 4px 0 rgba(0, 0, 0, 0.17);
+	background:#fff;
+	border: solid 1px #f1f1f1;
+	border-bottom:1px solid #d8d8d8;
+}
+.fl-transaction-quick-view::after{
+	clear:both;
+	content:"";
+	display:block;
+	height:0;
+}
+.transaction_detail{
+	display:none;
+	margin-bottom:10px;
+}
+.transaction_active{
+	margin-top:10px;
+}
+.transaction_active .transaction_detail{
+	display:block;
+}
+.transaction_active .fl-home-tranaction-item-amount,.transaction_active .fl-home-tranaction-item-time{
+	display:none;
+}
+.transaction_active em{
+	display:block;
+	position:absolute;
+	right:15px;
+	top:13px;
+	width:10px;
+	height:10px;
+	background:url(/banners/images/creditCard_installment/icon_exit.png) no-repeat;
+	cursor:pointer;
+}
+.fr_date_sevices{
+	float:right;
+}
+.icon_exportdate{
+	background:url(/banners/images/creditCard_installment/icon_export.png) 8px 9px no-repeat;
+	padding-left:30px;
+	height:32px;
+	border-left:1px solid #e4e4e4;
+	display:inline-block;
+	line-height:32px;
+}
+.icon_printer{
+	background:url(/banners/images/creditCard_installment/icon_print.png) 8px 9px no-repeat;
+	padding-left:30px;
+	height:32px;
+	border-left:1px solid #e4e4e4;
+	display:inline-block;
+	line-height:32px;
+	margin-left:10px;
+}
+ul.tab_installment li{
+	padding-left:40px;
+	padding-right:40px;
+	position:relative;
+}
+.back-step{
+	margin-top:10px;
+	display:inline-block;
+	margin-bottom:5px;
+}
+.back-step i{
+	background:url(/banners/images/creditCard_installment/back_step.png) 0 3px  no-repeat;
+	padding-left:15px;
+	height:13px;
+	color:#000;
+	font-size:16px;
+	font-family: MyriadProR;
+}
+.noti_tab{
+	width:14px;
+	height:14px;
+	text-align:center;
+	color:#fff;
+	font-size:10px;
+	line-height:14px;
+	border-radius:50%;
+	position:absolute;
+	top:10px;
+	right:10px;
+	display:block;
+	background:#d0021b;
+}
+#tab_dstragop,#tab_dktragop,#detail_dstragop,#detail_dktragop{
+	margin-top:20px;
+}
+.tit_ds{
+	font-size:18px;
+	font-family:Verdana;
+	color:#0066b2;
+}
+.box_list_time_tragop{
+	border: solid 2px #979797;
+	border-radius:5px;
+	margin-top:10px;
+	margin-bottom:50px;
+}
+.money_tragop{
+	color:#0066b2;
+}
+.header_box_time_tragop{
+	background:#f0f0f0;
+	line-height:32px;
+	font-size:14px;
+	color:#808080;
+	padding:0 10px;
+}
+.body_line_tragop{
+	display:table;
+}
+.row0_box_time_tragop{
+	display:table-cell;
+	vertical-align:middle;
+}
+.header_box_time_tragop .row1_box_time_tragop{
+	width:238px;
+}
+.row1_box_time_tragop{
+	padding:5px;
+	width:230px;
+	display:table-cell;
+	vertical-align:middle;
+}
+.row2_box_time_tragop{
+	padding:5px;
+	width:105px;
+	display:table-cell;
+	vertical-align:middle;
+}
+.row3_box_time_tragop{
+	padding:5px;
+	width:80px;
+	display:table-cell;
+	vertical-align:middle;
+}
+.row4_box_time_tragop{
+	padding:5px;
+	width:135px;
+	display:table-cell;
+	vertical-align:middle;
+}
+.row5_box_time_tragop{
+	display:table-cell;
+	vertical-align:middle;
+}
+.header_box_time_tragop::after,.body_box_time_tragop::after,.line_body_detail-tragop::after {
+	content:"";
+	display:block;
+	clear:both;
+	height:0;
+}
+.body_box_time_tragop{
+	padding:0 10px;
+	font-size:14px;
+	color:#000;
+}
+.money_tragop{
+	color:#0066b2;
+}
+.btn_more_detail{
+  width: 70px;
+  height: 23px;
+  font-family: MyriadProR;
+  font-size: 10px;
+  text-align: center;
+  color: #747474;
+  line-height:23px;
+  border-radius: 14.5px;
+  border: solid 1px #979797;
+  display:inline-block;
+}
+.body_line_tragop{
+	padding:10px 0;
+	border-bottom:1px solid #cfcfcf;
+}
+.body_line_tragop:last-child{
+	border:none;
+}
+.body_box_time_tragop{
+	max-height:550px;
+	min-height:400px;
+}
+.row6_box_time_tragop{
+	display:table-cell;
+	padding:5px;
+	width:325px;
+}
+.row7_box_time_tragop{
+	display:table-cell;
+	padding:5px;
+	width:315px;
+}
+#tab_dktragop{
+	display:none;
+}
+.back_icon{
+  width: 91px;
+  height: 26px;
+  border-radius: 12.5px;
+  background-color: #ececec;
+  float:left;
+  text-align:center;
+}
+.paging_top{
+	margin-top:15px;
+	margin-bottom:10px;
+}
+.back_icon span{
+	background:url(/banners/images/creditCard_installment/back_icon.png) 0 2px no-repeat;
+	height:16px;
+	padding-left:10px;
+	display:inline-block;
+	color:#0066b2;
+	font-size:14px;
+	font-family: MyriadProR;
+	margin-top:5px;
+}
+.paging_number{
+	float:right;
+
+}
+.paging_number span{
+	color:#808080;
+	font-size:14px;
+	margin-right:5px;
+	line-height:23px;
+}
+.title_tragop{
+	border-radius: 5px;
+	  background-image: linear-gradient(277deg, #0066b2, #2f95e2);
+	  box-shadow: 0 5px 6px 0 rgba(0, 0, 0, 0.16);
+	  height:79px;
+	  padding:17px;
+	  box-sizing:border-box;
+	  position:relative;
+}
+.icon_installment{
+	height:28px;
+	width:28px;
+	display:block;
+	float:left;
+	background:url(/banners/images/creditCard_installment/installment.png) no-repeat;
+	margin-top:7px;
+}
+.money_return{
+	float:left;
+	margin-left:10px;
+}
+.money_return p{
+	font-family:Verdana;
+	font-size:14px;
+	color:#fff;
+	margin-bottom:3px;
+}
+.money_return h4{
+	font-weight:bold;
+	font-family:Verdana;
+	font-size:20px;
+	color:#fff;
+}
+.money_status{
+	border-left:1px solid #fff;
+	margin-left:20px;
+	padding-left:20px;
+	float:left;
+}
+.money_status p{
+	font-family:Verdana;
+	font-size:14px;
+	color:#fff;
+	margin-bottom:5px;
+}
+.money_status h4{
+	font-weight:bold;
+	font-family:Verdana;
+	font-size:16px;
+	color:#7ed321;
+}
+.body_detail_tragop{
+	border-radius:0 0 5px 5px;
+    border: solid 2px #979797;
+	margin-top:-5px;
+	padding-top:5px;
+	padding:0 10px;
+	margin-bottom:50px;
+}
+.line_body_detail-tragop{
+	border-bottom:1px solid #9a9a9a;
+	padding: 10px 0px;
+}
+.line_body_detail-tragop:last-child{
+	border:none;
+}
+.left_body_detail{
+	padding:10px;
+	font-size:16px;
+	color:#4a4a4a;
+	float:left;
+}
+.right_body-detail{
+	float:right;
+	text-align:right;
+	padding:10px;
+}
+.right_body-detail span{
+	font-size:16px;
+	color:#000;
+}
+.right_body-detail span.price_status{
+	color:#0066b2;
+}
+a.submit_register{
+	width: 103px;
+  height: 30px;
+  border-radius: 14.5px;
+  background-color: #ffffff;
+  line-height:30px;
+  text-align:center;
+  color:#0066b2;
+  font-size:14px;
+  float:right;
+  display:block;
+  margin-top:10px;
+}
+.money_status h4.no-register{
+	color:#c2c2c2;
+}
+.money_status h4.register{
+	color:#FCB813;
+}
+.fancybox-content{
+	text-align:center;
+}
+.fancybox-content p{
+	font-size:16px;
+	color:#000;
+	text-align:center;
+	margin-top:10px;
+}
+a.get_otp{
+	width: 135px;
+  height: 50px;
+  border-radius: 5px;
+  background-color: #0066b3;
+  display:inline-block;
+  color:#fff;
+  font-size:16px;
+  line-height:50px;
+  margin-top:20px;
+}
+.otp_input{
+	margin-top:20px;
+}
+.otp_input input {
+    border-radius: 5px;
+    display: inline-block;
+    width: 43px;
+    height: 43px;
+    border: 1px solid #ccc;
+    text-align: center;
+    font-weight: bold;
+}
+input[type='number'] {
+    -moz-appearance:textfield;
+}
+a.btn_popup_continue{
+	display:inline-block;
+	min-width: 135px;
+  height: 50px;
+  padding:0 25px;
+  border-radius: 5px;
+  background-color: #f58220;
+  color:#fff;
+  text-align:center;
+  line-height:50px;
+  margin-top:30px;
+  font-size:16px;
+}
+.form_popup p{
+	font-size:20px;
+	margin-bottom:10px;
+	margin-top:10px;
+}
+.form_popup p span{
+	color:#0066b2;
+}
+.form_popup h4{
+	font-size:16px;
+}
+a.link_exit{
+	font-size:20px;
+	margin-top:20px;
+	color:#0066b2;
+	display:inline-block;
+}
+.select_installment {
+    border: none;
+    font-size: 16px;
+    color: #666;
+}
+ul.fl-my-card-tab a:hover{
+	text-decoration:none;
+	color:#000;
+}
+.popup_otp a:hover{
+	text-decoration:none;
+}
+a.submit_register:hover{
+	text-decoration:none;
+}
+.fl-icon-tranaction-off, .tranaction-off .fl-icon-tranaction {
+	height: 10px;
+	width: 10px;
+	webkit-border-radius: 10px;
+	-moz-border-radius:  10px;
+	border-radius:  10px;
+	background: #ccc;
+	display: inline-block;
+	position: relative;
+	top: 1px;
+	margin-right: 3px;
+}
+a.ib-link-tra-gop {
+    position: absolute;
+    right: 20px;
+    top: 16px;
+    color: #FFFFFF;
+    font-family: Verdana;
+    font-size: 16px;
+    font-weight: 400;
+    text-decoration: underline;
+}
+
+.fl-icon-tranaction-enrolled, .tranaction-enrolled .fl-icon-tranaction {
+	height: 10px;
+	width: 10px;
+	webkit-border-radius: 10px;
+	-moz-border-radius:  10px;
+	border-radius:  10px;
+	background: #f5a623;
+	display: inline-block;
+	position: relative;
+	top: 1px;
+	margin-right: 3px;
+}

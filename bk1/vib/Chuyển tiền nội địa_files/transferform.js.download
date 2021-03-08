@@ -1,0 +1,2311 @@
+﻿var getbanklist = false;
+var getbic = false;
+var txtAddNewAccount = $("#txtAddNewAccount");
+var reqAddnew = "reqAddnew";
+var txtTransferLater = "#txtTransferLater";
+var rbtTransferLater = "rbtTransferLater";
+var toaccttype = "";
+var kytudacbiet = '!@#$%&/<>=?';
+//var moduleid = "";
+
+//////////////begin $(function())
+$(function () {
+
+    InitPageload();
+
+    $("#txtAmout").autoNumeric({ vMax: get_vMax, vMin: get_vMin });
+    $("#hdfFormatNumber").autoNumeric({ pSign: 's', vMax: '999999999999.99', vMin: '0.00' });
+    $("#hdfFormatNumberVND").autoNumeric({ pSign: 's', vMax: '999999999999', vMin: '0' });
+    if ($('#txtAmout').val().length > 0) {
+        $('#txtAmout').autoNumericSet($('#txtAmout').autoNumericGet());
+    }
+    $("#txtAmout").change(function () {
+        $('#hdfFormatNumberVND').autoNumericSet($('#txtAmout').autoNumericGet() * parseFloat(dnn.getVar("VIBExchangeRate")));
+        $("#spTranBaseAmt").html($('#hdfFormatNumberVND').val() + " VND");
+    });
+    $("#txtAddNewAccount,#txtEndAfter").numeric(false, function () {
+        this.value = ""; this.focus();
+    });
+    inittxtAddNewAccount();
+    $('.chkaddben').hide();
+    divToAcctType_Click();
+    if (isedit) {
+        var type = GetToAcctType();
+        $('#divFromAcct .selected').html($('#divFromAcct .selectOptions .selectOption[val="' + $('#hdfFromAcct').val() + '"]').html());
+        nextto2();
+        
+        $('#step3').slideDown();
+        $('#box3').attr('class', 'spec-header1');
+        $('.button-next').show();
+        if(GetCcy() != $("#hdfToAcctCcy").val()){
+             $("#trTranBaseAmt, #trTranBaseAmt2").show();
+             $("#txtAmout").change();
+        }
+        else{
+            $("#trTranBaseAmt, #trTranBaseAmt2").hide();
+        }
+        $('#txtTransferLater').datepicker("setDate", edittransferlater);
+        $('#txtStartOn').datepicker("setDate", edittransferstarton);
+        $('#txtEndOn').datepicker("setDate", edittransferendton);
+        if ($('#pMessage').html().trim().length > 0) {
+            $('#pMessage').show();
+        }
+        if ($('#rbtRegularTransfer:checked').val() === "rbtRegularTransfer") {
+            $('#rbtRegularTransfer').click();
+        }
+
+        CheckShowInternationalBank();
+        if ($('#chkInterBank').is(':checked')) {
+            $('#Intermediary_bank_details').show();
+        } else {
+            $('#Intermediary_bank_details').hide();
+        }
+
+        //bind bankname neu trong truong hop KH nhap so SWIFT
+        if (rdbInternationalSwift_IsChecked()) {
+            var isc = $('#txtInternationalSwiftCode').val().trim();
+            if (isc.length > 0) {
+                BindInternationalBankInfo(isc, 'internationalbank');
+            }
+        }
+        if (rdbInterSwift_IsChecked()) {
+            var isc1 = $('#txtInterSwiftCode').val().trim();
+            if (isc1.length > 0) {
+                BindInternationalBankInfo(isc1, 'interbank');
+            }
+        }
+        
+        
+        if ($('#rbtAddNewAccount:checked').val() === "rbtAddNewAccount") {
+            switch (type) {
+                case ToAcctType.Email:
+                    $("#trEmailMobile,#divEmailDetail").show();
+                    $("#divPhoneDetail").hide();
+                break;
+                case ToAcctType.PhoneNo:
+                    $("#divPhoneDetail").show();
+                    $("#divEmailDetail,#trEmailMobile").hide();
+                    break;
+                case ToAcctType.LocalBankAccount:
+                    $("#slSMLBank").val(dnn.getVar(dnnvarname.BenBankID)).prop('disabled', false);
+                    break;
+            }
+            $('.chkaddben').show();
+        } else {
+            //$("#divPhoneDetail,#trEmailMobile").hide();
+            switch (type) {
+                case ToAcctType.Email:
+                    $("#trEmailMobile").show();
+                    $("#divPhoneDetail,#divEmailDetail").hide();
+                    break;
+                case ToAcctType.PhoneNo:
+                    $("#divEmailDetail,#trEmailMobile,#divPhoneDetail").hide();
+                    break;
+                case ToAcctType.LocalBankAccount:
+                    $("#trLCTBenBankName").show();
+                    var bankname = "";
+                    var bank = $('#slSMLBank option[value="' + dnn.getVar(dnnvarname.BenBankID) + '"]');
+                    if (dnn.getVar(dnnvarname.BenBankID) == VIBMessage.LCTBankOther) {
+                        bankname = dnn.getVar("BenBankName");
+                    } else {
+                        bankname = bank.text();
+                    }
+                    $("#spBenBankName").html(bankname);
+                    break;
+            }
+        }
+        switch (type) {
+            case ToAcctType.LocalBankAccount:
+                if ($("#ddlTransferMethod").val() == VIBMessage.SMLACCT) {
+                    $("#spLCTAcctName").html($("#txtLCTAcctName").val());
+                    dnn.setVar("ValidSMLACCT", "Y");
+                }
+                var bank1 = $('#slSMLBank option[value="' + dnn.getVar(dnnvarname.BenBankID) + '"]');
+                var isfast = bank1.attr("fast");
+                if (isfast === "Y") {
+                        if (dnn.getVar("LCTDefaultNAPAS") === "Y") {
+                            $('select#ddlTransferMethod').selectmenu('disable');
+                            $("#trTransferMethod,#trTransferMethodNote").hide();
+                        } else {
+                            $('select#ddlTransferMethod').selectmenu('enable');
+                            $("#trTransferMethod,#trTransferMethodNote").show();
+                        }
+                } else {
+                    $('select#ddlTransferMethod').selectmenu("value", VIBMessage.CITAD);
+                    $('select#ddlTransferMethod').selectmenu('disable');
+                    $("#trTransferMethod,#trTransferMethodNote").hide();
+                }
+                
+                $("#ddlTransferMethod").change();
+                $('#slLCTState').val(dnn.getVar(dnnvarname.LCTState + "Edit")).change();
+                $('#slExtBranch').val(dnn.getVar(dnnvarname.LCTExtBranch + "Edit")).change();
+                break;
+            case ToAcctType.InternationalBankAccount:
+                $('#divBenChiuPhi').show();
+                break;
+
+        }
+    
+    } else {
+        $("#rbtTransferNow").attr("checked", "checked");
+    }
+
+    $('#ddlCcy').change(function () {
+        $('#txtAmout').autoNumericSet($('#txtAmout').autoNumericGet());
+    });
+    if (dnn.getVar("UserRegisterOnline") === "Y") {
+        $("<a href='#divPopup'/>").fancybox({
+            helpers: {
+                overlay: { closeClick: false } //Disable click outside event
+            },
+            width: 400,
+            height    :100,
+            autoSize: false,
+            wrapCSS   :"userregisteronline"
+        }).trigger("click");
+    }
+        dnn.setVar("LCTEditDone", "Y");
+});
+//////////////////end $(function)
+
+
+$('#txtDescription').focusout(function () {
+    var valid = checkkytu($('#txtDescription').val(), kytudacbiet);
+    if (valid) {
+        $('#spDesValid').css("visibility", "visible");
+        $('#spDesValid').focus();
+    } else {
+        $('#spDesValid').css("visibility", "hidden");
+    }
+});
+
+function bindplaceholder() {
+    if (ltie10) {
+        if (txtAddNewAccount.val() == '') {
+            txtAddNewAccount.val(txtAddNewAccount.attr('placeholder'));
+        }
+        $('[placeholder]').parents('form').submit(function () {
+            $(this).find('[placeholder]').each(function () {
+                var input = $(this);
+                if (input.val() == input.attr('placeholder')) {
+                    input.val('');
+                }
+            });
+        });
+    }
+}
+
+
+//////begin inittxtAddNewAccount()
+function inittxtAddNewAccount() {
+    $("#txtAddNewAccount").focus(function () {
+        var first = $('#divToAccount #cont').children('div.selectOptions').children('div.selectOption:first');
+        $('#divToAccount #cont').children('span.selected').html(first.html());
+        //div.children('span.selected').attr('val', first.attr('val'));
+        $('#divToAccount #cont').children('span.selected').attr('ben', first.attr('ben'));
+        $('#divToAccount #cont').children('span.selected').attr('ccy', first.attr('ccy'));
+        $('#hdfSelectAccount').val(first.attr('val'));
+        $('#pMessage').hide();
+        if ($('#rbtAddNewAccount:checked').val() != "rbtAddNewAccount") {
+            $('#rbtAddNewAccount').click();
+        }
+        if (ltie10) {
+            if (txtAddNewAccount.val() == txtAddNewAccount.attr('placeholder')) {
+                txtAddNewAccount.val('');
+            }
+        }
+
+    }).focusout(function (e) {
+        if (ltie10) {
+            if (txtAddNewAccount.val() == '' || txtAddNewAccount.val() == txtAddNewAccount.attr('placeholder')) {
+                //txtAddNewAccount.val(txtAddNewAccount.attr('placeholder'));
+                return;
+            }
+        }
+        if (txtAddNewAccount.val() == '') {
+            return;
+        }
+        var type = GetToAcctType();
+        var acctid = txtAddNewAccount.val();
+        if (acctid.length == 0) {
+
+            return;
+        }
+        var fromid = $('#hdfFromAcct').val();
+
+        if (acctid === fromid) {
+            ShowMessage(VIBMessage.err40);
+            return;
+        }
+        if (type === ToAcctType.PhoneNo) {
+            revMobile.controltovalidate = "txtAddNewAccount";
+            var ret = Page_ClientValidate("validMobile");
+            if (!ret) {
+                ShowMessage(revMobile.errormessage);
+                return ;
+            }
+        }
+        if (type === ToAcctType.Email) {
+            var ret = Page_ClientValidate("validEmail");
+            if (!ret) {
+                ShowMessage(regEmail.errormessage);
+                e.stopPropagation();
+                return ;
+            }
+        }
+        if (type === ToAcctType.SML || type === ToAcctType.VIBAccount) {
+            var datap = {
+                toacctid: acctid,
+                type: type,
+                fromacctid: fromid,
+                bankcode: "",
+                fromaccttype: dnn.getVar("FromAcctType")
+            };
+            $.ajax({
+                type: "POST",
+                url: bsrbtransfer + "GetAccount",
+                beforeSend: sfrbtransfer.setModuleHeaders,
+                data: datap,
+                cache: false,
+                success: function (result) {
+                    if (typeof result !== "undefined" && result != null) {
+                        if (result.STATUSCODE === "000000") {
+                            if (GetToAcctType() === ToAcctType.SML) {
+                                $('#spAccountName').html(result.data);
+                                $('#newacctinfo').show();
+                                $('.chkaddben').show();
+                            }
+                            if (GetToAcctType() === ToAcctType.VIBAccount) {
+                                $('#spAccountName').html(result.data.AcctName);
+                                $('#newacctinfo').show();
+                                $('.chkaddben').show();
+                                $('#hdfToAcctCcy').val(result.data.Ccy);
+                                if(GetCcy() !== result.data.Ccy){
+                                    $("#trTranBaseAmt, #trTranBaseAmt2").show();
+                                    if(dnn.getVar("EOCPHASE")=="EOD"){
+                                        ShowMessage(VIBMessage.msgEODDontAllowTransfer);
+                                    }
+                                }
+                                else{
+                                    $("#trTranBaseAmt, #trTranBaseAmt2").hide();
+                                }
+                                dnn.setVar("VIBExchangeRate",result.ExchangeRate.toString());
+                                $("#ltTranBaseAmt2").html(result.strExchangeRate);
+                            }
+                        } else {
+                            $('.chkaddben').hide();
+                            $('#newacctinfo').hide();
+                            ShowMessage(result.MESSAGE);
+                            if (GetToAcctType() === ToAcctType.SML) {
+                                smlvalid = false;
+                            }
+                        }
+                    }
+                },
+                error: function (xhr, textStatus) {
+                    RBAjaxError(xhr, textStatus);
+                }
+            });
+        }
+    });
+}
+//////end inittxtAddNewAccount()
+
+function checkkytu(val, invalidChar) {
+    for (i = 0; i < val.length; i++) {
+        if (invalidChar.indexOf(val[i]) >= 0) return true;
+    }
+    return false;
+}
+
+function validate() {
+    $('#pMessage').hide();
+    var fl = true;
+    var toacctType = GetToAcctType();
+    var acctid = txtAddNewAccount.val().trim();
+    if (toacctType === ToAcctType.LocalBankAccount) {
+        acctid = $("#txtLCTAccountNo").val().trim();
+    }
+    var fromid = $('#hdfFromAcct').val();
+    var acctfromben = false;
+    if ($('#rbtSelectAccount:checked').val() === "rbtSelectAccount") {
+        acctid = $('#hdfSelectAccount').val();
+        acctfromben = true;
+    }
+    if (acctid === '' || acctid === txtAddNewAccount.attr('placeholder')) {
+        ShowMessage(chuachontaikhoandich);
+        return false;
+    }
+    if (acctid == fromid) {
+        ShowMessage(VIBMessage.err40);
+        return false;
+    }
+    if (!CheckOD()) {
+        return false;
+    }
+    if (!validOD(fromid,acctid)) {
+        return false;
+    }
+    var amt = $('#txtAmout').autoNumericGet();
+    if (amt <= 0) {
+        ShowMessage(err34);
+        return false;
+    }
+    var valid = checkkytu($('#txtDescription').val(), kytudacbiet);
+    if (valid) {
+        ShowMessage(ghichukhongchuakytudacbiet);
+        $('#spDesValid').css("visibility", "visible");
+        $('#spDesValid').focus();
+        return false;
+    }
+    $('.gtransfer input').each(function () {
+        if ($(this).attr("checked") == "checked") {
+            if ($(this).attr("id") == rbtTransferLater) {
+                //$('#datepicker').datepicker("getDate")
+                if ($('#txtTransferLater').datepicker("getDate") == null) {
+                    $('#txtTransferLater').focus();
+                    ShowMessage(err31);
+                    fl = false;
+                } else {
+                    var trl = $('#txtTransferLater').datepicker("getDate");
+                    if (trl <= dtnow) {
+                        ShowMessage(err31);
+                        fl = false;
+                    }
+                }
+            } else if ($(this).attr("id") == 'rbtRegularTransfer') {
+                if ($('#txtStartOn').datepicker("getDate") == null) {
+                    $('#txtStartOn').focus();
+                    ShowMessage(startoncantbeblank);
+                    fl = false;
+                } else {
+                    var sto = $('#txtStartOn').datepicker("getDate");
+                    if (sto <= dtnow) {
+                        ShowMessage(err31);
+                        fl = false;
+                    }
+                }
+                if ($('#rdEndAffer').attr("checked") == "checked") {
+                    var ea = $('#txtEndAfter').autoNumericGet();
+                    if (ea <= 0) {
+                        ShowMessage(invalidendafter);
+                        fl = false;
+                    }
+                } else if ($('#rdEndOn').attr("checked") == "checked") {
+                    if ($('#txtEndOn').datepicker("getDate") == null) {
+                        $('#txtEndOn').focus();
+                        ShowMessage(endoncantbeblank);
+                        fl = false;
+                    } else {
+                        var eo = $('#txtEndOn').datepicker("getDate");
+                        if (eo <= dtnow) {
+                            ShowMessage(err31);
+                            fl = false;
+                        }
+                    }
+                }
+
+            }
+        }
+    });
+   
+    if (toacctType === ToAcctType.SML || toacctType === ToAcctType.SMLAccount) {
+        if ($('#txtAmout').autoNumericGet() > maxsml) {
+            ShowMessage(VIBMessage.maxsmlmessage);
+            fl = false;
+        }
+    }
+
+    if ((toacctType === ToAcctType.LocalBankAccount || toacctType === ToAcctType.InternationalBankAccount || toacctType === ToAcctType.SML) && checkkytu($('#txtDescription').val(), unichar)) {
+        ShowMessage(ghichukhongchuakytucodau);
+        fl = false;
+    }
+
+    if (toacctType === ToAcctType.LocalBankAccount) {
+        if (dnn.getVar(dnnvarname.BenBankID) == "") {
+            ShowMessage(chuachonnganhangthuhuong);
+            return false;
+        }
+        if (dnn.getVar("LCTTransferMethod") == VIBMessage.SMLACCT) {
+            if (dnn.getVar("ValidSMLACCT") != "Y") {
+                ShowMessage(dnn.getVar("ValidSMLACCTMessage"));
+                return false;
+            }
+            if ($('#txtAmout').autoNumericGet() > VIBMessage.maxsmlAccount) {
+                ShowMessage(VIBMessage.maxsmlAcctmessage);
+                return false;
+            }
+        } else {
+            if ($("#slExtBranch").val() === VIBMessage.LCTBranchOther) {
+            if ($('#txtBenBankBranchName').val().trim().length == 0) {
+                ShowMessage(chuadientenchinhanh);
+                return false;
+            }
+            if (!ValidLCTOtherBranchName($('#txtBenBankBranchName').val())) {
+                ShowMessage(VIBMessage.msgLCTOtherBankNameInvalid);
+                return false;
+            }
+            }
+                var bendetailacttname = GetBenDetailAccName();
+            if (bendetailacttname.length == 0) {
+                ShowMessage(chuadiententaikhoannhan);
+                fl = false;
+            } else {
+                if (!ValidLCTBenName(bendetailacttname)) {
+                    ShowMessage(VIBMessage.msgLCTBenNameInvalid);
+                    return false;
+                }
+            }
+        }
+        
+        if (!ValidToAccountNumber(acctid, ToAcctType.LocalBankAccount)) {
+            ShowMessage(VIBMessage.LCT_TKHuongPhaiLaChuVaSo);
+            fl = false;
+        }
+    }
+    if (toacctType === ToAcctType.InternationalBankAccount) {
+        var suc = ValidInternationBank();
+        if (!suc) fl = false;
+    }
+
+    if (toacctType === ToAcctType.PhoneNo && !acctfromben) {
+        revMobile.controltovalidate = "txtAddNewAccount";
+        var suc = Page_ClientValidate("validMobile");
+        if (!suc) {
+            ShowMessage(revMobile.errormessage);
+            fl = false;
+        } else {
+            if ($("#txtPhoneReceiverName").val().trim() === "") {
+                ShowMessage(VIBMessage.ChuaNhapTenNguoiNhan);
+                fl = false;
+            }
+            revCustName.controltovalidate = "txtPhoneReceiverName";
+            suc = Page_ClientValidate("validCustName");
+            if (!suc) {
+                ShowMessage(revCustName.errormessage);
+                fl = false;
+            }
+        }
+    }
+    if (toacctType === ToAcctType.Email) {
+        var EmailReceiverMobile = $('#txtEmailReceiverMobile').val().trim();
+        if (EmailReceiverMobile === "") {
+            ShowMessage(VIBMessage.EmailReceiverMobileNull);
+            fl = false;
+        } else {
+            revMobile.controltovalidate = "txtEmailReceiverMobile";
+        suc = Page_ClientValidate("validMobile");
+        if (!suc) {
+            ShowMessage(revMobile.errormessage);
+            fl = false;
+        }
+        else if (!acctfromben) {
+            var suc = Page_ClientValidate("validEmail");
+            if (!suc) {
+                ShowMessage(regEmail.errormessage);
+                fl = false;
+            } else {
+                if ($("#txtEmailReceiverName").val().trim() === "") {
+                    ShowMessage(VIBMessage.ChuaNhapTenNguoiNhan);
+                    fl = false;
+                }
+                    revCustName.controltovalidate = "txtEmailReceiverName";
+                    suc = Page_ClientValidate("validCustName");
+                    if (!suc) {
+                        ShowMessage(revCustName.errormessage);
+                        fl = false;
+                    }
+                
+            }
+        }
+        }
+        
+    }
+    return fl;
+}
+
+function ValidInternationBank() {
+    if (!rdbInternationalSwift_IsChecked() && !rdbInternationalName_IsChecked()) {
+        ShowMessage(chuachonnganhangthuhuong);
+        return false;
+    }
+    if (rdbInternationalSwift_IsChecked()) {
+        if ($('#txtInternationalSwiftCode').val().trim().length == 0) {
+            ShowMessage(chuachonnganhangthuhuong);
+            return false;
+        }
+        //        if ($('#txtInternationalSwiftBranch').val().trim().length == 0) {
+        //            ShowMessage(chuadientenchinhanh);
+        //            return false;
+        //        }
+    }
+    if (rdbInternationalName_IsChecked()) {
+        //bo sung them check cac thogn tin khac nua
+        if (getInternationalBankId() == BIC_OTHER) {
+            if ($('#txtInternationalNameBranch').val().trim().length == 0) {
+                ShowMessage(chuadientenchinhanh);
+                return false;
+            }
+            if ($('#txtInternationalNameCity').val().trim().length == 0) {
+                ShowMessage(chuadientenchinhanh);
+                return false;
+            }
+            if ($('#txtInternationalNameCountry').val().trim().length == 0) {
+                ShowMessage(chuadientenchinhanh);
+                return false;
+            }
+        }
+    }
+    if ($('#chkInterBank').is(':checked')) {
+        if (rdbInterSwift_IsChecked()) {
+            if ($('#txtInterSwiftCode').val().trim().length == 0) {
+                ShowMessage(chuadientenchinhanh);
+                return false;
+            }
+            //            if ($('#txtInterSwiftBranch').val().trim().length == 0) {
+            //                ShowMessage(chuadientenchinhanh);
+            //                return false;
+            //            }
+        }
+        if (rdbInterName_IsChecked()) {
+            if (getInterBankId() == BIC_OTHER) {
+                if ($('#txtInterNameBranch').val().trim().length == 0) {
+                    ShowMessage(chuadientenchinhanh);
+                    return false;
+                }
+                if ($('#txtInterNameCity').val().trim().length == 0) {
+                    ShowMessage(chuadientenchinhanh);
+                    return false;
+                }
+                if ($('#txtInterNameCountry').val().trim().length == 0) {
+                    ShowMessage(chuadientenchinhanh);
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+function hidedetail() {
+    $('#Beneficiary_details,#Beneficiary_bank_details').hide();
+    $('#divInternationalBenBank').hide();
+    $('#Intermediary_bank_details').hide();
+    $('#divInterBankCheck').hide();
+}
+
+function showdetail() {
+    var type = GetToAcctType();
+    switch (type) {
+        case ToAcctType.LocalBankAccount:
+            $('#Beneficiary_details').show();
+            $('#Beneficiary_bank_details').show();
+            $('#divInternationalBenBank').hide();
+            $('#Intermediary_bank_details').hide();
+            $('#divInterBankCheck').hide();
+            $('#trbencountry').hide();
+            break;
+        case ToAcctType.InternationalBankAccount:
+            $('#Beneficiary_details').show();
+            $('#Beneficiary_bank_details').hide();
+            $('#divInternationalBenBank').show();
+            //$('#Intermediary_bank_details').hide();
+            $('#divInterBankCheck').show();
+            if ($('#chkInterBank').is(':checked')) {
+                //console.log('show');
+                $('#Intermediary_bank_details').show();
+            } else {
+                //console.log('hide');
+                $('#Intermediary_bank_details').hide();
+            }
+            $('#trbencountry').show();
+            break;
+    }
+}
+
+function enableSelectBoxes() {
+    $('div.selectBox').each(function () {
+        if (!isedit) {
+            $(this).children('span.selected').html($(this).children('div.selectOptions').children('div.selectOption:first').html());
+            var val = $(this).children('div.selectOptions').children('div.selectOption:first').attr('val');
+            $(this).children('span.selected').attr('val', val);
+            if ($(this).attr('id') == 'divFromAcct') {
+                $('#hdfFromAcct').val(val);
+                dnn.setVar("FromAcctIsCard", $(this).children('div.selectOptions').children('div.selectOption:first').attr('data-iscard'));
+            }
+        }
+        $(this).children('span.selected,span.selectArrow').click(function (e) {
+            var div = $(this).parent().children('div.selectOptions');
+            if (div.is(':visible')) {
+                div.hide();
+
+            } else {
+                $('div.selectOptions').hide();
+                $(this).parent().children('div.selectOptions').show();
+            }
+            e.stopPropagation();
+        });
+        $(this).find('div.selectOption').click(function () {
+            $('#pMessage').hide();
+            $(this).parent().hide();
+            $(this).parent().siblings('span.selected').html($(this).html());
+            //$(this).parent().siblings('span.selected').attr('val', $(this).attr('val'));
+             if ($(this).closest('div.selectBox').attr('id') === 'divFromAcct') {
+                var accit = $(this).attr('val');
+                $('#hdfFromAcct').val(accit);
+                dnn.setVar("FromAcctType", $(this).attr('accttype'));
+                
+                dnn.setVar("FromAcctIsCard", $(this).attr('data-iscard'));
+                $("#ddlToAcctType option").show();
+                 var prevalue = $("#ddlToAcctType").val();
+                if ($(this).attr('data-iscard') === "True") {
+                    var arrtoaccttype = []; // ["VIBA", "LBA", "SMLCARD"];
+                    if (dnn.getVar("CREDITCARD_ENABLEDEBIT_TRANSFER_VIBA") === "Y") {
+                        arrtoaccttype.push("VIBA");
+                    }
+                    if (dnn.getVar("CREDITCARD_ENABLEDEBIT_TRANSFER_SMLCARD") === "Y") {
+                        arrtoaccttype.push("SMLCARD");
+                    }
+                    if (dnn.getVar("CREDITCARD_ENABLEDEBIT_TRANSFER_LOCALBANKFAST") === "Y" || dnn.getVar("CREDITCARD_ENABLEDEBIT_TRANSFER_LOCALBANK") === "Y") {
+                        arrtoaccttype.push("LBA");
+                    }
+                    $.each($("#ddlToAcctType option"), function(i, value) {
+                        if ($.inArray($(value).val(), arrtoaccttype) > -1) {
+                            $(value).show();
+                        } else {
+                            $(value).hide();
+                        }
+                    });
+                    if ($.inArray(prevalue, arrtoaccttype) === -1) {
+                        $("#ddlToAcctType option:eq(1)").attr("selected", "selected").change();
+                    }
+                } else {
+                    var arrtoaccttype = [];
+                    
+                    if(GetCcy() !== "VND"){
+                        arrtoaccttype.push("VIBA");                        
+                    }
+                    if(arrtoaccttype.length==0){
+                        $.each($("#ddlToAcctType option"), function(i, value) {
+                            $(value).show();                        
+                        });
+                    }
+                    else{
+                    $.each($("#ddlToAcctType option"), function(i, value) {
+                        if ($.inArray($(value).val(), arrtoaccttype) > -1) {
+                            $(value).show();
+                        } else {
+                            $(value).hide();
+                        }
+                    });
+                }
+                    if ($.inArray(prevalue, arrtoaccttype) === -1) {
+                        $("#ddlToAcctType option:eq(1)").attr("selected", "selected").change();
+                    }
+                }
+
+            ShowHideTyGia();
+                 CheckOD();
+             }
+        });
+    });
+}
+
+function enableSelectBoxesToAccount() {
+    var div = $('#divToAccount #cont');
+    if (!isedit) {
+        var first = div.children('div.selectOptions').children('div.selectOption:first');
+        div.children('span.selected').html(first.html());
+        //div.children('span.selected').attr('val', first.attr('val'));
+        div.children('span.selected').attr('ben', first.attr('ben'));
+        div.children('span.selected').attr('ccy', first.attr('ccy'));
+        $('#hdfSelectAccount').val(first.attr('val'));
+        dnn.setVar(dnnvarname.benid, first.attr('benid'));
+    }
+    else {
+        var tam = true;
+        if ($('#rbtSelectAccount:checked').val() === "rbtSelectAccount") {
+            var d = $('#divToAccount #cont .selectOptions .selectOption[benid="' + dnn.getVar(dnnvarname.benid) + '"]');
+            if (d.html() !== null) {
+                div.children('span.selected').html(d.html());
+                div.children('span.selected').attr('ben', d.attr('ben'));
+                div.children('span.selected').attr('ccy', d.attr('ccy'));
+                tam = false;
+                if (d.attr('tp')) {
+                    div.children('span.selected').attr('tp', d.attr('tp'));
+                    div.children('span.selected').attr('bal', d.attr('bal'));
+                    BindBen();
+                }
+            }
+        }
+        if(tam) {
+            var f = div.children('div.selectOptions').children('div.selectOption:first');
+            div.children('span.selected').html(f.html());
+            div.children('span.selected').attr('ben', f.attr('ben'));
+            div.children('span.selected').attr('ccy', f.attr('ccy'));
+        }
+    }
+
+
+    div.children('span.selected,span.selectArrow').click(function (e) {
+        var div = $(this).parent().children('div.selectOptions');
+        if (div.is(':visible')) {
+            div.hide();
+
+        } else {
+            $('div.selectOptions').hide();
+            $(this).parent().children('div.selectOptions').show();
+        }
+        e.stopPropagation();
+    });
+
+    div.find('div.selectOption').click(function () {
+        $('#pMessage').hide();
+        $(this).parent().css('display', 'none');
+        $(this).closest('div.selectBox').attr('value', $(this).attr('value'));
+        $(this).parent().siblings('span.selected').html($(this).html());
+        $(this).parent().siblings('span.selected').attr('ben', $(this).attr('ben'));
+        $(this).parent().siblings('span.selected').attr('ccy', $(this).attr('ccy'));
+        if ($(this).attr('tp')) {
+            $(this).parent().siblings('span.selected').attr('tp', $(this).attr('tp'));
+            $(this).parent().siblings('span.selected').attr('bal', $(this).attr('bal'));
+        }
+        $('#hdfSelectAccount').val($(this).attr('val'));
+        dnn.setVar(dnnvarname.benid, $(this).attr('benid'));
+        $('#rbtSelectAccount').click();
+        if ($('#rbtSelectAccount:checked').val() == "rbtSelectAccount") {
+            $('#hdfToAcctCcy').val($(this).attr('ccy'));
+        }
+        BindBen();
+ShowHideTyGia();
+    });
+
+}
+
+function divToAcctType_Click() {
+    $('#pMessage,#divPhoneDetail,#divEmailDetail,#trTranCcy,#trEmailMobile,#slSMLBank,#divTransferLCT').hide();
+    $('#trDanhSachSML').hide();
+    var moduleid = GetToAcctType();
+    
+    if (toaccttype === moduleid) return;
+    if (moduleid === ToAcctType.VIBAccount) {
+        if (!dnn.getVar("LSTGOALSAVER")) {
+            $.ajax({
+                type: "GET",
+                url: bsrbtransfer + "GetGoalSaverList",
+                beforeSend: sfrbtransfer.setModuleHeaders,
+                contentType: "application/json; charset=utf-8",
+                cache: false,
+                success: function (result) {
+                    if (typeof result !== "undefined" && result != null && result.data != null && result.STATUSCODE==="000000") {
+                        dnn.setVar("LSTGOALSAVER", JSON.stringify(result.data));
+                    }
+                },
+                error: function (xhr, textStatus) {
+                    RBAjaxError(xhr, textStatus);
+                }
+            });
+        }
+    }
+    CheckOD();
+    $('#spnotext').html(maxlengthdescother + ' ' + characterlimit);
+    $('#txtDescription').attr('maxlength', maxlengthdescother);
+    $('#txtDescription').keyup();
+    switch (moduleid) {
+        case ToAcctType.SML:
+            txtAddNewAccount.attr('placeholder', VIBMessage.NhapSoTheMoiTaiDay).show();
+            $('#newaccountname').html(newcardname);
+            $('span.SelectAccount label[for="rbtSelectAccount"]').html(VIBMessage.selectcardnumber);
+            $('span.SelectAccount label[for="rbtAddNewAccount"]').html(VIBMessage.addnewcard);
+            txtAddNewAccount.attr("maxlength", VIBMessage.maxlength_acctid_SML);
+            $('#spnotext').html(maxlengthdescsml + ' ' + characterlimit);
+            $('#txtDescription').attr('maxlength', maxlengthdescsml);
+            $('#txtDescription').keyup();
+            $('#trDanhSachSML').show();
+            $('label[for="ckbAddben"]').html(VIBMessage.ckbAddben_SML);
+            break;
+        case ToAcctType.Email:
+            txtAddNewAccount.attr("maxlength", VIBMessage.maxlength_acctid_Email).show();
+            txtAddNewAccount.attr('placeholder', VIBMessage.NhapEmailMoiTaiDay);
+            $("#trEmailMobile").show();
+            $('span.SelectAccount label[for="rbtSelectAccount"]').html(VIBMessage.selectemail);
+            $('span.SelectAccount label[for="rbtAddNewAccount"]').html(VIBMessage.addnewemail);
+            $('label[for="ckbAddben"]').html(VIBMessage.ckbAddben_Email);
+            break;
+        case ToAcctType.IDNo:
+            txtAddNewAccount.attr("maxlength", VIBMessage.maxlength_acctid_IDNo).show();
+            //$("#divIDNumberDetail").show();
+            $('span.SelectAccount label[for="rbtSelectAccount"]').html(VIBMessage.selectIDNo);
+            $('span.SelectAccount label[for="rbtAddNewAccount"]').html(VIBMessage.addnewIDNo);
+            $('label[for="ckbAddben"]').html(VIBMessage.ckbAddben_IDNo);
+            break;
+        case ToAcctType.PhoneNo:
+            txtAddNewAccount.attr("maxlength", VIBMessage.maxlength_acctid_PhoneNo).show();
+            txtAddNewAccount.attr('placeholder', VIBMessage.NhapSoDTMoiTaiDay);
+            //$("#divPhoneDetail").show();
+            $('span.SelectAccount label[for="rbtSelectAccount"]').html(VIBMessage.selectmobile);
+            $('span.SelectAccount label[for="rbtAddNewAccount"]').html(VIBMessage.addnewmobile);
+            $('label[for="ckbAddben"]').html(VIBMessage.ckbAddben_PhoneNo);
+            break;
+        case ToAcctType.VIBAccount:
+            txtAddNewAccount.attr("maxlength", VIBMessage.maxlength_acctid_VIBAccount).show();
+            $('span.SelectAccount label[for="rbtSelectAccount"]').html(VIBMessage.selectaccount);
+            $('span.SelectAccount label[for="rbtAddNewAccount"]').html(VIBMessage.addnewaccount);
+            $('label[for="ckbAddben"]').html(VIBMessage.ckbAddben_VIBAccount);
+            break;
+        case ToAcctType.LocalBankAccount:
+            $('#trTranCcy,#slSMLBank,#divTransferLCT').show();
+            txtAddNewAccount.attr("maxlength", VIBMessage.maxlength_acctid_LCT).hide();
+            $('span.SelectAccount label[for="rbtSelectAccount"]').html(VIBMessage.selectaccountLCT);
+            $('span.SelectAccount label[for="rbtAddNewAccount"]').html(VIBMessage.addnewaccountLCT);
+            $('label[for="ckbAddben"]').html(VIBMessage.ckbAddben_SML);
+            BindSMLBank();
+            BindLCTState();
+            $("#ddlTransferMethod").change();
+            $("#slLCTState").change();
+            //slLCTState
+            break;
+        case ToAcctType.InternationalBankAccount:
+            $('#trTranCcy').show();
+            txtAddNewAccount.attr("maxlength", 34);
+            $('#txtBenDetailCity').attr("maxlength", INTERNATIONAL_MAXLENGTH_BENACCOUNTCITY);
+            $('#txtBenDetailAddress').attr("maxlength", INTERNATIONAL_MAXLENGTH_BENACCOUNTADDRESS);
+            $('span.SelectAccount label[for="rbtSelectAccount"]').html(VIBMessage.selectaccount);
+            $('span.SelectAccount label[for="rbtAddNewAccount"]').html(VIBMessage.addnewaccount);
+            $('label[for="ckbAddben"]').html(VIBMessage.ckbAddben_InternationalBankAccount);
+            break;
+        default:
+            txtAddNewAccount.attr('placeholder', VIBMessage.NhapSoTkMoiTaiDay).show();
+            $('#newaccountname').html(newaccountname);
+            $('span.SelectAccount label[for="rbtSelectAccount"]').html(VIBMessage.selectaccount);
+            $('span.SelectAccount label[for="rbtAddNewAccount"]').html(VIBMessage.addnewaccount);
+            break;
+    }
+    
+    if (ltie10 && !isedit) {
+        txtAddNewAccount.val(txtAddNewAccount.attr('placeholder'));
+    }
+    ShowSchedule();
+    //if (moduleid !== ToAcctType.LocalBankAccount) {
+    //    $('#spnotext').html(maxlengthdescother + ' ' + characterlimit);
+    //    $('#txtDescription').attr('maxlength', maxlengthdescother);
+    //    $('#txtDescription').keyup();
+    //}
+    if ($('#rbtAddNewAccount:checked').val() === "rbtAddNewAccount") {
+        switch (moduleid) {
+            case ToAcctType.Email:
+                $("#trEmailMobile,#divEmailDetail").show();
+                $("#divPhoneDetail").hide();
+                break;
+            case ToAcctType.PhoneNo:
+                $("#divPhoneDetail").show();
+                $("#divEmailDetail,#trEmailMobile").hide();
+                break;
+            case ToAcctType.SMLAccount:
+                $("#slSMLBank").show();
+                break;
+        }
+        $('.chkaddben').show();
+    } else {
+        $("#divPhoneDetail,#trEmailMobile").hide();
+    }
+    nhapsotkcokytu();
+    $('#newacctinfo').hide();
+    $.ajax({
+        url: "/DesktopModules/VIBTransfer/ajax.aspx?t=ben&g=" + moduleid + "&dt=" + (new Date()).getTime(),
+        success: function (html) {
+            $('#divToAccount').html(html);
+            enableSelectBoxesToAccount();
+            toaccttype = moduleid;
+            checkshowben();
+            //BindBen();
+        }
+    });
+}
+function ShowSchedule() {
+    var moduleid = GetToAcctType();
+    if(moduleid === ToAcctType.VIBAccount && GetCcy() !== "VND"){
+        $('#trTransferLater,#tbregulartransfer,#tbtransfernow,#setuparegulartransfer,#ghichuhoathi').hide();
+        $('#tbNow').show();
+    }
+    else if (moduleid === ToAcctType.SML || moduleid === ToAcctType.IDNo || moduleid === ToAcctType.Email || moduleid === ToAcctType.PhoneNo || moduleid === ToAcctType.SMLAccount) {
+        $('#trTransferLater,#tbregulartransfer,#tbtransfernow,#setuparegulartransfer,#ghichuhoathi').hide();
+        $('#tbNow').show();
+    } else {
+        if ($("#ddlTransferMethod").val() === VIBMessage.CITAD) {
+            $('#trTransferLater,#tbregulartransfer,#tbtransfernow,#ghichuhoathi').show();
+            $('#tbNow').hide();
+        } else {
+            $('#trTransferLater,#tbregulartransfer,#tbtransfernow,#setuparegulartransfer,#ghichuhoathi').hide();
+            $('#tbNow').show();
+        }
+    }
+}
+function BindBen() {
+    if ($('#rbtAddNewAccount:checked').val() != "rbtAddNewAccount") {
+        if ($('#hdfSelectAccount').val().trim().length == 0) return;
+        $("#trGSDetail").hide();
+            var tp = $('#divToAccount #cont .selected');
+            if (tp.attr('tp')) {
+            if (tp.attr('tp') === "GOALSAVER") {
+                var lst = $.parseJSON(dnn.getVar('LSTGOALSAVER'));
+                $.map(lst, function (obj) {
+                    if (obj.AcctID === $('#hdfSelectAccount').val().trim()) {
+                        $("#trGSDetail").show();
+                        var bal = parseFloat(tp.attr('bal'));
+                        //$("#hdfFormatNumberVND").autoNumeric("update",{ pSign: 's', vMax: '999999999999', vMin: '0'});
+                        $('#hdfFormatNumberVND').autoNumericSet(bal);
+                        var curbal = $('#hdfFormatNumberVND').val() + tp.attr('ccy');
+                        //$("#hdfFormatNumber").autoNumeric("update", { pSign: 's', vMax: '999999999999.99', vMin: '0.00' });
+                        $('#hdfFormatNumber').autoNumericSet(bal / obj.GoalAmountNo * 100);
+                        $("#tdGSDetail").html(VIBMessage.textgoalsaverdetail.replace("{{GoalAmount}}", obj.GoalAmount).replace("{{CurrentBanlance}}", curbal).replace("{{HoanThanh}}", $('#hdfFormatNumber').val()));
+                    }
+                });
+            }
+        }
+
+            if (tp.attr('ben') == 'ben') {
+            var datap = {
+                id: dnn.getVar(dnnvarname.benid),
+                moduleid: GetToAcctType(),
+            };
+            $.ajax({
+                type: "GET",
+                url: bsrbtransfer + "GetBenInfo",
+                beforeSend: sfrbtransfer.setModuleHeaders,
+                data: datap,
+                cache: false,
+                success: function (rs) {
+                    if (rs.data != null) {
+                        var ben = rs.data;
+                        
+                        if (GetToAcctType() === ToAcctType.LocalBankAccount) {
+                            if (ben.BankInfo != null) {
+                                var bankinfo = ben.BankInfo;
+                                dnn.setVar(dnnvarname.BenBankID, bankinfo.Code);
+                                $("#trLCTBenBankName").show();
+                                var bankname = "";
+                                    var bank = $('#slSMLBank option[value="' + ben.BankInfo.Code + '"]');
+                                if (ben.BankInfo.Code == VIBMessage.LCTBankOther) {
+                                    bankname = ben.BankInfo.Name;
+                                    $("#txtLCTBankName").val(bankname);
+                                } else {
+                                    bankname = bank.text();
+                                }
+                                $("#spBenBankName").html(bankname);
+                                var isfast = bank.attr("fast");
+                                if (isfast === "Y") {
+                                    $('select#ddlTransferMethod').selectmenu("value", VIBMessage.SMLACCT);
+                                    dnn.setVar("ValidSMLACCT", "Y");
+                                    //$('select#ddlTransferMethod').selectmenu('enable');
+                                    if (dnn.getVar("LCTDefaultNAPAS") === "Y") {
+                                        $('select#ddlTransferMethod').selectmenu('disable');
+                                        $("#trTransferMethod,#trTransferMethodNote").hide();
+                                    } else {
+                                        $('select#ddlTransferMethod').selectmenu('enable');
+                                        $("#trTransferMethod,#trTransferMethodNote").show();
+                                    }
+                                } else {
+                                    $('select#ddlTransferMethod').selectmenu("value", VIBMessage.CITAD);
+                                    $('select#ddlTransferMethod').selectmenu('disable');
+                                    $("#trTransferMethod,#trTransferMethodNote").hide();
+                                }
+                                $('#ddlTransferMethod').change();
+                                $('#txtBenBankBranchName').val(bankinfo.BranchName);
+                                if (bankinfo.AddressCityCode != null) {
+                                    $("#slLCTState").val(bankinfo.AddressCityCode).change();
+                                }
+                                if (bankinfo.BranchCode != null) {
+                                    $("#slExtBranch").val(bankinfo.BranchCode).change();
+                                }
+                            }
+                            $('#txtLCTAcctName').val(ben.Account.AcctName);//.attr("readonly", "readonly");
+                            $('#txtLCTAccountNo').val(ben.Account.AcctId);//.attr("readonly", "readonly");
+                            $("#spLCTAcctName").html(ben.Account.AcctName);
+                            //$('#txtLCTAccountNo').change();
+                        } else if (GetToAcctType() === ToAcctType.InternationalBankAccount) {
+                            Ben_BindBankInternationalTransfer(ben);
+                        }
+                        
+                    }
+                    showdetail();
+                },
+                error: function () {
+                    showMessageWhenAjaxError();
+                }
+            });
+        }
+    }
+}
+
+///// Begin initpageload()
+function InitPageload() {
+    sfrbtransfer = $.ServicesFramework(VIBMessage.ModuleID);
+    bsrbtransfer = sfrbtransfer.getServiceRoot('RBTransferController') + 'WebAPI/';
+    $('.fancybox').fancybox();
+    $("#txtInterNameBranch,#txtInterNameCity,#txtInterNameCountry").attr('readonly', 'readonly');
+    $("#txtInternationalNameBranch,#txtInternationalNameCity,#txtInternationalNameCountry").attr('readonly', 'readonly');
+    $("#txtBenBankBranchName,#imgLCTBranchCancel,#txtLCTBankName,#imgLCTBankNameCancel").hide();
+    txtAddNewAccount.attr('placeholder', VIBMessage.NhapSoTkMoiTaiDay);
+    bindplaceholder();
+    var onEditCallback = function (remaining) {
+        $('#spnotext').html(remaining + ' ' + characterlimit);
+    };
+
+    var onLimitCallback = function () {
+        //$(this).css('background-color', 'red');
+    };
+
+    $('#txtDescription').limitMaxlength({
+        onEdit: onEditCallback,
+        onLimit: onLimitCallback
+    });
+    $("#txtEndAfter,#txtEmailReceiverMobile").numeric(false, function () { this.value = ""; this.focus(); });
+    
+    enableSelectBoxes();
+    if (dnn.getVar('debitshowheader') != null && dnn.getVar('debitshowheader') === "N") {
+        $('#divfromacctheader').hide();
+    }
+    if (dnn.getVar('debitacct') != '' && dnn.getVar('debitacct') != null) {
+        var t = $('#divFromAcct .selectOptions .selectOption[val="' + dnn.getVar('debitacct') + '"]');
+        $('#divFromAcct .selected').html(t.html());
+        $("#hdfFromAcct").val(dnn.getVar('debitacct'));
+        dnn.setVar("FromAcctType", t.attr('accttype'));
+        dnn.setVar("FromAcctIsCard", t.attr('data-iscard'));
+    }
+    // 
+    InitDatePickerMinDate(txtTransferLater, dtngaymai);
+    InitDatePickerMinDate("#txtStartOn", dtngaymai);
+    InitDatePickerMinDate("#txtEndOn", dtngaymai);
+    var dtidnofrom = new Date(parseInt(dnn.getVar('NICYear')), parseInt(dnn.getVar('NICMonth')) - 1, parseInt(dnn.getVar('NICDay')));
+    InitDatePickerMaxMinDate("#txtIDNoIssueDate", dtidnofrom, dtnow);
+    $('.gtransfer input').each(function () {
+        $(this).click(function () {
+            if ($(this).attr("id") == 'rbtRegularTransfer') {
+                $('#setuparegulartransfer').show();
+            } else {
+                $('#setuparegulartransfer').hide();
+            }
+        });
+    });
+
+    $('.SelectAccount input').each(function () {
+        $(this).click(function () {
+            $('#pMessage').hide();
+            $('#newacctinfo').hide();
+            var type = GetToAcctType();
+            if ($(this).attr("id") === "rbtAddNewAccount") {
+                //$("#txtAddNewAccount").removeAttr('readonly');
+                if (!isedit) {
+                    checkshowben();
+                    $('#hdfBenBankID').val('');
+                    $('#txtBenBankBranchName').val('').removeAttr("readonly");
+                    $('#txtLCTAcctName,#txtLCTAccountNo').val('').removeAttr("readonly");
+                    $('#txtBenBankCoutry').val('').removeAttr("readonly");
+                    $("#spLCTAcctName").html("");
+                    $('#txtInternationalNameBranch,#txtInternationalNameCity,#txtInternationalNameCountry').val('');
+                    $('#txtInterNameBranch').val('');
+                    $('#txtInterNameCity').val('');
+                    $('#txtInterNameCountry').val('');
+                    $('#txtInternationalSwiftCode').val('');
+                    $('#txtInterSwiftCode').val('');
+                    $('#spInterSwiftName').html('');
+                    $('#spInternationalSwiftName').html('');
+                    $('#txtInterNameBankName').val('');
+                    $('#txtInternationalNameBankName').val('');
+                    $('#chkInterBank').attr('checked', false);
+                    $('#chkInterBank').change();
+                }
+                $('.chkaddben').show();
+                //$('#divToAccount #cont').find('div.selectOption:first').click();
+                var div = $('#divToAccount #cont');
+                var first = div.children('div.selectOptions').children('div.selectOption:first');
+                div.children('span.selected').html(first.html());
+                //div.children('span.selected').attr('val', first.attr('val'));
+                div.children('span.selected').attr('ben', first.attr('ben'));
+                div.children('span.selected').attr('ccy', first.attr('ccy'));
+                $('#hdfSelectAccount').val(first.attr('val'));
+                dnn.setVar(dnnvarname.benid, first.attr('benid'));
+                //ValidatorEnable(document.getElementById(reqAddnew), true);
+                nhapsotkcokytu();
+                switch (type) {
+                    case ToAcctType.Email:
+                        $("#divEmailDetail,#trEmailMobile").show();
+                        break;
+                    case ToAcctType.PhoneNo:
+                        $("#divPhoneDetail").show();
+                        $("#trEmailMobile").hide();
+                        break;
+                    case ToAcctType.LocalBankAccount:
+                    case ToAcctType.SMLAccount:
+                        $("#slLCTState").val(VIBMessage.msgToAcctTypeEmpty);
+                        $("#slSMLBank").prop('disabled', false).change();
+                $("#trLCTBenBankName").hide();
+                        break;
+                }
+            } else {
+                //$("#txtAddNewAccount").attr('readonly', 'readonly');
+                txtAddNewAccount.val('');
+                if (ltie10) {
+                    txtAddNewAccount.val(txtAddNewAccount.attr('placeholder'));
+                }
+                hidedetail();
+                $('.chkaddben').hide();
+                checkshowben();
+
+                $("#slSMLBank").val("").prop('disabled', true);
+                switch (type) {
+                    case ToAcctType.Email:
+                        $("#trEmailMobile").show();
+                        $("#divEmailDetail").hide();
+                        break;
+                    case ToAcctType.PhoneNo:
+                        $("#divPhoneDetail,#trEmailMobile").hide();
+                        break;
+                }
+            }
+        });
+    });
+
+    $('#rdbInternationalSwift').click(function () {
+        CheckShowInternationalBank();
+        InternationalBankSelectItem0('#divInternationalBankList');
+    });
+    $('#rdbInternationalName').click(function () {
+        CheckShowInternationalBank();
+    });
+    $('#rdbInterSwift').click(function () {
+        CheckShowInternationalBank();
+        InternationalBankSelectItem0('#divInterBankList');
+    });
+    $('#rdbInterName').click(function () {
+        CheckShowInternationalBank();
+    });
+
+    $('#txtInternationalSwiftCode').focus(function () {
+        $('#rdbInternationalSwift').attr('checked', true);
+        $('#rdbInternationalSwift').click();
+    }).focusout(function () {
+        BindInternationalBankInfo($(this).val(), 'internationalbank');
+    });
+
+    $('#txtInterSwiftCode').focus(function () {
+        $('#rdbInterSwift').attr('checked', true);
+        $('#rdbInterSwift').click();
+    }).focusout(function () {
+        BindInternationalBankInfo($(this).val(), 'interbank');
+    });
+
+    $('#chkInterBank').change(function () {
+        if ($(this).is(':checked')) {
+            $('#Intermediary_bank_details').show();
+        } else {
+            $('#Intermediary_bank_details').hide();
+        }
+        //Intermediary_bank_details
+    });
+    $('#lnkInternationalNameCancel').click(function () {
+        $('#divInternationalBankListOther').hide();
+        $('#divInternationalBankList').show();
+        $('#txtInternationalNameBankName').val('');
+        InternationalBankSelectItem0('#divInternationalBankList');
+        CheckShowInternationalBank();
+    });
+    $('#lnkInterNameCancel').click(function () {
+        $('#divInterBankListOther').hide();
+        $('#divInterBankList').show();
+        $('#txtInterNameBankName').val('');
+        InternationalBankSelectItem0('#divInterBankList');
+        CheckShowInternationalBank();
+    });
+    $("#slLCTState").change(function () {
+        dnn.setVar(dnnvarname.LCTState, this.value);
+        BindExtBranch(this.value);
+    });
+    $("#slExtBranch").change(function () {
+        dnn.setVar(dnnvarname.LCTExtBranch, this.value);
+        //console.log(this);
+        if (this.value === VIBMessage.LCTBranchOther) {
+            $("#slExtBranch").hide();
+            $("#txtBenBankBranchName,#imgLCTBranchCancel").show();
+            //gioi han do dai branchname sao cho tong 3 truong: bankname + branchname + city <=70
+            var tmpbanknamefull = $('#slSMLBank option:selected').text();
+            var tmpbankname = tmpbanknamefull.substring(tmpbanknamefull.indexOf('-') + 1);
+            if ($("#slSMLBank").val() === VIBMessage.LCTBankOther) {
+                tmpbankname = $("#txtLCTBankName").val();
+            }
+            $('#txtBenBankBranchName').attr("maxlength", 63 - $('#slLCTState option:selected').text().length - tmpbankname.length);
+        } else {
+            $("#slExtBranch").show();
+            $("#txtBenBankBranchName,#imgLCTBranchCancel").hide();
+        }
+    });
+    $("#imgLCTBranchCancel").click(function() {
+        $("#slExtBranch").show();
+        $("#slExtBranch")[0].selectedIndex = 0;
+        $("#txtBenBankBranchName,#imgLCTBranchCancel").hide();
+    });
+    $("#imgLCTBankNameCancel").click(function () {
+        $("#slSMLBank").show();
+        $("#slSMLBank")[0].selectedIndex = 0;
+        $("#txtLCTBankName,#imgLCTBankNameCancel").hide();
+    });
+    $("#slSMLBank").change(function () {
+        $('#pMessage').hide();
+        if ($(this).val() == '204') {
+            $('#pLCTNote').show();
+            $('body,html').animate({
+                scrollTop: $('#pLCTNote').offset().top - 100
+            }, 800);
+        } else {
+            $('#pLCTNote').hide();
+        }
+        dnn.setVar(dnnvarname.BenBankID, this.value);
+        var fromacctiscard = dnn.getVar("FromAcctIsCard") === "True";
+        //dnn.setVar("ValidSMLACCT", "N");
+        if ($('option:selected', this).attr("fast") === "N") {
+            $('select#ddlTransferMethod').selectmenu("value", VIBMessage.CITAD);
+            $('select#ddlTransferMethod').selectmenu('disable');
+            $("#trTransferMethod,#trTransferMethodNote").hide();
+            if (fromacctiscard && dnn.getVar("CREDITCARD_ENABLEDEBIT_TRANSFER_LOCALBANK") !== "Y" && ($('option:selected', this).val()!=="") ) {
+                ShowMessage(VIBMessage.msgDebitCardCITADDontAllow);
+                return;
+            }
+        } else {
+            $('select#ddlTransferMethod').selectmenu("value", VIBMessage.SMLACCT);
+            if (dnn.getVar("LCTDefaultNAPAS") === "Y") {
+                $('select#ddlTransferMethod').selectmenu('disable');
+                $("#trTransferMethod,#trTransferMethodNote").hide();
+            } else {
+                $('select#ddlTransferMethod').selectmenu('enable');
+                $("#trTransferMethod,#trTransferMethodNote").show();
+            }
+        }
+        if (this.value === VIBMessage.LCTBankOther) {
+            $("#slSMLBank").hide();
+            $("#txtLCTBankName,#imgLCTBankNameCancel").show();
+        } else {
+            $("#slSMLBank").show();
+            $("#txtLCTBankName,#imgLCTBankNameCancel").hide();
+        }
+            $("#slLCTState").change();
+        $("#ddlTransferMethod").change();
+    });
+
+    $("#ddlTransferMethod").change(function () {
+        $('#pMessage').hide();
+        dnn.setVar("LCTTransferMethod", $(this).val());
+
+        if (dnn.getVar("LCTEditDone") === "Y") {
+            if ($('#rbtSelectAccount:checked').val() !== "rbtSelectAccount") {
+                $('#txtLCTAcctName,#txtLCTAccountNo').val('');
+                $("#spLCTAcctName").html("");
+            }
+            
+        }
+        var fromacctiscard = dnn.getVar("FromAcctIsCard")==="True";
+        //dnn.setVar("LCTEditDone","Y");
+        if ($(this).val() === VIBMessage.CITAD) {
+            $("#trLCTState,#trLCTBranch,#txtLCTAcctName,#spBenNameNote").show();
+            $("#ddlCcy").val("VND").prop('disabled', false);
+            $("#spTransferMethodNote").html(VIBMessage.TransferMethodNote_CITAD);
+            $("#spLCTAcctName").hide();
+            $('#txtDescription').attr('maxlength', maxlengthdescother);
+            if (fromacctiscard && dnn.getVar("CREDITCARD_ENABLEDEBIT_TRANSFER_LOCALBANK") !== "Y" && $("#trTransferMethod").is(':hidden')==false) {
+                ShowMessage(VIBMessage.msgDebitCardCITADDontAllow);
+            }
+        }
+        if ($(this).val() === VIBMessage.SMLACCT) {
+            $("#trLCTState,#trLCTBranch,#txtLCTAcctName,#spBenNameNote").hide();
+            $("#spLCTAcctName").show();
+            $("#ddlCcy").val("VND").prop('disabled', true);
+            $("#spTransferMethodNote").html(VIBMessage.TransferMethodNote_SMLACCT);
+            $('#txtDescription').attr('maxlength', VIBMessage.maxlength_desc_SMLAccount);
+            if (fromacctiscard && dnn.getVar("CREDITCARD_ENABLEDEBIT_TRANSFER_LOCALBANKFAST") !== "Y" && $("#trTransferMethod").is(':hidden') == false) {
+                ShowMessage(VIBMessage.msgDebitCardSMLACCTDontAllow);
+            }
+        }
+        ShowSchedule();
+    });
+    $("#txtLCTAccountNo").focusout(function () {
+        if ($(this).val() === "")return;
+        $('#spLCTAcctName').html("");
+        $('#pMessage').hide();
+        if (dnn.getVar(dnnvarname.BenBankID) === "") {
+            ShowMessage(chuachonnganhangthuhuong);
+            return;
+        }
+        var type = dnn.getVar("LCTTransferMethod");
+        //check tk huong k dc phep toan chu
+        if (!ValidToAccountNumber($(this).val(), type)) {
+            ShowMessage(VIBMessage.LCT_TKHuongPhaiLaChuVaSo);
+            return;
+        }
+        if (type === VIBMessage.SMLACCT) {
+            var datap = {
+                toacctid: $(this).val(),
+                type: VIBMessage.SMLACCT,
+                fromacctid: $('#hdfFromAcct').val(),
+                bankcode: dnn.getVar(dnnvarname.BenBankID)
+            };
+            $.ajax({
+                type: "POST",
+                url: bsrbtransfer + "GetAccount",
+                beforeSend: sfrbtransfer.setModuleHeaders,
+                data: datap,
+                cache: false,
+                success: function (result) {
+                    if (typeof result !== "undefined" && result != null) {
+                        if (result.STATUSCODE === "000000") {
+                            $('#spLCTAcctName').html(result.data).show();
+                            $('.chkaddben').show();
+                            dnn.setVar("ValidSMLACCT", "Y");
+                        } else {
+                            dnn.setVar("ValidSMLACCT", "N");
+                            dnn.setVar("ValidSMLACCTMessage", result.MESSAGE);
+                            $('.chkaddben').hide();
+                            $('#newacctinfo').hide();
+                            ShowMessage(result.MESSAGE);
+                        }
+                    }
+                },
+                error: function (xhr, textStatus) {
+                    RBAjaxError(xhr, textStatus);
+                }
+            });
+        }
+    });
+    //divToAcctType_Click()
+    $("#ddlToAcctType").change(function() {
+        divToAcctType_Click();
+    });
+    $('#ddlTransferMethod').selectmenu({
+        style: 'popup',
+        width: '373px',
+        format: ddlTransferMethodFormatting
+    });
+
+    $("#txtLCTBankName").change(function() {
+        if (!ValidLCTOtherBankName()) {
+            ShowMessage(VIBMessage.msgLCTOtherBankNameInvalid);
+        }
+    });
+    $("#txtBenBankBranchName").change(function () {
+        if (!ValidLCTOtherBranchName($(this).val())) {
+            ShowMessage(VIBMessage.msgLCTOtherBranchNameInvalid);
+        }
+    });
+    
+}
+//////end InitPageLoad()
+var ddlTransferMethodFormatting = function (text) {
+    var newText = text;
+    //array of find replaces
+    var findreps = [
+        { find: /^([^\-]+) \- /g, rep: '<span class="ui-selectmenu-item-header">$1</span>' },
+        { find: /([^\|><]+) \| /g, rep: '<span class="ui-selectmenu-item-content">$1</span>' },
+        //{ find: /([^\|><\(\)]+)$/g, rep: '<span class="ui-selectmenu-item-content 1">$1</span>' },
+        { find: /([^\|><]+)$/g, rep: '<span class="ui-selectmenu-item-content">$1</span>' },
+        //{ find: /(\([^\|><]+\))$/g, rep: '<span class="ui-selectmenu-item-footer">$1</span>' }
+    ];
+
+    for (var i in findreps) {
+        newText = newText.replace(findreps[i].find, findreps[i].rep);
+    }
+    return newText;
+}
+
+function nhapsotkcokytu() {
+    var type = GetToAcctType();
+    if (type === ToAcctType.LocalBankAccount || type === ToAcctType.InternationalBankAccount || type === ToAcctType.Email) {
+        txtAddNewAccount.unbind();
+        inittxtAddNewAccount();
+    }
+    else {
+        txtAddNewAccount.numeric(false, function () {
+            this.value = ""; this.focus();
+        });
+    }
+}
+
+function checkshowben() {
+    var type = GetToAcctType();
+    showdetail();
+    if (type === ToAcctType.LocalBankAccount) {
+            if ($('#rbtSelectAccount:checked').val() === "rbtSelectAccount") {
+                //BindBen();
+            }
+    }
+    else if (type === ToAcctType.InternationalBankAccount) {
+        if (!getbic) {
+            $.ajax({
+                url: "/DesktopModules/VIBTransfer/ajax.aspx?t=bic",
+                success: function (html) {
+                    $('#divInternationalBankList').html(html);
+                    $('#divInterBankList').html(html);
+                    InitSelectBoxInternationalBank('#divInternationalBankList');
+                    InitSelectBoxInternationalBank('#divInterBankList');
+                    //enableSelectBoxesBenBank('#divInterBankList');
+                    getbic = true;
+                    BindBen();
+                },
+                error: function () {
+                    showMessageWhenAjaxError();
+                }
+            });
+        } else {
+            if ($('#rbtSelectAccount:checked').val() == "rbtSelectAccount") {
+                BindBen();
+            }
+        }
+    }
+    else {
+        hidedetail();
+    }
+}
+
+function nextto2() {
+    $('#pMessage').hide();
+    var fromid = $('#hdfFromAcct').val();
+    if (fromid == '') {
+        ShowMessage(chuachontaikhoannguon);
+        return;
+    }
+    $('#step2').show();
+    $('#box1').attr('class', 'spec-header2').toggleClass('daqua');
+    $('.boxstep1').attr('class', 'box-grey');
+    $('.ns1').hide();
+    $('.nsb1').toggleClass('next-step-bot').toggleClass('box-bot-grey');
+    $('#box2').attr('class', 'spec-header1');
+}
+
+function nextto3() {
+    $('#pMessage').hide();
+    var type = GetToAcctType(); //  $('#hdfToAcctType').val();
+
+    var acctid = txtAddNewAccount.val();
+    if (type === ToAcctType.LocalBankAccount) {
+        acctid = $("#txtLCTAccountNo").val();
+    }
+    var fromid = $('#hdfFromAcct').val();
+    if (type == '') {
+        ShowMessage(VIBMessage.msgToAcctTypeEmpty);
+        return;
+    }
+    var actfromben = $('#rbtSelectAccount:checked').val() === "rbtSelectAccount";
+    if (actfromben) {
+        acctid = $('#hdfSelectAccount').val();
+    }
+    if (acctid === '' || acctid === txtAddNewAccount.attr('placeholder')) {
+        ShowMessage(chuachontaikhoandich);
+        return;
+    }
+    if (acctid === fromid) {
+        ShowMessage(VIBMessage.err40);
+        return;
+    }
+    if (!CheckOD()) {
+        return;
+    }
+    if (!validOD(fromid, acctid)) {
+        return;
+    }
+    
+    if (type === ToAcctType.LocalBankAccount) {
+        if (dnn.getVar(dnnvarname.BenBankID) === "") {
+            ShowMessage(chuachonnganhangthuhuong);
+            return;
+        }
+        if (dnn.getVar(dnnvarname.BenBankID) === VIBMessage.LCTBankOther && !ValidLCTOtherBankName()) {
+            ShowMessage(VIBMessage.msgLCTOtherBankNameInvalid);
+            return;
+        }
+        //check tk huong k dc phep toan chu
+        if (!ValidToAccountNumber(acctid, type)) {
+            ShowMessage(VIBMessage.LCT_TKHuongPhaiLaChuVaSo);
+            return;
+        }
+        if (dnn.getVar("LCTTransferMethod") == VIBMessage.SMLACCT) {
+            if (dnn.getVar("ValidSMLACCT")!="Y") {
+                ShowMessage(dnn.getVar("ValidSMLACCTMessage"));
+                return;
+            }
+        } else {
+            var bendetailacttname = GetBenDetailAccName();
+            if (bendetailacttname.length == 0) {
+                ShowMessage(chuadiententaikhoannhan);
+                return;
+            } else {
+                if (!ValidLCTBenName(bendetailacttname)) {
+                    ShowMessage(VIBMessage.msgLCTBenNameInvalid);
+                    return;
+                }
+            }
+            if ($("#slExtBranch").val() === VIBMessage.LCTBranchChon) {
+                ShowMessage(chuadientenchinhanh);
+                return;
+            }
+            if ($("#slExtBranch").val() === VIBMessage.LCTBranchOther) {
+                if ($('#txtBenBankBranchName').val().trim().length == 0) {
+                    ShowMessage(chuadientenchinhanh);
+                    return;
+                }
+                if (!ValidLCTOtherBranchName($('#txtBenBankBranchName').val())) {
+                    ShowMessage(VIBMessage.msgLCTOtherBranchNameInvalid);
+                    return;
+                }
+            }
+        }
+       
+        ShowStep3();
+        return;
+    }
+    if (type === ToAcctType.IDNo || type === ToAcctType.Email || type === ToAcctType.PhoneNo) {
+        if (type === ToAcctType.PhoneNo) {
+            if (!actfromben) {
+                revMobile.controltovalidate = "txtAddNewAccount";
+                var ret = Page_ClientValidate("validMobile");
+                if (!ret) {
+                    ShowMessage(revMobile.errormessage);
+                    return;
+                    }
+                    if ($("#txtPhoneReceiverName").val().trim() === "") {
+                        ShowMessage(VIBMessage.ChuaNhapTenNguoiNhan);
+                        return;
+                    }
+                revCustName.controltovalidate = "txtPhoneReceiverName";
+            }
+        }
+        if (type === ToAcctType.Email) {
+            if (!actfromben) {
+                var ret = Page_ClientValidate("validEmail");
+                if (!ret) {
+                    ShowMessage(regEmail.errormessage);
+                    return;
+                }
+                if ($("#txtEmailReceiverName").val().trim() === "") {
+                    ShowMessage(VIBMessage.ChuaNhapTenNguoiNhan);
+                    return;
+                }
+            }
+            revMobile.controltovalidate = "txtEmailReceiverMobile";
+            var ret = Page_ClientValidate("validMobile");
+            if (!ret) {
+                ShowMessage(revMobile.errormessage);
+                return;
+            }
+            revCustName.controltovalidate = "txtEmailReceiverName";
+        }
+
+        if (!actfromben) {
+            var ret = Page_ClientValidate("validCustName");
+            if (!ret) {
+                ShowMessage(revCustName.errormessage);
+                return;
+            }
+        }
+        ShowStep3();
+        return;
+    }
+    if (type === ToAcctType.SML) {
+        var fromccy = GetCcy();
+        if (fromccy !== 'VND') {
+            ShowMessage(VIBMessage.khongchuyencheoloaitien);
+            return;
+        }
+    }
+    if (type === ToAcctType.InternationalBankAccount) {
+        if (GetBenDetailAccName().length == 0) {
+            ShowMessage(chuadiententaikhoannhan);
+            return;
+        }
+        var valid = ValidInternationBank();
+        if (!valid) return;
+        ShowStep3();
+        return;
+    }
+    var datap = {
+        toacctid: acctid,
+        type: type,
+        fromacctid: fromid,
+        bankcode: $("#slSMLBank").val(),
+        fromaccttype: dnn.getVar("FromAcctType")
+    };
+    $.ajax({
+        type: "POST",
+        url: bsrbtransfer + "GetAccount",
+        beforeSend: sfrbtransfer.setModuleHeaders,
+        data: datap,
+        cache: false,
+        success: function (result) {
+            if (typeof result !== "undefined" && result != null) {
+                if (result.STATUSCODE === "000000") {
+                    if (GetToAcctType() === ToAcctType.SML || GetToAcctType() === ToAcctType.SMLAccount) {
+                        if ($('#rbtAddNewAccount:checked').val() === "rbtAddNewAccount") {
+                            $('#spAccountName').html(result.data);
+                            $('#newacctinfo').show();
+                            $('.chkaddben').show();
+                        }
+                    }
+                    if (GetToAcctType() === ToAcctType.VIBAccount) {
+                        if ($('#rbtAddNewAccount:checked').val() == "rbtAddNewAccount") {
+                            $('#spAccountName').html(result.data.AcctName);
+                            $('#newacctinfo').show();
+                            $('.chkaddben').show();
+                            $('#hdfToAcctCcy').val(result.data.Ccy);
+
+                        }
+                        if(GetCcy() !== result.data.Ccy){
+                                    $("#trTranBaseAmt, #trTranBaseAmt2").show();
+                                    if(dnn.getVar("EOCPHASE")=="EOD"){
+                                        ShowMessage(VIBMessage.msgEODDontAllowTransfer);
+                                    }
+                                }
+                                else{
+                                    $("#trTranBaseAmt, #trTranBaseAmt2").hide();
+                                }
+                                dnn.setVar("VIBExchangeRate",result.ExchangeRate.toString());
+                                $("#ltTranBaseAmt2").html(result.strExchangeRate);
+                    }
+                    ShowStep3();
+                } else {
+                    $('.chkaddben').hide();
+                    $('#newacctinfo').hide();
+                    ShowMessage(result.MESSAGE);
+                    if (GetToAcctType() === ToAcctType.SML) {
+                        smlvalid = false;
+                    }
+                    //dnn.setVar("ValidSMLACCT","Y");
+                }
+            }
+        },
+        error: function (xhr, textStatus) {
+            RBAjaxError(xhr, textStatus);
+        }
+    });
+}
+
+function GetBenDetailAccName() {
+    return $('#txtLCTAcctName').val().trim();
+}
+
+function InitSelectBoxInternationalBank(id) {
+    var div = $(id + ' #divBic');
+    if (isedit) {
+        var bankid = '';
+        if (id == '#divInternationalBankList') {
+            bankid = getInternationalBankId();
+        }
+        if (id == '#divInterBankList') {
+            bankid = getInterBankId();
+        }
+        div.find('.selected').html(div.find('.selectOptions .selectOption[val="' + bankid + '"]').html());
+    }
+    else {
+        InternationalBankSelectItem0(id);
+    }
+    div.children('span.selected,span.selectArrow').click(function (e) {
+        var parent = $(this).parent();
+        var div1 = parent.children('div.selectOptions');
+        if (div1.is(':visible')) {
+            div1.hide();
+        } else {
+            $('div.selectOptions').hide();
+            parent.children('div.selectOptions').show();
+        }
+        e.stopPropagation();
+    });
+
+    div.find('div.selectOption').click(function () {
+        var parent = $(this).parent();
+        parent.css('display', 'none');
+        parent.siblings('span.selected').html($(this).html());
+        var val = $(this).attr('val');
+        parent.siblings('span.selected').attr('val', val);
+        if (id == '#divInternationalBankList') {
+            setInternationalBankId(val);
+            if (val == BIC_OTHER) {
+                $('#divInternationalBankList').hide();
+                $('#divInternationalBankListOther').show();
+                $('#txtInternationalNameBankName').val('');
+            }
+            $('#rdbInternationalName').attr('checked', true);
+            $('#rdbInternationalName').click();
+            $('#txtInternationalSwiftCode').val('');
+        }
+        if (id == '#divInterBankList') {
+            setInterBankId(val);
+            if (val == BIC_OTHER) {
+                $('#divInterBankList').hide();
+                $('#divInterBankListOther').show();
+                $('#txtInterNameBankName').val('');
+            }
+            $('#rdbInterName').attr('checked', true);
+            $('#rdbInterName').click();
+            $('#txtInterSwiftCode').val('');
+        }
+
+    });
+}
+
+function InternationalBankSelectItem0(id) {
+    var div = $(id + ' #divBic');
+    var first = div.children('div.selectOptions').children('div.selectOption:first');
+    var val = first.attr('val');
+    div.children('span.selected').html(first.html());
+    if (id == '#divInternationalBankList') {
+        setInternationalBankId(val);
+    }
+    if (id == '#divInterBankList') {
+        setInterBankId(val);
+    }
+}
+
+function getInternationalBankId() {
+    return $('#hdfInternationalBankId').val();
+}
+
+function setInternationalBankId(id) {
+    $('#hdfInternationalBankId').val(id);
+}
+
+function getInterBankId() {
+    return $('#hdfInterBankId').val();
+}
+
+function setInterBankId(id) {
+    $('#hdfInterBankId').val(id);
+}
+//
+
+function showMessageWhenAjaxError() {
+    $('#pMessage').show().html(err66);
+    $('body,html').animate({
+        scrollTop: $('#pMessage').offset().top - 100
+    }, 800);
+}
+
+function ShowMessage(message) {
+    $('#pMessage').show().html(message);
+    $('body,html').animate({
+        scrollTop: $('#pMessage').offset().top - 100
+    }, 800);
+}
+
+var get_vMax = function () {
+    if (GetToAcctType() == LocalBankAccount || GetToAcctType() == InternationalBankAccount) {
+        if ($('#ddlCcy').val() == 'VND') return '99999999999';
+        return '99999999999.99';
+    }
+    if (GetCcy() == 'VND') return '99999999999';
+    return '99999999999.99';
+};
+var get_vMin = function () {
+    if (GetToAcctType() == LocalBankAccount || GetToAcctType() == InternationalBankAccount) {
+        if ($('#ddlCcy').val() == 'VND') return '0';
+        return '0.00';
+    }
+    if (GetCcy() == 'VND') return '0';
+    return '0.00';
+};
+function GetCcy() {
+    var accid = $('#hdfFromAcct').val();
+    var ccy = 'USD';
+    for (var i = 0; i < lstacctccy.length; i++) {
+        if (lstacctccy[i]["id"] == accid) {
+            ccy = lstacctccy[i].ccy;
+            break;
+        }
+    }
+    return ccy.toUpperCase();
+}
+
+function CheckShowInternationalBank() {
+    if ($('#rdbInternationalSwift').is(':checked')) {
+        $('#tblInternationalName').hide();
+        $('#tblInternationalSwift').show();
+    }
+
+    if ($('#rdbInternationalName').is(':checked')) {
+        $('#tblInternationalSwift').hide();
+        $('#tblInternationalName').show();
+        if (getInternationalBankId() == BIC_OTHER) {
+            $('#divInternationalBankListOther').show();
+            $('#divInternationalBankList').hide();
+            $('#txtInternationalNameBranch,#txtInternationalNameCity,#txtInternationalNameCountry').removeAttr("readonly");
+        } else {
+            $('#divInternationalBankListOther').hide();
+            $('#divInternationalBankList').show();
+            $('#txtInternationalNameBranch').val('').attr('readonly', 'readonly');
+            $('#txtInternationalNameCity').val('').attr('readonly', 'readonly');
+            $('#txtInternationalNameCountry').val('').attr('readonly', 'readonly');
+        }
+    }
+    if ($('#rdbInterSwift').is(':checked')) {
+        $('#tblInterSwift').show();
+        $('#tblInterName').hide();
+    }
+    if ($('#rdbInterName').is(':checked')) {
+        $('#tblInterSwift').hide();
+        $('#tblInterName').show();
+        if (getInterBankId() == BIC_OTHER) {
+            $('#divInterBankListOther').show();
+            $('#divInterBankList').hide();
+            $('#txtInterNameBranch,#txtInterNameCity,#txtInterNameCountry').removeAttr("readonly");
+        } else {
+            $('#divInterBankListOther').hide();
+            $('#divInterBankList').show();
+            $('#txtInterNameBranch').val('').attr('readonly', 'readonly');
+            $('#txtInterNameCity').val('').attr('readonly', 'readonly');
+            $('#txtInterNameCountry').val('').attr('readonly', 'readonly');
+        }
+    }
+}
+
+function BindInternationalBankInfo(swiftcode, target) {
+    if (swiftcode == '') return;
+    $.ajax({
+        type: "POST",
+        url: "/DesktopModules/VIBTransfer/ajax.aspx/GetBic",
+        data: "{swift:'" + swiftcode + "'}",
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function (data) {
+            if (data.d == 'ERROR') {
+                ShowMessage(err01);
+                return;
+            }
+            if (data.d != '') {
+                var bic = jQuery.parseJSON(data.d);
+                if (target == 'internationalbank') {
+                    $('#spInternationalSwiftName').html(bic.BankNameAddress);
+                }
+                if (target == 'interbank') {
+                    $('#spInterSwiftName').html(bic.BankNameAddress);
+                }
+            }
+        },
+        error: function () {
+            showMessageWhenAjaxError();
+        }
+    });
+}
+
+function ShowStep3() {
+    $('#step3').slideDown();
+    $('#box3').attr('class', 'spec-header1');
+    $('#box2').attr('class', 'spec-header2').toggleClass('daqua');
+    $('.ns2').hide();
+    $('.nsb2').toggleClass('next-step-bot').toggleClass('box-bot-grey');
+    $('.boxstep2').toggleClass('box-grey2').toggleClass('box-grey');
+    $('.button-next').show();
+    if (GetToAcctType() == InternationalBankAccount) {
+        $('#divBenChiuPhi').show();
+    } else {
+        $('#divBenChiuPhi').hide();
+    }
+}
+
+function GetToAcctType() {
+    return $('#ddlToAcctType').val();
+}
+
+function SetToAcctType(value) {
+    $('#hdfToAcctType').val(value);
+}
+
+function Ben_BindBankInternationalTransfer(ben) {
+    if (ben.BankInfo != null) {
+        var bankinfo = ben.Account.BankInfo;
+        if (bankinfo.BankId != '') {
+            var abc = $('#divInternationalBankList #divBic div[val="' + bankinfo.BankId + '"]').html();
+            //var bankname = $('#divInternationalBankList #divBic div[val="' + bankinfo.BankId + '"]').html().trim();
+            if (abc == null) {
+                BindInernationalSwift(bankinfo);
+                $('#txtInternationalSwiftCode').focusout();
+            } else {
+                BindInternationalName(bankinfo);
+            }
+        } else {
+            BindInternationalName(bankinfo);
+        }
+    }
+    if (ben.InterBank != null) {
+        var interbank = ben.InterBank;
+        if (interbank.BankId != '' || interbank.Name != '') {
+            $('#chkInterBank').attr('checked', true);
+        } else {
+            $('#chkInterBank').attr('checked', false);
+        }
+        if (interbank.BankId != '') {
+
+            var bankintername = $('#divInterBankList #divBic div[val="' + interbank.BankId + '"]').html();
+            if (bankintername == null) {
+                BindInerSwift(interbank);
+                $('#txtInterSwiftCode').focusout();
+            } else {
+                BindInterName(interbank);
+            }
+        } else {
+            BindInterName(interbank);
+        }
+    }
+}
+
+function BindInternationalName(bankinfo) {
+    $('#rdbInternationalName').attr('checked', true);
+    $('#rdbInternationalName').click();
+    $('#divInternationalBankList #divBic .selected').html($('#divInternationalBankList #divBic div[val="' + bankinfo.BankId + '"]').html());
+    if (bankinfo.BankId == '') {
+        setInternationalBankId(BIC_OTHER);
+        CheckShowInternationalBank();
+        $('#txtInternationalNameBankName').val(bankinfo.Name);
+        $('#txtInternationalNameBranch').val(bankinfo.BranchName);
+        $('#txtInternationalNameCity').val(bankinfo.AddressCity);
+        $('#txtInternationalNameCountry').val(bankinfo.AddressCountry);
+
+    } else {
+        SetInternationalBankId(bankinfo.BankId);
+        $('#txtInternationalNameBranch').val(bankinfo.BranchName).attr('readonly', 'readonly');
+        $('#txtInternationalNameCity').val(bankinfo.AddressCity).attr('readonly', 'readonly');
+        $('#txtInternationalNameCountry').val(bankinfo.AddressCountry).attr('readonly', 'readonly');
+    }
+}
+
+function BindInernationalSwift(bankinfo) {
+    $('#rdbInternationalSwift').attr('checked', true);
+    $('#rdbInternationalSwift').click();
+    $('#txtInternationalSwiftCode').val(bankinfo.BankId);
+    $('#txtInternationalSwiftBranch').val(bankinfo.BranchName).attr('readonly', 'readonly');
+    $('#txtInternationalSwiftCity').val(bankinfo.AddressCity).attr('readonly', 'readonly');
+    $('#txtInternationalSwiftCountry').val(bankinfo.AddressCountry).attr('readonly', 'readonly');
+}
+
+function BindInterName(bankinfo) {
+    $('#rdbInterName').attr('checked', true);
+    $('#rdbInterName').click();
+    $('#divInterBankList #divBic .selected').html($('#divInterBankList #divBic div[val="' + bankinfo.BankId + '"]').html());
+    if (bankinfo.BankId == '') {
+        setInterBankId(BIC_OTHER);
+        CheckShowInternationalBank();
+        $('#txtInterNameBankName').val(bankinfo.Name);
+        $('#txtInterNameBranch').val(bankinfo.BranchName);
+        $('#txtInterNameCity').val(bankinfo.AddressCity);
+        $('#txtInterNameCountry').val(bankinfo.AddressCountry);
+    } else {
+        SetInterBankId(bankinfo.BankId);
+        $('#txtInterNameBranch').val(bankinfo.BranchName).attr('readonly', 'readonly');
+        $('#txtInterNameCity').val(bankinfo.AddressCity).attr('readonly', 'readonly');
+        $('#txtInterNameCountry').val(bankinfo.AddressCountry).attr('readonly', 'readonly');
+    }
+
+}
+
+function BindInerSwift(bankinfo) {
+    $('#rdbInterSwift').attr('checked', true);
+    $('#rdbInterSwift').click();
+    $('#txtInterSwiftCode').val(bankinfo.BankId);
+    $('#txtInterSwiftBranch').val(bankinfo.BranchName).attr('readonly', 'readonly');
+    $('#txtInterSwiftCity').val(bankinfo.AddressCity).attr('readonly', 'readonly');
+    $('#txtInterSwiftCountry').val(bankinfo.AddressCountry).attr('readonly', 'readonly');
+}
+
+function SetInternationalBankId(bankid) {
+    $('#hdfInternationalBankId').val(bankid);
+}
+
+function SetInterBankId(bankid) {
+    $('#hdfInterBankId').val(bankid);
+}
+
+function GetInterBankInputFrom() {
+    return $('#hdfInterBankInputFrom').val();
+}
+
+function GetInternationalBankInputFrom() {
+    return $('#hdfInternationalBankInputFrom').val();
+}
+
+function rdbInternationalSwift_IsChecked() {
+    return $('#rdbInternationalSwift:checked').val() == "rdbInternationalSwift";
+}
+
+function rdbInternationalName_IsChecked() {
+    return $('#rdbInternationalName:checked').val() == "rdbInternationalName";
+}
+
+function rdbInterSwift_IsChecked() {
+    return $('#rdbInterSwift:checked').val() == "rdbInterSwift";
+}
+
+function rdbInterName_IsChecked() {
+    return $('#rdbInterName:checked').val() == "rdbInterName";
+}
+
+function ValidToAccountNumber(acct, type) {
+    if (type === ToAcctType.LocalBankAccount || type === ToAcctType.SMLAccount) {
+        var check1 = VIBMessage.regLCTBenAcctNo.exec(acct) !== null;
+        if (!check1) {
+            var patt1 = /[0-9]/g;
+            var result = patt1.test(acct);
+            return result;
+        } else {
+            return false;
+        }
+    }
+    return true;
+}
+
+function CheckSizeFileAttachFile(sender, args) {
+    var ctrl = sender.controltovalidate;
+    var size = GetFileSize(ctrl);
+    if (size > VIBMessage.AttachmentMaxSize) // Max size: 3M && file extension: .xls
+    {
+        args.IsValid = false;
+    }
+}
+
+function CheckExtenFileAttachFile(sender, args) {
+    var ctrl = sender.controltovalidate;
+    var value = $("#" + ctrl).val();
+    var extension = GetExtention(value);
+    var validstring = VIBMessage.AttachmentExtension.toLowerCase();
+    if ((validstring.indexOf(extension) == -1)) // Max size: 3M && file extension: .xls
+    {
+        args.IsValid = false;
+    }
+
+}
+function BindLCTState() {
+    $('#slLCTState').find('option').remove();
+    $('#slLCTState').append($('<option>', {
+        value: VIBMessage.LCTStateChon,
+        text: VIBMessage.LCTStateChonText
+    }));
+    $.ajax({
+        type: "GET",
+        url: bsrbtransfer + "GetState",
+        beforeSend: sfrbtransfer.setModuleHeaders,
+        contentType: "application/json; charset=utf-8",
+        cache: false,
+        async: false,
+        success: function(result) {
+            if (typeof result !== "undefined" && result != null && result.data != null) {
+                $.each(result.data, function (i, item) {
+                    if (item.Code != null) {
+                        $('#slLCTState').append($('<option>', {
+                            value: item.Code,
+                            text: item.Name
+                        }));
+                    }
+                });
+            }
+        },
+        error: function (xhr, textStatus) {
+            RBAjaxError(xhr, textStatus);
+        }
+        });
+}
+
+function BindExtBranch(state) {
+    $('#slExtBranch').find('option').remove();
+    $('#slExtBranch').append($('<option>', {
+        value: VIBMessage.LCTBranchChon,
+        text: VIBMessage.LCTBranchChonText
+    }));
+    if (dnn.getVar(dnnvarname.BenBankID) == null || dnn.getVar(dnnvarname.BenBankID) === "" || state == VIBMessage.LCTStateChon) {
+        return;
+    }
+    var pas = {
+        bankcode: dnn.getVar(dnnvarname.BenBankID),
+        state: state
+    };
+    $.ajax({
+        type: "GET",
+        url: bsrbtransfer + "GetExtBranch",
+        beforeSend: sfrbtransfer.setModuleHeaders,
+        data: pas,
+        contentType: "application/json; charset=utf-8",
+        cache: false,
+        async: false ,
+        success: function (result) {
+            if (typeof result !== "undefined" && result != null && result.data != null) {
+                $.each(result.data, function (i, item) {
+                    if (item.Code != null) {
+                        $('#slExtBranch').append($('<option>', {
+                            value: item.Code,
+                            text: item.Name
+                        }));
+                    }
+                });
+            }
+            if ($('#slExtBranch option').length == 0) {
+                $('#slExtBranch').append($('<option>', {
+                    value: VIBMessage.LCTBranchOther,
+                    text: VIBMessage.LCTBranchOtherText
+                }));
+            } else {
+                $('#slExtBranch option:last').after($('<option>', {
+                    value: VIBMessage.LCTBranchOther,
+                    text: VIBMessage.LCTBranchOtherText
+                }));
+            }
+            $('#slExtBranch').change();
+        },
+        error: function (xhr, textStatus) {
+            RBAjaxError(xhr, textStatus);
+        }
+    });
+}
+function BindSMLBank() {
+    if ($('#slSMLBank option').length > 0) return;
+    $('#slSMLBank').find('option').remove();
+    $('#slSMLBank').append($('<option>', {
+        value: "",
+        text: VIBMessage.PleaseSelectdropdown
+    }).attr("fast", "N"));
+    //dnn.setVar(dnnvarname.BenBankID, "");
+    $.ajax({
+        type: "GET",
+        url: bsrbtransfer + "GetBankList",
+        beforeSend: sfrbtransfer.setModuleHeaders,
+        contentType: "application/json; charset=utf-8",
+        cache: false,
+        async: false,
+        success: function (result) {
+            if (typeof result !== "undefined" && result != null && result.data != null) {
+                $.each(result.data, function (i, item) {
+                    if (item.Code != null) {
+                        $('#slSMLBank').append($('<option>', {
+                            value: item.Code,
+                            text:item.ID+" - "+ item.Name
+                        }).attr("fast", item.Fast));
+                    }
+                });
+                $('#slSMLBank option:last').after($('<option>', {
+                    value: VIBMessage.LCTBankOther,
+                    text: VIBMessage.LCTBankOtherText
+                }).attr("fast", "N"));
+                //if (isedit) {
+                //    $('#slSMLBank').val(dnn.getVar(dnnvarname.BenBankID));
+                //}
+            }
+        },
+        error: function (xhr, textStatus) {
+            RBAjaxError(xhr, textStatus);
+        }
+    });
+}
+
+function CheckOD() {
+    var configaccttype = dnn.getVar("ODAcctType");
+    if (configaccttype === undefined) return true;
+    if (configaccttype.indexOf(dnn.getVar("FromAcctType")) > -1) {
+        var configpvct = dnn.getVar("ODPVCT");
+        if (configpvct.indexOf(GetToAcctType()) === -1) {
+            ShowMessage(VIBMessage.msgODPVCTNotValid);
+            return false;
+        }
+    }
+    return true;
+}
+
+function validOD(fromacctid,toacctid) {
+    var configaccttype = dnn.getVar("ODAcctType");
+    if (configaccttype !== null && configaccttype.indexOf(dnn.getVar("FromAcctType")) === -1) return true;
+        var configpvct = dnn.getVar("ODPVCT");
+        if (configpvct.indexOf(GetToAcctType()) === -1) {
+            return true;
+        }
+        var flag = false;
+        var datap = {
+            toacctid: toacctid,
+            type: GetToAcctType(),
+            fromacctid: fromacctid,
+            bankcode: "",
+            fromaccttype: dnn.getVar("FromAcctType")
+        };
+        $.ajax({
+            type: "POST",
+            url: bsrbtransfer + "GetAccount",
+            beforeSend: sfrbtransfer.setModuleHeaders,
+            data: datap,
+            cache: false,
+            async: false,
+            success: function (result) {
+                if (typeof result !== "undefined" && result != null) {
+                    if (result.STATUSCODE !== "000000") {
+                        ShowMessage(result.MESSAGE);
+                        flag= false;
+                    }
+                }
+                flag= true;
+            },
+            error: function (xhr, textStatus) {
+                RBAjaxError(xhr, textStatus);
+                return false;
+            }
+        });
+    return flag;
+}
+
+function ValidLCTOtherBankName() {
+    return VIBMessage.regLCTOtherBankName.exec($("#txtLCTBankName").val())==null;
+}
+
+function ValidLCTBenName(name) {
+    return VIBMessage.regLCTBenAcctName.exec(name) == null;
+}
+
+function ValidLCTOtherBranchName(name) {
+    return VIBMessage.regLCTOtherBranchName.exec(name) == null;
+}
+
+function ShowHideTyGia(){
+    if(GetToAcctType() !=ToAcctType.VIBAccount){
+        $("#trTranBaseAmt, #trTranBaseAmt2").hide();
+        return;
+    }
+    var toccy=$("#hdfToAcctCcy").val();
+    if(toccy == "")toccy="VND";
+    var fromccy=GetCcy();
+    if(fromccy != toccy){
+             $("#trTranBaseAmt, #trTranBaseAmt2").show();
+
+             //$("#txtAmout").change();
+             if(dnn.getVar("ExchangeRate_"+fromccy+"_"+toccy)==undefined){
+                var datap = {
+                branch: dnn.getVar("DRACCTBRANCH_"+$('#hdfFromAcct').val()),
+                fromccy: fromccy,
+                toccy: toccy,
+                };
+                $.ajax({
+                    type: "GET",
+                    url: bsrbtransfer + "LayTyGia",
+                    beforeSend: sfrbtransfer.setModuleHeaders,
+                    data: datap,
+                    cache: false,
+                    success: function (result) {
+                        if (typeof result !== "undefined" && result != null) {
+                            if (result.STATUSCODE === "000000") {
+                                dnn.setVar("strExchangeRate_"+GetCcy()+"_"+$("#hdfToAcctCcy").val(),result.strExchangeRate);
+                                dnn.setVar("ExchangeRate_"+GetCcy()+"_"+$("#hdfToAcctCcy").val(),result.ExchangeRate.toString());
+                                dnn.setVar("VIBExchangeRate",result.ExchangeRate.toString());
+                                $("#ltTranBaseAmt2").html("1 "+GetCcy()+" ~ "+ result.strExchangeRate);
+                            }
+                        }
+                    },
+                    error: function (xhr, textStatus) {
+                        RBAjaxError(xhr, textStatus);
+                    }
+                });
+             }
+             else{
+                dnn.setVar("VIBExchangeRate",dnn.getVar("ExchangeRate_"+GetCcy()+"_"+toccy));
+                $("#ltTranBaseAmt2").html("1 "+fromccy+" ~ "+ dnn.getVar("strExchangeRate_"+GetCcy()+"_"+toccy));
+             }
+        }
+        else{
+            $("#trTranBaseAmt, #trTranBaseAmt2").hide();
+        }
+}

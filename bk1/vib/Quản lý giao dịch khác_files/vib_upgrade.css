@@ -1,0 +1,5 @@
+.dnnFormValidationSummary{font-size:14px; margin-top:30px;background:#f7eaea url(../../../images/error-icn.png) no-repeat 10px center;text-shadow:0px 1px 1px #fff;color:#900;border:2px #df4a40 solid;}
+.dnnFormSuccess{background:#ecffeb url(../../../images/success-icn.png) no-repeat 10px center;border:2px #64b657 solid;color:#358927}
+.page-break a:link, .page-break a:visited, .page-break a:active {
+    text-decoration: none;
+}

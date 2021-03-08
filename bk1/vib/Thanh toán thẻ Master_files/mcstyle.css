@@ -1,0 +1,80 @@
+﻿#lblPaynowF1 {
+    display: block;
+    padding-top: 10px;
+}
+#kytu {
+    display: inline-block;
+    float: left;
+    padding: 20px 0 0;
+}
+#spnotext {
+    float: left;
+    width: 30px !important;
+}
+.box-bot-grey {
+    width: 690px !important;
+}
+.box-grey
+{
+   width: 658px !important;
+    padding: 15px;
+}
+.vac
+{
+    border: none;
+    padding: 0px;
+    margin: 0px;
+}
+
+.box-grey2
+{
+    width: 658px !important;
+}
+.spec-header div.spec-header-mid, .spec-header1 div.spec-header-mid 
+{
+    width: 622px;
+}
+.box-nd1 
+{
+    width: 648px;
+}
+.form-footer 
+{
+    position: relative;
+    width: 690px;
+}
+.form-footer a
+{
+    cursor:pointer;
+}
+
+.form-footer a:hover
+{
+    cursor:pointer;
+}
+.button-finish{position:absolute;right:0px;top:15px;
+background:url(../images/button-next.png) no-repeat;width:113px;height:38px; }
+.button-finish:hover
+{
+    position:absolute;right:0px;top:15px;
+    background:url(../images/button-next-hover.png) no-repeat;width:113px;height:38px; 
+}
+.button-finish a
+{
+    text-decoration:none;display:block;
+    background: url(../images/arrow-trang-mini.png) no-repeat 90% 50%;
+    color:#fff;font-size:15px;
+    font-weight:bold;
+    text-shadow: 0px 1px 1px #d35515;
+    line-height:36px;padding-left:18px;
+}
+.button-next a 
+{
+    cursor:pointer;
+}
+pre {
+    overflow: hidden;
+    white-space: pre-wrap;
+    width: 450px;
+    word-wrap: break-word;
+}

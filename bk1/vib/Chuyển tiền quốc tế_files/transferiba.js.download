@@ -1,0 +1,1468 @@
+﻿var rbtransferIBA = {
+    sf: null,
+    bs: null,
+    Init: function (moduleid) {
+        this.sf = $.ServicesFramework(moduleid);
+        this.bs = this.sf.getServiceRoot('RBTransferController') + 'WebAPI/';
+        $("#ddlFromAcct").selectmenu({
+            style: 'popup',
+            width: '373px',
+            format: rbtransferIBA.ddlFromAcctFormatting
+        });
+        $("#txtAmount").autoNumeric();        
+        $("#ddlToAccount").selectmenu({
+            style: 'popup',
+            width: '373px',
+            format: rbtransferIBA.ddlToAcctFormatting
+        });
+        $("#ddlInternationalBankList,#ddlInterBank").selectmenu({
+            style: 'popup',
+            width: '373px',
+            format: rbtransferIBA.ddlBankListFormatting
+        });
+        $("#txtInternationalSwiftCode").change(function () {
+            rbtransferIBA.txtSwiftCode_Change(this);
+        });
+        $("#txtInterSwiftCode").change(function () {
+            rbtransferIBA.txtSwiftCode_Change(this);
+        });
+        $('.upper').focusout(function(){
+            $(this).val($(this).val().toUpperCase());
+        });
+        $('.notallowspecialchar').focusout(function(){
+            if($(this).val()!=""){
+                $(this).val($(this).val().replace(/[^a-zA-Z0-9 ]/g,""));
+            }
+        });
+        $('#txtInvoiceNo,#txtPassportNo,#txtVisaNo').focusout(function(){
+            if($(this).val()!=""){
+                $(this).val($(this).val().replace(/ /g,"").replace(" ",""));
+            }
+        });
+
+
+        $("#ddlToAccount").change(function () {
+            $("#divBenInfo").removeClass("hidden");
+            var benid = $("#ddlToAccount").val();
+            var datap = {
+                id: benid,
+                moduleid: "IBA",
+            };
+            rbtransferIBA.GetBenInfo(datap);
+            $("#rbtSelectAccount").prop('checked', true);
+            $("#divInternationalBenBank").removeClass("hidden");
+            $("#divInputBank").addClass("hidden");
+            $("#txtAddNewAccount").attr("readonly","readonly");
+            //$("#ddlCountry").prop('disabled', true);
+            $(".chkaddben").addClass("hidden");
+			$("#ddlMucDich").attr("style", "pointer-events: none;"); 
+            setReadOnly("#txtVisaNo,#txtPassportNo,#txtIBAN,#txtBSB",true);
+        });
+        $("#rbtSelectAccount").click(function () {            
+            $(".chkaddben").addClass("hidden");
+            $("#divInternationalBenBank").removeClass("hidden");
+            $("#divInputBank").addClass("hidden");
+            $("#ddlToAccount").change();
+            $("#txtAddNewAccount").attr("readonly","readonly");
+            $("#divBenInfo").removeClass("hidden");
+            //$("#ddlCountry").prop('disabled', true);
+            setReadOnly("#txtVisaNo,#txtPassportNo,#txtIBAN,#txtBSB",true);
+            $("#ddlMucDich").attr("style", "pointer-events: none;"); 
+
+        });
+        $("#rbtAddNewAccount").click(function () {
+            $("#pNoteInput").removeClass("hidden");
+            $(".chkaddben").removeClass("hidden");
+            $("#divInternationalBenBank").removeClass("hidden");
+            $("#divInputBank").removeClass("hidden");
+            $('#divBankInfoFromBenList').addClass("hidden");
+            $('#divBenOtherBank').addClass("hidden");
+            if(!isedit){
+                $('#txtAddNewAccount').val('');
+                $('#txtReceiveAcctName').val('');
+                $('#txtReceiveAddress').val('');
+                rbtransferIBA.ClearBenInfo();
+            }
+
+            $('#ddlToAccount').selectmenu("value", -1);
+            $('#txtBen2Swift').val("");
+            $("#spBen2BankName").html("");
+            $('#txtBen3BankName').val("");
+            $('#txtBen3BranchName').val("");
+            $('#txtBen3Address').val("");
+            $('#txtBen3AddressCity').val("");
+            $('#txtBen3AddressCountry').val("");
+            $("#txtAddNewAccount").removeAttr("readonly");
+            $("#divBenInfo").removeClass("hidden");
+
+
+            //$("#ddlCountry").prop('disabled', false);
+            $("#ddlCountry").removeAttr("style");
+            $("#ddlMucDich").removeAttr("style");
+            setReadOnly("#txtVisaNo,#txtPassportNo,#txtIBAN,#txtBSB",false);
+        });
+        $("#rdbInternationalName,#rdbInternationalSwift").click(function () {
+            if (this.id == "rdbInternationalName") {
+                $("#tblInternationalSwift").addClass("hidden");
+            } else {
+                $("#tblInternationalSwift").removeClass("hidden");
+                $("#lnkInternationalNameCancel").click();
+            }
+        });
+        $("#rdbInterName,#rdbInterSwift").click(function () {
+            if (this.id == "rdbInterName") {
+                $("#tblInterSwift").addClass("hidden");
+            } else {
+                $("#tblInterSwift").removeClass("hidden");
+                $('#lnkInterNameCancel').click();
+            }
+        });
+        $("#ddlInternationalBankList").change(function () {            
+            $("#rdbInternationalName").click();
+            $("#txtInternationalSwiftCode").val("");
+            if (this.value != BIC_OTHER && this.value != ""&& this.value != "-1") {                
+                $("#divInternationalBankLBL").removeClass("hidden");
+                var name = $("#ddlInternationalBankList").find(":selected").text();
+                $("#divInternationalBankLBL").find("span").html(name.replace(this.value,"<span style='font-weight: bold;'>"+this.value+"</span>"));
+                $("#ddlInternationalBankList-button").css("display","block");
+            } else {
+                $("#divInternationalBankLBL").addClass("hidden");
+                $("#divInternationalBankListOther").removeClass("hidden");
+                $("#ddlInternationalBankList").addClass("hidden");
+                $('#tblInternationalName').removeClass("hidden");
+                $("#ddlInternationalBankList-button").css("display","none");
+            }
+        });
+        $("#ddlInterBank").change(function () {            
+            $("#rdbInterName").click();
+            $("#txtInterSwiftCode").val("");
+            if (this.value != BIC_OTHER && this.value != ""&& this.value != "-1") {
+                $("#divInterBankLBL").removeClass("hidden");
+                var name = $("#ddlInterBank").find(":selected").text();
+                $("#divInterBankLBL").find("span").html(name.replace(this.value,"<span style='font-weight: bold;'>"+this.value+"</span>"));
+                $("#ddlInterBank-button").css("display","block");
+            } else {
+                $("#divInterBankLBL").addClass("hidden");
+                $("#divInterBankListOther").removeClass("hidden");
+                $("#ddlInterBank").addClass("hidden");
+
+                $('#tblInterName').removeClass("hidden");
+                $("#ddlInterBank-button").css("display","none");
+            }
+        });
+        $('#lnkInternationalNameCancel').click(function () {
+            $('#tblInternationalName').addClass("hidden");
+            $('#divInternationalBankListOther').addClass("hidden");
+            $('#txtInternationalNameBankName').val('');
+            $("#ddlInternationalBankList-button").css("display","block");
+            $("#ddlInternationalBankList").removeClass("hidden");
+        });
+        $('#lnkInterNameCancel').click(function () {
+            $('#tblInterName').addClass("hidden");
+            $('#divInterBankListOther').addClass("hidden");
+            $('#divInterBankList').removeClass("hidden");
+            $('#txtInterNameBankName').val('');
+            $("#ddlInterBank-button").css("display","block");
+            $("#ddlInterBank").removeClass("hidden");
+        });
+        $('#chkInterBank').change(function () {
+            if ($(this).is(':checked')) {
+                $('#Intermediary_bank_details').removeClass("hidden");
+            } else {
+                $('#Intermediary_bank_details').addClass("hidden");
+            }
+        });
+        //$("#txtAmount,#ddlBenChiuPhi").change(function () {
+        //    rbtransferIBA.GetFee();
+        //});
+        $("#txtAmount,#ddlBenChiuPhi,#ddlCcy,#ddlFromAcct").change(function () {
+            if ($('#txtAmount').val() == "") {
+                return;
+            }
+            rbtransferIBA.GetFee();
+        });
+        $("#ddlMucDich").change(function () {
+            rbtransferIBA.ddlMucDich_Change();            
+            $("#txtDescription").val("");
+        });
+        $("#ddlChungTu").change(function () {
+            if ($(this).val() == "-1") {
+                return;
+            }  
+            $("#divInternationalChungtuFile").show(); 
+            $(".divDocOld").removeClass("hidden");    
+            if ($(this).val() != "chungtucu") {
+                //$("#divInternationalChungtuFile").show();
+                //$("#trNoteOldDoc").hide(); 
+                $(".divDocOld").addClass("hidden"); 
+            } else {                
+                //$("#divInternationalChungtuFile").hide();
+                //$("#trNoteOldDoc").show();
+                var PurposeCode=$("#ddlMucDich").val();
+                var InvoiceNo=$("#txtInvoiceNo").val();
+                var PassportNo=$("#txtPassportNo").val();                
+                var datap = {
+                    purposecode: PurposeCode,
+                    passportno: PassportNo,
+                    invoiceno: InvoiceNo
+                };
+                rbtransferIBA.GetDocFileOld(datap);
+            }
+            var lstInputFile = $('input[type="file"]');
+            if (lstInputFile.length > 0) {
+                for (i = 0; i < lstInputFile.length; i++) {
+                    lstInputFile[i].value = "";
+                }
+            }
+            $(".divdocExpired").removeClass("hidden");
+            $(".divdocExpired").addClass("hidden");
+            $(".divdocExpired").attr("vib-active","N");
+            var required_expireddate = $("#ddlMucDich").find(":selected").attr("required-expireddate");
+            if (required_expireddate != undefined) {
+                var arrEx = required_expireddate.split(";");
+                if(arrEx.length>0){
+                    for (var i = 0; i < arrEx.length; i++) {
+                        $("#divDateExpired"+arrEx[i]).removeClass("hidden");
+                        $("#divDateExpired"+arrEx[i]).attr("vib-active","Y");
+                    }
+
+                }
+            } 
+        });
+
+        //xu ly cac buoc
+        $("#aNextToStep2").click(function () {
+            $('#pMessage').hide();
+            var fromid = $('#ddlFromAcct').val();
+            if (fromid == '') {
+                ShowMessage("chuachontaikhoannguon");
+                return;
+            }
+            $('#step2').show();
+            $('#box1').attr('class', 'spec-header2').toggleClass('daqua');
+            $('.boxstep1').attr('class', 'box-grey');
+            $('.ns1').hide();
+            $('.nsb1').toggleClass('next-step-bot').toggleClass('box-bot-grey');
+            $('#box2').attr('class', 'spec-header1');
+        });
+        $("#aNextToStep3").click(function () {
+            $('#pMessage').hide();
+            if($("#ddlCountry").val()=="-1"){
+                ShowMessage(messageObj.IBA_Message_InputBankCountry);
+                return;
+            }
+
+            var acctid = $("#txtAddNewAccount").val();
+
+            var fromid = $('#ddlFromAcct').val();
+            var actfromben = $('#rbtSelectAccount:checked').val() === "rbtSelectAccount";
+            if (acctid === '') {
+                ShowMessage(messageObj.IBA_Message_Require);
+                return;
+            }
+            if (acctid === fromid) {
+                ShowMessage(messageObj.IBA_Message_AcctIDNotValid);
+                return;
+            }
+
+            var valid = rbtransferIBA.ValidInternationBank();
+            if (!valid) return;
+            if($("#ddlMucDich").val()=="-1"){
+                ShowMessage(messageObj.IBA_Message_ChonMucDich);
+                return;
+            }
+            var required_passport = $("#ddlMucDich").find(":selected").attr("required-passport");
+            if (required_passport != undefined && required_passport == "Y") {
+                if($("#txtPassportNo").val()==""){
+                   ShowMessage(messageObj.IBA_Message_InputPassportNo);     
+                   return;
+                }
+                if($("#txtPassportExpiry").val()==""){
+                   ShowMessage(messageObj.IBA_Message_InputPassportExpired);     
+                   return;
+                }
+                if(!isDate($("#txtPassportExpiry").val())){  
+                   return;
+                }
+            }
+
+            var valid_Visa = checkkytu($('#txtVisaNo').val(), kytudacbiet);
+            if (valid_Visa) {
+                ShowMessage(messageObj.IBA_Message_SpecicalChar);
+                return;
+            }  
+            var valid_passport = checkkytu($('#txtPassportNo').val(), kytudacbiet);
+            if (valid_passport) {
+                ShowMessage(messageObj.IBA_Message_SpecicalChar);
+                return;
+            }              
+
+
+            var required_visa = $("#ddlMucDich").find(":selected").attr("required-visa");
+            var extvisa= VISA_EXEMPTION.indexOf($("#ddlCountry").val()); 
+            if (required_visa != undefined && required_visa == "Y") {
+                if($("#txtVisaNo").val()==""&& extvisa== -1){
+                   ShowMessage(messageObj.IBA_Message_InputVisaNo);     
+                   return;
+                }
+                if($("#txtVisaExpiry").val()==""&& extvisa== -1){
+                   ShowMessage(messageObj.IBA_Message_InputVisaExpired);     
+                   return;
+                }     
+                if(extvisa == -1){           
+                    if (!isDateVisa($("#txtVisaExpiry").val())) {                        
+                       return;
+                    }
+                }
+            }
+
+            if (INTERNATIONAL_REQUIRED_BSB.indexOf($("#ddlCountry").val()) != -1) {
+                var bsbTemp=$("#txtBSB").val();
+                if(bsbTemp==""){
+                    ShowMessage(messageObj.IBA_Message_InputBSB);     
+                    return;
+                }else if(bsbTemp.length<6){
+                    ShowMessage(messageObj.IBA_Message_InvalidBSB);     
+                    return;
+                }
+            }
+            // if (INTERNATIONAL_REQUIRED_IBAN.indexOf($("#ddlCountry").val()) != -1&&$("#txtIBA").val()=="") {
+            //     ShowMessage(messageObj.IBA_Message_InputIBAN);     
+            //     return;
+            // }           
+
+            ShowStep3();
+            return;
+
+        });
+        $("#aNextToStep4").click(function () {
+            if ($("#txtAmount").val() == "") {
+                ShowMessage(messageObj.IBA_Message_AmountNotValid);
+                return;
+            }
+            var limit_type = $("#ddlMucDich").find(":selected").attr("required-limit-type");
+            if (limit_type != undefined && limit_type == "INVOICE") {
+                if($("#txtInvoiceNo").val()==""){
+                   ShowMessage(messageObj.IBA_Message_InputInvoiceNo);     
+                   return;
+                }            
+
+                if(!checkregex($("#txtInvoiceNo").val(),regexInvoice)){
+                    ShowMessage(messageObj.IBA_Message_InvoiceNo_SpecicalChar);     
+                    return;
+                }             
+            }
+            ShowStep4();
+            return;
+        });
+        $("#ddlCountry").change(function() {
+            if (INTERNATIONAL_REQUIRED_BSB.indexOf(this.value) != -1) {                
+                $("#tblBSB").removeClass("hidden");
+            } else {
+                $("#txtBSB").val("");
+                $("#tblBSB").addClass("hidden");
+            }
+            if (INTERNATIONAL_REQUIRED_IBAN.indexOf(this.value) != -1||INTERNATIONAL_ALWAY_REQUIRED_IBAN.indexOf(this.value) != -1) {
+                $("#tblIBAN").removeClass("hidden");
+            } else {
+                $("#txtIBAN").val("");
+                $("#tblIBAN").addClass("hidden");
+            }
+            rbtransferIBA.GetBICbyCountry();
+        });
+        $("#ddlCountry").change();
+
+        $("#txtBSB").keydown(function (e) {
+        // Allow: backspace, delete, tab, escape, enter and .
+        if ($.inArray(e.keyCode, [8, 9, 27, 13, 110]) !== -1 ||
+            // Allow: Ctrl+A
+            (e.keyCode == 65 && e.ctrlKey === true) ||
+            // Allow: Ctrl+C
+            (e.keyCode == 67 && e.ctrlKey === true) ||
+            // Allow: Ctrl+X
+            (e.keyCode == 88 && e.ctrlKey === true) ||
+            // Allow: home, end, left, right
+            (e.keyCode >= 35 && e.keyCode <= 39)) {
+            // let it happen, don't do anything
+            return;
+        }
+        // Ensure that it is a number and stop the keypress
+        if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+            e.preventDefault();
+        }
+    });
+    },
+    FileChange: function (a) {
+        var fname=a.files[0].name;
+        if(a.files[0].size/1024>maxSizeFile){
+            index = $('input[type="file"]').length;
+            alert(messageObj.IBA_Message_FileOverSize);
+            a.value="";
+            fname="";
+        }
+        $("#" + a.id).parent().parent().find("span.spAttachFile").html(fname);       
+       
+    },
+    ClearBenInfo: function () {
+        $('#txtBen2Swift').val("");
+        $("#spBen2BankName").val("");
+        $('#txtAddNewAccount').val("");
+        $('#txtReceiveAcctName').val("");
+        $('#txtReceiveAddress').val("");     
+        $('#txtBen3BankName').val("");         
+        $('#txtBen3BranchName').val("");         
+        $('#txtBen3Address').val("");         
+        $('#txtBen3AddressCity').val("");    
+        $("#txtInterSwiftCode").val("");    
+        $('#txtInterBankName').val("");
+        $('#txtInterBranch').val("");
+        $('#txtInterCity').val("");        
+
+        $("#txtPassportNo").val("");                            
+        $("#txtPassportExpiry").val("");   
+        $("#txtVisaNo").val("");
+        $("#txtVisaExpiry").val("");
+        $("#txtIBAN").val("");
+        $("#txtBSB").val("");
+        $("#txtInvoiceNo").val("");                        
+    },
+    GetBenInfo: function (datap) {
+        $.ajax({
+            type: "GET",
+            url: this.bs + "GetBenInfo",
+            beforeSend: this.sf.setModuleHeaders,
+            data: datap,
+            cache: false,
+            contentType: "application/json; charset=utf-8",
+            success: function (rs) {
+                if (rs.data != null) {
+                    var ben = rs.data;
+                    rbtransferIBA.BindBenInfo(ben);
+                    $("#pNoteInput").removeClass("hidden");
+                }                
+                $("#ddlToAccount").prop('checked', true);
+                if(rs.extinfo!=null&&rs.extinfo.length){
+                    var extinfo=rs.extinfo;
+                    for (ij = 0; ij < extinfo.length; ij++) {
+                        if(extinfo[ij].Name=="COUNTRY"){
+                            if(extinfo[ij].Value==null||extinfo[ij].Value==""){
+                                ShowMessage(messageObj.IBA_Message_PleaseSelectOtherBen);
+                                return;
+                            }
+                            $("#ddlCountry").val(extinfo[ij].Value);
+                            $("#ddlCountry").change();    
+                            $("#ddlCountry").attr("style", "pointer-events: none;"); 
+                        }                      
+                        
+                        if(extinfo[ij].Name=="PASSPORT"){
+                            $("#txtPassportNo").val(extinfo[ij].Value);                            
+                        }
+                        else if(extinfo[ij].Name=="PASSPORTEXPIRY"){
+                            if(!iseditBen){
+                                $("#txtPassportExpiry").val(extinfo[ij].Value);   
+                            }
+                        }
+                        else if(extinfo[ij].Name=="VISA"){
+                            $("#txtVisaNo").val(extinfo[ij].Value);   
+                        }
+                        else if(extinfo[ij].Name=="VISAEXPIRY"){
+                            if(!iseditBen){
+                                $("#txtVisaExpiry").val(extinfo[ij].Value);   
+                            }
+                        }
+                        else if(extinfo[ij].Name=="IBAN"){
+                            $("#txtIBAN").val(extinfo[ij].Value);  
+                        }
+                        else if(extinfo[ij].Name=="BSB"){
+                            $("#txtBSB").val(extinfo[ij].Value);  
+                        }
+                        else if(extinfo[ij].Name=="INVOICE"){
+                            $("#txtInvoiceNo").val(extinfo[ij].Value);  
+                        }
+                        else if(extinfo[ij].Name=="PURPOSE"){
+                            $("#ddlMucDich").val(extinfo[ij].Value); 
+                            //$("#ddlMucDich").change();
+                            rbtransferIBA.ddlMucDich_Change();
+                            $("#ddlMucDich").attr("style", "pointer-events: none;"); 
+
+                        }
+                    }
+                }
+            },
+            error: function () {
+                showMessageWhenAjaxError();
+            }
+        });
+    },
+    BindBenInfo: function (ben) {
+        // if(ben.AddressCountry==null||ben.AddressCountry==""){
+        //     ShowMessage(messageObj.IBA_Message_PleaseUpdateBen);
+        // }
+        // $("#ddlCountry").val(ben.AddressCountry);
+        // if(ben.AddressCountry==null||ben.AddressCountry==""){
+        //     ShowMessage(messageObj.IBA_Message_PleaseSelectOtherBen);
+        //     return;
+        // }
+        // $("#ddlCountry").change();    
+        // $("#ddlCountry").attr("style", "pointer-events: none;"); 
+        $('#txtBen2Swift').val("");
+        $('#txtBen3BankName').val("");
+        if (ben.BankInfo != null) {
+            var bankinfo = ben.BankInfo;
+            if (bankinfo.BankId != null && bankinfo.BankId != '') {
+                $("#divBankInfoFromBenList").removeClass("hidden");
+                $("#divBenOtherBank").addClass("hidden");
+                $('#txtBen2Swift').val(bankinfo.BankId);
+                $("#spBen2BankName").html(bankinfo.Name);
+                $('#txtAddNewAccount').val(ben.Account.AcctId);
+                $('#txtReceiveAcctName').val(ben.Name);
+                $('#txtReceiveAddress').val(ben.Address);
+                //$('#txtReceiveCity').val(ben.AddressCity);
+                //$('#txtReceiveCountry').val(ben.AddressCountry);
+            } else {
+                //BindInternationalName(bankinfo);
+                $("#divBenOtherBank").removeClass("hidden");
+                $('#divBankInfoFromBenList').addClass("hidden");
+
+                $('#txtAddNewAccount').val(ben.Account.AcctId);
+                $('#txtReceiveAcctName').val(ben.Name);
+                $('#txtReceiveAddress').val(ben.Address);
+                //$('#txtReceiveCity').val(bankinfo.AddressCity);
+                //$('#txtReceiveCountry').val(bankinfo.AddressCountry);
+
+                $('#txtBen3BankName').val(bankinfo.Name);
+                $('#txtBen3BranchName').val(bankinfo.BranchName);
+                $('#txtBen3Address').val(bankinfo.Address);
+                $('#txtBen3AddressCity').val(bankinfo.AddressCity);
+                //$('#txtBen3AddressCountry').val(bankinfo.AddressCountry);
+            }
+        }
+        if (ben.InterBank != null) {
+            var interbank = ben.InterBank;
+            if (interbank.BankId != '' || interbank.Name != '') {
+                $('#chkInterBank').prop('checked', true);
+                $('#Intermediary_bank_details').removeClass("hidden");
+            } else {
+                $('#chkInterBank').prop('checked', false);
+                $('#Intermediary_bank_details').addClass("hidden");
+            }
+            rbtransferIBA.BindInterName(interbank);
+        }
+        //$("#ddlMucDich").change();
+        rbtransferIBA.ddlMucDich_Change();
+    },
+    BindInterName: function (bankinfo) {
+        if (bankinfo.BankId != '') {               
+            var bFound=false;
+            $("#ddlInterBank option").each(function(){
+                // Add $(this).val() to your list
+                if($(this).val()==bankinfo.BankId){
+                    $("#ddlInterBank").val(bankinfo.BankId).trigger("change").selectmenu().selectmenu('change');
+                    $('#lnkInterNameCancel').click();
+                    bFound=true;
+                }                
+            });
+            if(!bFound){
+                $("#txtInterSwiftCode").val(bankinfo.BankId).change();
+            }
+            // $('#txtInterNameBankName').val(bankinfo.Name);
+            // $('#txtInterNameBranch').val(bankinfo.BranchName);
+            // $('#txtInterNameCity').val(bankinfo.AddressCity);
+            // $('#txtInterNameCountry').val(bankinfo.AddressCountry);
+        } else {
+            $("#rdbInterName").attr("checked","checked");
+            $("#ddlInterBank").val(BIC_OTHER).trigger("change").selectmenu().selectmenu('change');
+            $('#txtInterBankName').val(bankinfo.Name);
+            $('#txtInterBranch').val(bankinfo.BranchName);
+            $('#txtInterCity').val(bankinfo.AddressCity);
+            //$('#txtInterCountry').val(bankinfo.AddressCountry);
+        }
+
+    },
+    ddlFromAcctFormatting: function (text) {
+        var newText = text;
+        //array of find replaces
+        var findreps = [
+            { find: /^([^\-]+) (PARAM1) /g, rep: '<span class="ui-selectmenu-item-fromacctparam1">$1</span>' },
+            { find: /([^\|><]+) (PARAM2) /g, rep: '<span class="ui-selectmenu-item-fromacctparam2">$1</span>' },
+            { find: /([^\|><]+)$/g, rep: '<span class="ui-selectmenu-item-fromacctparam3" style="font-size: 12px;">$1</span>' },
+        ];
+
+        for (var i in findreps) {
+            newText = newText.replace(findreps[i].find, findreps[i].rep);
+        }
+        return newText;
+    },
+    ddlToAcctFormatting: function (text) {
+        var newText = text;
+        //array of find replaces
+        var findreps = [
+            { find: /^([^\-]+) (PARAM1) /g, rep: '<span class="ui-selectmenu-item-fromacctparam1">$1</span>' },
+            { find: /([^\|><]+) (PARAM2) /g, rep: '<span class="ui-selectmenu-item-fromacctparam2">$1</span>' },
+            { find: /([^\|><]+)$/g, rep: '<span class="ui-selectmenu-item-fromacctparam3">$1</span>' },
+        ];
+
+        for (var i in findreps) {
+            newText = newText.replace(findreps[i].find, findreps[i].rep);
+        }
+        return newText;
+    },
+    ddlBankListFormatting: function (text) {
+        var newText = text;
+        //array of find replaces
+        var findreps = [
+            { find: /^([^\-]+) (PARAM1) /g, rep: '<span class="ui-selectmenu-item-banklistparam1">$1</span>' },
+            { find: /([^\|><]+) (PARAM2) /g, rep: '<span class="ui-selectmenu-item-banklistparam2">$1</span>' },
+            { find: /([^\|><]+)$/g, rep: '<span class="ui-selectmenu-item-banklistparam3">$1</span>' },
+        ];
+
+        for (var i in findreps) {
+            newText = newText.replace(findreps[i].find, findreps[i].rep);
+        }
+        return newText;
+    },
+    txtSwiftCode_Change: function (a) {        
+        var code = a.value.trim();
+        if(code==""){
+            if (a.id == "txtInternationalSwiftCode") {
+                $("#spInternationalSwiftName").html('');            
+            }else{
+                $("#spInterSwiftName").html("");  
+            }
+            return;
+        }  
+        var datap = {
+            code: code.toUpperCase()
+        };
+        $.ajax({
+            type: "GET",
+            url: this.bs + "GetBic",
+            beforeSend: this.sf.setModuleHeaders,
+            data: datap,
+            contentType: "application/json; charset=utf-8",
+            success: function (result) {
+                if (result.STATUSCODE == "000000" && result.DATA != null && result.DATA.length > 0) {
+                    if (a.id == "txtInternationalSwiftCode") {
+                        $("#spInternationalSwiftName").html(result.DATA[0].BankNameAddress);
+                        $("#rdbInternationalSwift").click();
+                        $("#divInternationalBankLBL").addClass("hidden");
+                    } else {
+                        $("#spInterSwiftName").html(result.DATA[0].BankNameAddress);
+                        $("#rdbInterSwift").click();
+                        $("#divInterBankLBL").addClass("hidden");                        
+                    }
+                } else{
+                    ShowMessage(messageObj.IBA_Message_SwiftNotValid)
+                    if (a.id == "txtInternationalSwiftCode") {
+                        $("#spInternationalSwiftName").html("");                        
+                    } else {
+                        $("#spInterSwiftName").html("");  
+                    }
+                }
+            },
+            error: function (xhr, textStatus) {
+                RBAjaxError(xhr, textStatus);
+            }
+        });
+    },
+    GetFee: function () {
+        var amount = $('#txtAmount').autoNumericGet();
+        if (amount <= 0) {
+            alert(messageObj.IBA_Message_InputAmount);
+            return;
+        }
+        var acctid = $('#ddlFromAcct').val();
+        var ccy = $('#ddlCcy').val();
+        var toccy = $('#ddlCcy').val();
+        var feeside = $('#ddlBenChiuPhi').val();
+        var datap = {
+            acctid: acctid,
+            ccy: ccy,
+            toccy: toccy,
+            feeside: feeside,
+            amount: amount
+        };
+        $.ajax({
+            type: "POST",
+            url: this.bs + "CalcFee",
+            beforeSend: this.sf.setModuleHeaders,
+            data: datap,
+            cache: false,
+            success: function (result) {
+                if (result.STATUSCODE == "000000") {
+                    $("#spQuyDoi").html(result.Convert);
+                    $("#spPhiVIB").html(result.FEE);
+                    $("#spExchangeRate").html(result.ExchangeRate);
+                    $("#spPhiNgoaiVIB").html(result.FEE2);
+                    $("#spTotalFee").html(result.TotalFee);
+                    $("#divNext").css("display","block");
+                    $("#divNext").removeClass("hidden");
+                    $("#aNextToStep4").removeClass("hidden");
+                } else {
+                    alert(result.MESSAGE);
+                    $("#divNext").css("display","none");
+                    $("#aNextToStep4").addClass("hidden");
+                }
+            },
+            error: function (xhr, textStatus) {
+                RBAjaxError(xhr, textStatus);
+            }
+        });
+    },
+    ddlMucDich_Change: function () {
+        var doc = $("#ddlMucDich").find(":selected").attr("vib-doc");
+        $("#transfer_chon_chung_tu").css("display", "block");
+        if ($("#ddlChungTu").val() != "chungtucu") {
+            $("#divInternationalChungtuFile").show();
+        }
+        var lstInputFile = $('input[type="file"]');
+        if (doc != undefined && doc != "") {
+            if (lstInputFile.length > 0) {
+                for (i = 0; i < lstInputFile.length; i++) {
+                    //alert($(this).attr("vib-doc"));
+                    if (doc.indexOf(lstInputFile[i].id) != -1) {
+                        $("." + lstInputFile[i].id).show();
+                    } else {
+                        $("." + lstInputFile[i].id).hide();
+                    }
+                    lstInputFile[i].value = "";
+                }
+            }
+        } else {
+            for (i = 0; i < lstInputFile.length; i++) {
+                $("." + lstInputFile[i].id).hide();
+                lstInputFile[i].value = "";
+            }
+        }
+        if ($("#ddlChungTu").val() != "chungtucu" && $("#ddlChungTu").val() != "-1") {
+            $("#divInternationalChungtuFile").show();
+        } else {
+            $("#divInternationalChungtuFile").hide();
+        }
+
+        var required_visa = $("#ddlMucDich").find(":selected").attr("required-visa");
+        if (required_visa != undefined && required_visa == "Y") {
+            $("#tblVisa").removeClass("hidden");
+            $("#txtVisaExpiry").attr("vib-active","Y");
+        } else {
+            $("#tblVisa").addClass("hidden");
+            $("#txtVisaExpiry").attr("vib-active","N");
+            $("#txtVisaNo,#txtVisaExpiry").val("");
+        }
+        var required_passport = $("#ddlMucDich").find(":selected").attr("required-passport");
+
+        if (required_passport != undefined && required_passport == "Y") {
+            $("#tblPassport").removeClass("hidden");
+            $("#txtPassportExpiry").attr("vib-active","Y");
+        } else {
+            $("#tblPassport").addClass("hidden");
+            $("#txtPassportExpiry").attr("vib-active","N");
+            $("#txtPassportNo,#txtPassportExpiry").val("");
+        }
+        if (VISA_EXEMPTION.indexOf($("#ddlCountry").val()) != -1) {
+            $("#tblVisa").addClass("hidden");
+            $("#txtVisaExpiry").attr("vib-active","N");
+            $("#txtVisaNo,#txtVisaExpiry").val("");
+        }
+
+        var required_limit_type = $("#ddlMucDich").find(":selected").attr("required-limit-type");
+        if (required_limit_type != undefined && required_limit_type == "INVOICE") {
+            $("#tblInvoice").removeClass("hidden");
+        } else {
+            $("#tblInvoice").addClass("hidden");
+        }
+        
+        $("#ddlChungTu").change();
+        
+        var maxlength = $("#ddlMucDich").find(":selected").attr("maxlength");                    
+        $("#txtDescription").attr("maxlength", maxlength);
+        $("#spMaxlength").html(maxlength);
+    },
+    uploadfile: function (lstInputFile, index) {
+        if (lstInputFile[index].value != "") {
+            var fileUpload = lstInputFile[index];
+            var files = fileUpload.files;
+            var dateExpiry=$("#txtDateExpired"+lstInputFile[index].id).val();
+
+            var data = new FormData();
+            for (j = 0; j < files.length; j++) {                
+                data.append(files[j].name, files[j]);
+                data.append("fileID", lstInputFile[index].id);
+                data.append("dateExpiry",dateExpiry);
+            }
+            $.ajax({
+                type: "POST",
+                url: this.bs + "UploadFile",
+                beforeSend: this.sf.setModuleHeaders,
+                data: data,
+                contentType: false,
+                processData: false,
+                success: function (result) {
+                    if (result.STATUSCODE == "000000") {
+                        index++;
+                        if (index < lstInputFile.length) {
+                            rbtransferIBA.uploadfile(lstInputFile, index);
+                        } else {
+                            //het file
+                            $('#pMessage').hide();
+                            $("#btnNext").click();
+                        }
+                    } else {
+                        index = lstInputFile.length;
+                        alert(result.STATUSCODE);
+                    }
+                },
+                error: function (err) {
+                    alert(err.statusText);
+                }
+            });
+        
+        }else {
+            if($("#ddlChungTu").val()=="chungtucu" && $("#spDocOld"+lstInputFile[index].id).html()!=""){
+                var dateExpiry=$("#txtDateExpired"+lstInputFile[index].id).val();
+                //  var datap = {
+                //     fileID: lstInputFile[index].id,
+                //     dateExpiry:dateExpiry
+                // };
+                var data = new FormData();                    
+                    data.append("fileID", lstInputFile[index].id);
+                    data.append("dateExpiry",dateExpiry);
+                $.ajax({
+                    type: "POST",
+                    url: this.bs + "UpdateFile",
+                    beforeSend: this.sf.setModuleHeaders,
+                    data: data,
+                    contentType: false,
+                    processData: false,
+                    success: function (result) {
+                        if (result.STATUSCODE == "000000") {
+                            index++;
+                            if (index < lstInputFile.length) {
+                                rbtransferIBA.uploadfile(lstInputFile, index);
+                            } else {
+                                //het file
+                                $('#pMessage').hide();
+                                $("#btnNext").click();
+                            }
+                        } else {
+                            index = lstInputFile.length;
+                            alert(result.STATUSCODE);
+                        }
+                    },
+                    error: function (err) {
+                        alert(err.statusText);
+                    }
+                });   
+            }else{
+                index++;
+                if (index < lstInputFile.length) {
+                    rbtransferIBA.uploadfile(lstInputFile, index);
+                } else {
+                    $('#pMessage').hide();
+                    $("#btnNext").click();
+                }
+            }
+        }
+
+    },
+    validate: function (lstInputFile, index) {
+        $('#pMessage').hide();
+
+        var fl = true;
+        var acctid = $("#txtAddNewAccount").val().trim();
+        var fromid = $('#ddlFromAcct').val();
+        var acctfromben = false;
+        if ($('#rbtSelectAccount:checked').val() === "rbtSelectAccount") {
+            acctfromben = true;
+        }
+        if (acctid === '') {
+            ShowMessage(messageObj.IBA_Message_Require);
+            return false;
+        }
+        var validAcct = checkkytu(acctid, kytudacbiet+"';,.-*");
+        if (validAcct) {
+            ShowMessage(messageObj.IBA_Message_Acct_SpecicalChar);
+            return false;
+        }
+        if (acctid == fromid) {
+            ShowMessage(messageObj.IBA_Message_AcctIDNotValid);
+            return false;
+        }
+
+        var amt = $('#txtAmount').autoNumericGet();
+        if (amt <= 0) {
+            ShowMessage(messageObj.IBA_Message_AmountNotValid);
+            return false;
+        }
+        var valid = checkkytu($('#txtDescription').val(), kytudacbiet);
+        if (valid) {
+            ShowMessage(messageObj.IBA_Message_SpecicalChar);
+            return false;
+        }       
+
+        if (INTERNATIONAL_REQUIRED_BSB.indexOf($("#ddlCountry").val()) != -1) {
+            var bsbTemp=$("#txtBSB").val();
+            if(bsbTemp==""){
+                ShowMessage(messageObj.IBA_Message_InputBSB);     
+                return false;
+            }
+            else if(bsbTemp.length<6){
+                ShowMessage(messageObj.IBA_Message_InvalidBSB);     
+                return;
+            }
+        }
+
+        var required_passport = $("#ddlMucDich").find(":selected").attr("required-passport");
+        if (required_passport != undefined && required_passport == "Y") {
+            if($("#txtPassportNo").val()==""){
+               ShowMessage(messageObj.IBA_Message_InputPassportNo);     
+               return;
+            }
+            if($("#txtPassportExpiry").val()==""){
+               ShowMessage(messageObj.IBA_Message_InputPassportExpired);     
+               return;
+            }
+            if(!isDate($("#txtPassportExpiry").val())){ 
+               return;
+            }
+        }
+        var required_visa = $("#ddlMucDich").find(":selected").attr("required-visa");
+        var extvisa= VISA_EXEMPTION.indexOf($("#ddlCountry").val()); 
+        if (required_visa != undefined && required_visa == "Y") {
+            if($("#txtVisaNo").val()==""&& extvisa== -1){
+               ShowMessage(messageObj.IBA_Message_InputVisaNo);     
+               return;
+            }
+            if($("#txtVisaExpiry").val()==""&& extvisa== -1){
+               ShowMessage(messageObj.IBA_Message_InputVisaExpired);     
+               return;
+            }    
+            if(extvisa == -1){           
+                if (!isDateVisa($("#txtVisaExpiry").val())) {                        
+                   return;
+                }
+            }
+        }
+
+        if (INTERNATIONAL_REQUIRED_IBAN.indexOf($("#ddlCountry").val()) != -1&&$("#ddlCcy").val()=="EUR") {
+            var ibanTemp=$("#txtIBAN").val();
+            if(ibanTemp==""||ibanTemp.length<2){
+                ShowMessage(messageObj.IBA_Message_InputIBAN);     
+                return false;
+            }
+            if(!checkregex(ibanTemp,regexIBAN)){
+                ShowMessage(messageObj.IBA_Message_IBANInvalid);     
+                return false;
+            }  
+        }
+        if (INTERNATIONAL_ALWAY_REQUIRED_IBAN.indexOf($("#ddlCountry").val()) != -1) {
+            var ibanTemp=$("#txtIBAN").val();
+            if(ibanTemp==""||ibanTemp.length<2){
+                ShowMessage(messageObj.IBA_Message_InputIBAN);     
+                return false;
+            }
+            if(!checkregex(ibanTemp,regexIBAN)){
+                ShowMessage(messageObj.IBA_Message_InputIBAN);     
+                return false;
+            } 
+        }
+
+        var suc = rbtransferIBA.ValidInternationBank();
+        if (!suc) fl = false;
+
+
+        if ($("#ddlMucDich").val() == -1) {
+            ShowMessage(messageObj.IBA_Message_ChonMucDich);
+            return false;
+        }
+        if ($("#ddlChungTu").val() == -1) {
+            ShowMessage(messageObj.IBA_Message_ChonChungTu);
+            return false;
+        }
+
+        if($("#txtVisaExpiry").attr("vib-active")=="Y"){
+            if($("#txtVisaExpiry").val()==""){
+               ShowMessage(messageObj.IBA_Message_InputVisaExpired);     
+               return false;
+            } 
+            if (!isDateVisa($("#txtVisaExpiry").val())) {
+                return false;
+            }
+        }
+        if($("#txtPassportExpiry").attr("vib-active")=="Y"){
+            if($("#txtPassportExpiry").val()==""){
+               ShowMessage(messageObj.IBA_Message_InputPassportExpired);     
+               return false;
+            }
+            if(!isDate($("#txtPassportExpiry").val())){
+                return false;
+            }
+        }
+
+        var lstDateEx=$(".divdocExpired");
+        for (var i = 0; i < lstDateEx.length; i++) {
+            var idDateEx=$("#"+lstDateEx[i].id)
+            if(idDateEx.attr("vib-active")=="Y"){
+                var dateExTemp=$("#"+lstDateEx[i].id+" .docExpired").val();
+                if($("#ddlChungTu").val()!= "chungtucu"){
+                    if($("#"+lstDateEx[i].id.replace("divDateExpired","").trim()).val()!=""){
+                        if(dateExTemp=="")
+                        {
+                            ShowMessage(messageObj.IBA_Message_InputDateInvalid);
+                            return false;
+                        }
+                        if(!isDateEx(dateExTemp)){
+                            //ShowMessage(messageObj.IBA_Message_InputDateInvalid);
+                            return false;
+                        }
+                    }
+                }else{
+                    if($("#spDocOld"+lstDateEx[i].id.replace("divDateExpired","").trim()).html()!=""){
+                        if(dateExTemp=="")
+                        {
+                            ShowMessage(messageObj.IBA_Message_InputDateInvalid);
+                            return false;
+                        }
+                        if(!isDateEx(dateExTemp)){
+                            //ShowMessage(messageObj.IBA_Message_InputDateInvalid);
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+
+        $("#hdfInternationalBankList").val($("#ddlInternationalBankList").val());
+        $("#hdfInterBank").val($("#ddlInterBank").val());
+
+        var limit_type = $("#ddlMucDich").find(":selected").attr("required-limit-type");
+        if (limit_type != undefined && limit_type == "INVOICE") {
+            if($("#txtInvoiceNo").val()==""){
+               ShowMessage(messageObj.IBA_Message_InputInvoiceNo);     
+               return;
+            }            
+
+            if(!checkregex($("#txtInvoiceNo").val(),regexInvoice)){
+                ShowMessage(messageObj.IBA_Message_InvoiceNo_SpecicalChar);     
+                return;
+            }             
+        }
+
+
+        var lstInputFile = $('input[type="file"]');
+        if (lstInputFile.length > 0 && fl) {
+            if($("#ddlChungTu").val()!="chungtucu"){
+                for (var e = 0; e < lstInputFile.length; e++) {
+                    if(lstInputFile[e].value != ""){
+                        rbtransferIBA.uploadfile(lstInputFile, 0);
+                        return;
+                    }
+                }
+                var checkdoc = $("#ddlMucDich").find(":selected").attr("vib-doc")
+                if(checkdoc!=null&&checkdoc!=undefined&&checkdoc!=""){
+                    ShowMessage(messageObj.IBA_Message_PleaseInputFile);
+                    return false;
+                } else{
+                    $('#pMessage').hide();
+                    $("#btnNext").click();
+                }
+            }else{
+                $('#pMessage').hide();
+                rbtransferIBA.uploadfile(lstInputFile, 0);
+            }
+        }        
+        return fl;
+    },
+    ValidInternationBank: function () {
+        if ($('#rbtSelectAccount:checked').val() === "rbtSelectAccount") {
+            //truong hop danh ba kh nhap ngan hang khac
+            if ($('#txtBen2Swift').val() == "") {
+                if ($('#txtBen3BankName').val() == "") {
+                    ShowMessage(messageObj.IBA_Message_InputBankName);
+                    return false;
+                }
+                if ($('#txtBen3BranchName').val() == "") {
+                    ShowMessage(messageObj.IBA_Message_InputBranch);
+                    return false;
+                }
+                if ($('#txtBen3Address').val() == "") {
+                    ShowMessage(messageObj.IBA_Message_InputBankAddress);
+                    return false;
+                }
+                if ($('#txtBen3AddressCity').val() == "") {
+                    ShowMessage(messageObj.IBA_Message_InputBankCity);
+                    return false;
+                }
+                if ($('#txtBen3AddressCountry').val() == "") {
+                    ShowMessage(messageObj.IBA_Message_InputBankCountry);
+                    return false;
+                }
+            }
+        } else {
+            if (!rdbInternationalSwift_IsChecked() && !rdbInternationalName_IsChecked()) {
+                ShowMessage(messageObj.IBA_Message_SelectBank);
+                return false;
+            }
+            if (rdbInternationalSwift_IsChecked()) {
+                if ($('#txtInternationalSwiftCode').val().trim().length == 0) {
+                    ShowMessage(messageObj.IBA_Message_SelectBank);
+                    return false;
+                }
+            }
+            if (rdbInternationalName_IsChecked()) {
+                //bo sung them check cac thogn tin khac nua
+                if ($("#ddlInternationalBankList").val() == BIC_OTHER) {
+                    if ($('#txtInternationalNameBankName').val().trim().length == 0) {
+                        ShowMessage(messageObj.IBA_Message_InputBankName);
+                        return false;
+                    }
+                    if ($('#txtInternationalNameBranch').val().trim().length == 0) {
+                        ShowMessage(messageObj.IBA_Message_InputBranch);
+                        return false;
+                    }
+                    if ($('#txtInternationalNameCity').val().trim().length == 0) {
+                        ShowMessage(messageObj.IBA_Message_InputBankCity);
+                        return false;
+                    }
+                    if ($('#ddlCountry').val() == "-1") {
+                        ShowMessage(messageObj.IBA_Message_InputBankCountry);
+                        return false;
+                    }
+                }
+            }
+            if(rdbInternationalName_IsChecked()){
+                 if ($("#ddlInternationalBankList").val() == "-1") {
+                    ShowMessage(messageObj.IBA_Message_SelectBank);
+                    return false;
+                }
+            }
+
+            if ($('#txtReceiveAcctName').val().trim().length == 0) {
+                ShowMessage(messageObj.IBA_Message_InputBenName);
+                return false;
+            }
+            // if ($('#txtReceiveAddress').val().trim().length == 0) {
+            //     ShowMessage(messageObj.IBA_Message_InputBenAddress);
+            //     return false;
+            // }
+            // if ($('#txtReceiveCity').val().trim().length == 0) {
+            //     ShowMessage("Chưa điền thành phố người nhận");
+            //     return false;
+            // }
+            // if ($('#txtReceiveCountry').val().trim().length == 0) {
+            //     ShowMessage("Chưa điền quốc gia người nhận");
+            //     return false;
+            // }
+
+            if ($('#chkInterBank').is(':checked')) {
+                if (!rdbInterSwift_IsChecked() && !rdbInterName_IsChecked()) {
+                    ShowMessage(messageObj.IBA_Message_SelectBank);
+                    return false;
+                }
+                if (rdbInterSwift_IsChecked()) {
+                    if ($('#txtInterSwiftCode').val().trim().length == 0) {
+                        ShowMessage(messageObj.IBA_Message_SwiftNotValid);
+                        return false;
+                    }
+                }
+                if (rdbInterName_IsChecked()) {
+                    if ($('#ddlInterBank').val() == BIC_OTHER) {
+                        if ($('#txtInterBankName').val().trim().length == 0) {
+                            ShowMessage(messageObj.IBA_Message_InputBankName);
+                            return false;
+                        }
+                        if ($('#txtInterBranch').val().trim().length == 0) {
+                            ShowMessage(messageObj.IBA_Message_InputBranch);
+                            return false;
+                        }
+                        if ($('#txtInterCity').val().trim().length == 0) {
+                            ShowMessage(messageObj.IBA_Message_InputBankCity);
+                            return false;
+                        }
+                        //if ($('#txtInterCountry').val().trim().length == 0) {
+                        //    ShowMessage(messageObj.IBA_Message_InputBankCountry);
+                        //    return false;
+                        //}
+                    }
+                }
+
+            }
+        }
+        return true;
+    },
+    ShowContentEdit: function() {
+        iseditBen=true;
+        $("#aNextToStep2,#aNextToStep3").click();
+        ShowStep3();
+        $("#aNextToStep4").click();
+        $('#pMessage').hide();
+        if($('#rbtSelectAccount:checked').val() === "rbtSelectAccount"){
+            $(".chkaddben").addClass("hidden");
+            $('#rbtSelectAccount').click();
+            $("#ddlToAccount").change();
+        }else if($('#rbtAddNewAccount:checked').val() === "rbtAddNewAccount"){
+            $('#rbtAddNewAccount').click();
+            if($("#rdbInternationalSwift").attr("checked")=="checked"){
+                $("#rdbInternationalSwift").click();
+            }else{
+                $("#rdbInternationalName").click();    
+                $("#ddlInternationalBankList").change();            
+            }
+            $(".chkaddben").removeClass("hidden");            
+        }        
+
+        $('#ddlCountry').change();
+        $('#chkInterBank').change();
+        
+        if($('#rdbInterName:checked').val() === "rdbInterName"){            
+            $("#ddlInterBank").change();
+        }
+
+        if($("#ddlMucDich").val()!="-1"){
+            //$("#ddlMucDich").change();
+            rbtransferIBA.ddlMucDich_Change();
+        }
+        $("#txtAmount").change();
+        var maxlength = $("#ddlMucDich").find(":selected").attr("maxlength");
+        $("#txtDescription").attr("maxlength", maxlength);
+        $("#spMaxlength").html(maxlength);
+    },
+    GetDocFileOld: function (datap) {
+        $("#divDocOld span").html("");
+        $.ajax({
+            type: "GET",
+            url: this.bs + "GetDocFileOld",
+            beforeSend: this.sf.setModuleHeaders,
+            data: datap,
+            cache: false,
+            contentType: "application/json; charset=utf-8",
+            success: function (rs) {
+                if(rs.STATUSCODE == "000000"){
+                    if (rs.data != null) {
+                        var arrDoc = rs.data;  
+                        for (var i = 0; i < arrDoc.length; i++) {
+                            var id=arrDoc[i].DocType;
+                            $("#spDocOld"+id).html("");
+                            $("#spDocOld"+id).append('<a href="'+arrDoc[i].URL+'">'+arrDoc[i].FileName+'</a>');
+                            $("#txtDateExpired"+id).val(arrDoc[i].DateExpiry);   
+                            $("#divDocOld"+id).removeClass("hidden");                            
+                        }                  
+                    } else{
+                        ShowMessage(messageObj.IBA_Message_NotFoundDocOld);
+                        $("#ddlChungTu").val("-1").change();
+                    }                       
+                }
+            },
+            error: function () {
+                showMessageWhenAjaxError();
+            }
+        });
+    },
+    GetBICbyCountry: function () {
+        var CountryCode=$("#ddlCountry").val();
+        if(CountryCode==""||CountryCode=="-1"){
+            return;
+        }
+        var datap = {
+            CountryCode: CountryCode
+        };
+        $.ajax({
+            type: "GET",
+            url: this.bs + "GetBICbyCountry",
+            beforeSend: this.sf.setModuleHeaders,
+            data: datap,
+            cache: true,
+            success: function (rs) {
+                if(rs.STATUSCODE == "000000"){                 
+                    $('#ddlInternationalBankList,#ddlInterBank').empty().append('<option selected="selected" value="-1">' + IBA_SELECT + '</option>');
+                    if (rs.data != null) {
+                        var bankArr = rs.data;      
+                        for (var i = 0; i < bankArr.length; i++) {
+                            $('#ddlInternationalBankList,#ddlInterBank').append('<option value="' + bankArr[i].BankID +'">'+ bankArr[i].BankID + ' PARAM1 '+bankArr[i].BankNameAddress+ '</option>');
+                        }                           
+                    }    
+                    $('#ddlInternationalBankList,#ddlInterBank').append('<option value="' + BIC_OTHER + '">' + IBA_SELECT_OTHER + '</option>');        
+                    $("#ddlInternationalBankList,#ddlInterBank").selectmenu({
+                        style: 'popup',
+                        width: '373px',
+                        format: rbtransferIBA.ddlBankListFormatting
+                    }); 
+                }
+                if(isedit){
+                    var interb=$("#hdfInterBank").val();
+                    var bank=$("#hdfInternationalBankList").val();     
+                    
+                    $("#ddlInterBank").val(interb);
+                    if(bank!=""&&bank!="-1"){
+                        $("#ddlInternationalBankList option").each(function(){
+                            // Add $(this).val() to your list
+                            if($(this).val()==bank){
+                                $("#ddlInternationalBankList").val(bank).trigger("change").selectmenu().selectmenu('change');
+                                $('#lnkInternationalNameCancel').click(); 
+                                $('#rdbInternationalName,#rbtAddNewAccount').click();                       
+                            }                
+                        });
+                    }
+                    if(interb!=""&&interb!="-1"){
+                        $("#ddlInterBank option").each(function(){
+                            // Add $(this).val() to your list
+                            if($(this).val()==interb){
+                                $("#ddlInterBank").val(interb).trigger("change").selectmenu().selectmenu('change');
+                                $('#lnkInterNameCancel').click();   
+                                $('#chkInterBank').click();                        
+                            }                
+                        });
+                    }
+                }
+                
+            }
+        });
+            
+    },
+};
+function ShowMessage(message) {
+    $('#pMessage').show().html(message);
+    $('body,html').animate({
+        scrollTop: $('#pMessage').offset().top - 100
+    }, 800);
+}
+function checkkytu(val, invalidChar) {
+    for (i = 0; i < val.length; i++) {
+        if (invalidChar.indexOf(val[i]) >= 0) return true;
+    }
+    return false;
+}
+function checkregex(val, pattern) {    
+    if (pattern.test(val)) {    
+        return true;
+    }
+    return false;
+}
+function rdbInternationalSwift_IsChecked() {
+    return $('#rdbInternationalSwift:checked').val() == "rdbInternationalSwift";
+}
+
+function rdbInternationalName_IsChecked() {
+    return $('#rdbInternationalName:checked').val() == "rdbInternationalName";
+}
+
+function rdbInterSwift_IsChecked() {
+    return $('#rdbInterSwift:checked').val() == "rdbInterSwift";
+}
+
+function rdbInterName_IsChecked() {
+    return $('#rdbInterName:checked').val() == "rdbInterName";
+}
+function ShowStep3() {
+    $('#step3').slideDown();
+    $('#box3').attr('class', 'spec-header1');
+    $('#box2').attr('class', 'spec-header2').toggleClass('daqua');
+    $('.ns2').hide();
+    $('.nsb2').toggleClass('next-step-bot').toggleClass('box-bot-grey');
+    $('.boxstep2').toggleClass('box-grey2').toggleClass('box-grey');
+}
+function ShowStep4() {
+    $('#step4').slideDown();
+    $('#box4').attr('class', 'spec-header1');
+    $('#box3').attr('class', 'spec-header2').toggleClass('daqua');
+    $('.ns3').hide();
+    $('.nsb3').toggleClass('next-step-bot').toggleClass('box-bot-grey');
+    $('.boxstep3').toggleClass('box-grey2').toggleClass('box-grey');
+    $('.button-next').show();
+}
+function isDate(testDate){
+    var date_regex = /^(0[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2])\/(19|20)\d{2}$/ ;
+    if(!(date_regex.test(testDate)))
+    {
+        ShowMessage(messageObj.IBA_Message_InputDatePassportInvalidFormat);
+        return false;
+    }
+    var dateArr = testDate.split("/");
+    var date = new Date(dateArr[2], dateArr[1] - 1, dateArr[0]);
+    //var now = new Date();
+    if (date.getFullYear() != dateArr[2] || (date.getMonth() + 1) != dateArr[1] || date.getDate() != dateArr[0]) {
+        ShowMessage(messageObj.IBA_Message_InputDatePassportInvalid);
+        return false;
+    }
+
+    //"23/10/2015"; // Oct 23
+    var dateParts = testDate.split("/");
+    var dateObject = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+    //dtngaymaiEx
+    if(dateObject.getTime() < dtEx.getTime()){
+        ShowMessage(messageObj.IBA_Message_DatePassportInvalid);
+        return false;
+    }
+    return true;
+}
+function isDateVisa(testDate) {
+    var date_regex = /^(0[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2])\/(19|20)\d{2}$/;
+    if (!(date_regex.test(testDate))) {
+        ShowMessage(messageObj.IBA_Message_DateInvalidFormat);
+        return false;
+    }
+    var dateArr = testDate.split("/");
+    var date = new Date(dateArr[2], dateArr[1] - 1, dateArr[0]);
+    //var now = new Date();
+    if (date.getFullYear() != dateArr[2] || (date.getMonth() + 1) != dateArr[1] || date.getDate() != dateArr[0]) {
+        ShowMessage(messageObj.IBA_Message_InputDateInvalid);
+        return false;
+    }
+    //"23/10/2015"; // Oct 23
+    var dateParts = testDate.split("/");
+    var dateObject = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+    //dtngaymaiEx
+    if (dateObject.getTime() < dtVisaEx.getTime()) {
+        ShowMessage(messageObj.IBA_Message_InputDateVisaInvalid);
+        return false;
+    }
+    return true;
+}
+function isDateEx(testDate){
+    var date_regex = /^(0[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2])\/(19|20)\d{2}$/ ;
+    if(!(date_regex.test(testDate)))
+    {
+        ShowMessage(messageObj.IBA_Message_InputDateInvalid);
+        return false;
+    }
+    var dateArr = testDate.split("/");
+    var date = new Date(dateArr[2], dateArr[1] - 1, dateArr[0]);
+    //var now = new Date();
+    if (date.getFullYear() != dateArr[2] || (date.getMonth() + 1) != dateArr[1] || date.getDate() != dateArr[0]) {
+        ShowMessage(messageObj.IBA_Message_InputDateInvalid);
+        return false;
+    }
+    //"23/10/2015"; // Oct 23
+    var dateParts = testDate.split("/");
+    var dateObject = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+    //dtngaymaiEx
+    if(dateObject.getTime() < dtngaymai.getTime()){
+        ShowMessage(messageObj.IBA_Message_DocDateExInvalid);
+        return false;
+    }
+    return true;
+}
+function isDateExFile(testDate){
+    if(testDate==""){
+        return true;
+    }
+    var date_regex = /^(0[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2])\/(19|20)\d{2}$/ ;
+    if(!(date_regex.test(testDate)))
+    {
+        return false;
+    }
+    return true;
+}
+function isBen(){
+    if($("#ddlToAccount").val()!="-1"){
+        return true;
+    }
+    return false;
+}
+function setReadOnly(control,flag){
+    if(flag){
+        $(control).attr("readonly","readonly");
+    }else{
+        $(control).removeAttr("readonly");
+    }
+}

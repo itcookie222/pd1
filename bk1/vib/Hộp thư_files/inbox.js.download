@@ -1,0 +1,326 @@
+﻿var inbox2view = {
+    sf: null,
+    bs: null,
+    templatefile: "/DesktopModules/VIB.Modules.Inbox2/template.html?v=3",
+    addtemptobody: false,
+    Init: function (moduleid) {
+        this.sf = $.ServicesFramework(moduleid);
+        this.bs = this.sf.getServiceRoot('Inbox2Controller') + 'Customer/';
+        $(document).ajaxStart(function () { $.showprogress('Get information', 'Loading.....', '<img src="/Images/loadingfinal.gif"/>') }).ajaxStop(function () { $.hideprogress() });
+    },
+    InitCustList: function () {
+        $('input[name="check_all"]').bind('click', function () {
+            var status = $(this).is(':checked');
+            $('input[name="check_mail"]').attr('checked', status);
+        });
+        $("#aDeleteAll").click(function () {
+            var arrval = [];
+            var arrval1 = [];
+            var noitem = 0;
+            $('input[name="check_mail"]').each(function () {
+                if ($(this).is(":checked")) {
+                    var usermsgid = $(this).attr("usermsgid");
+                    if (usermsgid) {
+                        arrval1.push(usermsgid);
+                    } else {
+                        arrval.push($(this).attr("msgid"));
+                    }
+                    noitem++;
+                }
+            });
+            inbox2view.Delete(arrval, arrval1, noitem);
+        });
+        $("#ddlCategory").change(function () {
+            inbox2view.ShowList(1);
+        });
+    },
+    InitCustDetail: function () {
+        $("#aDelete").click(function () {
+            var arrval = [];
+            var arrval1 = [];
+            if (dnn.getVar("USERMESSAGEID")) {
+                arrval1.push(dnn.getVar("USERMESSAGEID"));
+            } else {
+                arrval.push(dnn.getVar("MESSAGEID"));
+            }
+            inbox2view.DeleteDetail(arrval, arrval1);
+        });
+        if (dnn.getVar("USERMESSAGEID")) {
+            inbox2view.GetReply(dnn.getVar("USERMESSAGEID"));
+        }
+        $("#aReply").click(function () {
+            inbox2view.Reply();
+        });
+        $("#lnkCTA").click(function () {
+            inbox2view.GoTo();
+        });
+    },
+    ShowHomePage: function () {
+        $.ajax({
+            type: "GET",
+            cache: false,
+            url: this.bs + "GetUnreadHome",
+            beforeSend: this.sf.setModuleHeaders,
+            success: function (result) {
+                if (result.STATUSCODE !== "000000") {
+                    return;
+                }
+                $("#spanTotalUnreadMessage").html(result.totalrecord);
+                $('#messageTable tr:gt(0)').remove();
+                $.get(inbox2view.templatefile, null, function (templates) {
+                    if (!inbox2view.addtemptobody) {
+                        $('body').append(templates);
+                        inbox2view.addtemptobody = true;
+                    }
+                    $("#tempInboxHome").tmpl(result.data).appendTo($("#messageTable"));
+                });
+
+            },
+            error: function (xhr, textStatus) {
+                ADMAjaxError(xhr, textStatus);
+            }
+        });
+    },
+    ReduceLongString: function (str, maxLength) {
+        if (str.length > maxLength) {
+            return str.substring(0, maxLength - 1) + '...';
+        }
+        return str;
+    },
+    replaceNewLine: function (str) {
+        return str.replace(/\n/g, "<br>");
+    },
+    Delete: function (id,usermsgid,soluong) {
+        if (id.length === 0 && usermsgid.length === 0) {
+            alert(vibcode.msgDeleteEmpty);
+            return;
+        }
+        if (!confirm(vibcode.msgDeleteConfirm.replace("{{NoMsg}}", soluong))) {
+            return;
+        }
+        var datap = {
+            id: JSON.stringify(id),
+            usermsgid: JSON.stringify(usermsgid),
+        };
+        $.ajax({
+            type: "POST",
+            url: this.bs + "Delete",
+            beforeSend: this.sf.setModuleHeaders,
+            data: datap,
+            cache: false,
+            success: function (result) {
+                if (typeof result !== "undefined" && result != null) {
+                    alert(result.MESSAGE);
+                    inbox2view.ShowList(1);
+                }
+            },
+            error: function (xhr, textStatus) {
+                RBAjaxError(xhr, textStatus);
+            }
+        });
+    },
+    DeleteDetail: function (id, usermsgid) {
+        if (id.length === 0 && usermsgid.length === 0) {
+            alert(vibcode.msgDeleteEmpty);
+            return;
+        }
+        if (!confirm(vibcode.msgDeleteConfirm)) {
+            return;
+        }
+        var datap = {
+            id: JSON.stringify(id),
+            usermsgid: JSON.stringify(usermsgid),
+        };
+        $.ajax({
+            type: "POST",
+            url: this.bs + "Delete",
+            beforeSend: this.sf.setModuleHeaders,
+            data: datap,
+            cache: false,
+            success: function (result) {
+                if (typeof result !== "undefined" && result != null) {
+                    alert(result.MESSAGE);
+                    window.location = result.ListURL;
+                }
+            },
+            error: function (xhr, textStatus) {
+                RBAjaxError(xhr, textStatus);
+            }
+        });
+    },
+    ShowList: function (pageindex) {
+        $("div[ret='divpaging']").html("");
+        $("#ulMessageList").find("li").remove();
+        var datap = {
+            pageindex: pageindex,
+            cateid: $("#ddlCategory").val(),
+            status: $('option:selected', $("#ddlCategory")).attr('stt')
+        };
+        $.ajax({
+            type: "GET",
+            data: datap,
+            cache: false,
+            url: this.bs + "Gets",
+            beforeSend: this.sf.setModuleHeaders,
+            success: function (result) {
+                if (result.STATUSCODE !== "000000") {
+                    return;
+                }
+
+                $.get(inbox2view.templatefile, null, function (templates) {
+                    if (!inbox2view.addtemptobody) {
+                        $('body').append(templates);
+                        inbox2view.addtemptobody = true;
+                    }
+                    $("#tempInboxList").tmpl(result.data).appendTo($("#ulMessageList"));
+                    if (result.totalrecord === 0) {
+                        $("#divCheckAll").hide();
+                    } else {
+                        $("#divCheckAll").show();
+                    }
+                    var totalpage = Math.ceil(result.totalrecord / result.pagesize);
+                    if (result.totalrecord <= result.pagesize) {
+                        $("div[ret='divpaging']").hide();
+                    } else {
+                        var startpage = 1;
+                        var endpage = totalpage;
+                        if (result.pageindex > 2) {
+                            startpage = result.pageindex - 2;
+                        }
+                        if (totalpage - 2 > result.pageindex) {
+                            endpage = result.pageindex + 2;
+                        }
+                        if (result.pageindex > 1) {
+                            $("div[ret='divpaging']").append("<a href='javascript:void(0)' onclick='inbox2view.ShowList(" + (result.pageindex - 1) + ")'> &lt; </a>");
+                        }
+
+                        for (var i = startpage; i <= endpage; i++) {
+                            var cla = result.pageindex === i ? "active" : "";
+                            $("div[ret='divpaging']").append("<a href='javascript:void(0)' class='" + cla + "' onclick='inbox2view.ShowList(" + i + ")'> " + i + " </a>");
+                        }
+
+                        if (totalpage > result.pageindex) {
+                            $("div[ret='divpaging']").append("<a href='javascript:void(0)' onclick='inbox2view.ShowList(" + (result.pageindex + 1) + ")'> &gt; </a>");
+                        }
+                        $("div[ret='divpaging']").show();
+                    }
+
+                });
+
+            },
+            error: function (xhr, textStatus) {
+                RBAjaxError(xhr, textStatus);
+            }
+        });
+    },
+    GetReply: function (umsgid) {
+        $("#divReply").html("");
+        var datap = {
+            usermessageid: umsgid,
+        };
+        $.ajax({
+            type: "GET",
+            data: datap,
+            cache: false,
+            url: this.bs + "GetReply",
+            beforeSend: this.sf.setModuleHeaders,
+            success: function (result) {
+                if (result.STATUSCODE !== "000000") {
+                    return;
+                }
+
+                $.get(inbox2view.templatefile, null, function (templates) {
+                    if (!inbox2view.addtemptobody) {
+                        $('body').append(templates);
+                        inbox2view.addtemptobody = true;
+                    }
+                    if (result.data) {
+                        $("#tempInboxReply").tmpl(result.data).appendTo($("#divReply"));
+                    }
+
+                });
+
+            },
+            error: function (xhr, textStatus) {
+                RBAjaxError(xhr, textStatus);
+            }
+        });
+    },
+    Reply:function() {
+        //if (!confirm(vibcode.msgConfirmReply)) {
+        //    return;
+        //}
+        if (!$("#txtReplyContent").val().trim()) {
+            alert(vibcode.msgContentReplyEmpty);
+            return;
+        }
+        var datap = {
+            contentid: dnn.getVar("MESSAGEID"),
+            usermessageid: dnn.getVar("USERMESSAGEID"),
+            content: dnn.encodeHTML($("#txtReplyContent").val())
+        };
+        $.ajax({
+            type: "POST",
+            url: this.bs + "ReplyMessage",
+            beforeSend: this.sf.setModuleHeaders,
+            data: datap,
+            cache: false,
+            success: function (result) {
+                if (typeof result !== "undefined" && result != null) {
+                    alert(result.MESSAGE);
+                    inbox2view.GetReply(dnn.getVar("USERMESSAGEID"));
+                    $("#txtReplyContent").val("");
+                }
+            },
+            error: function (xhr, textStatus) {
+                RBAjaxError(xhr, textStatus);
+            }
+        });
+    },
+    GoTo: function () {
+        var datap = {
+            pa1: dnn.getVar("MESSAGEID"),
+            pa2: dnn.getVar("USERMESSAGEID"),
+            pa3: dnn.getVar("VIBPARAM")
+        };
+        $.ajax({
+            type: "POST",
+            url: this.bs + "GoTo",
+            beforeSend: this.sf.setModuleHeaders,
+            data: datap,
+            cache: false,
+            success: function (result) {
+                if (typeof result !== "undefined" && result != null) {
+                    if (dnn.getVar("VIBPARAM1") != "") {
+                        var a = document.createElement("a");
+                        if (!a.click) //for IE
+                        {
+                            window.open(url);
+                            return;
+                        }
+                        a.setAttribute("href", result.GoTo);
+                        a.setAttribute("target", '_blank');
+                        a.style.display = "none";
+                        document.body.appendChild(a);
+                        a.click();
+                    } else {
+                        window.location = result.GoTo;
+                    }
+                }
+            },
+            error: function (xhr, textStatus) {
+                RBAjaxError(xhr, textStatus);
+            }
+        });
+    },
+    GetListTitleClass:function(status) {
+        switch (status) {
+        case "R":
+            return "dadoc";
+            case "QuaHan":
+                return "quahan";
+            default:
+                return "title";
+        }
+    }
+};

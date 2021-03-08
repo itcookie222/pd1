@@ -1,0 +1,305 @@
+﻿
+$(function(){
+$(document).click( function (e) {
+									// if(e.target.className=='selected' || e.target.className=='selectArrow'){
+									// $('div.selectOptions').hide();
+									// }
+								if ( $('span.selected,span.selectArrow' ).closest('div.selectOptions').length === 0 ) {
+									$('div.selectOptions').hide();
+									}
+									//console.log(e);
+							});
+			
+			$('select#speedA').selectmenu({
+				width: 150,
+                menuWidth: 180
+			});
+			
+			$('select#speedAa').selectmenu({maxHeight: 150});
+			
+			$('select#speedB').selectmenu({
+                maxHeight: 240,
+				width: 300,
+				format: addressFormatting
+			});
+			
+			$('select#speedC').selectmenu({style:'dropdown'});
+			
+			$('select#speedD').selectmenu({
+				style:'dropdown', 
+				menuWidth: 400,
+				format: addressFormatting
+			});
+			
+			$('select#files, select#filesC').selectmenu({
+				icons: [
+					{find: '.script', icon: 'ui-icon-script'},
+					{find: '.image', icon: 'ui-icon-image'}
+				]
+			});
+			
+			$('select#filesB').selectmenu({
+                width: 295,
+                menuWidth: 150,
+				icons: [
+					{find: '.male'},
+					{find: '.female'},
+					{find: '.other'}
+				]
+			});
+			
+			
+		});
+        //a custom format option callback
+		var addressFormatting = function(text){
+			var newText = text;
+			//array of find replaces
+			var findreps = [
+				{find:/^([^\-]+) \- /g, rep: '<span class="ui-selectmenu-item-header">$1</span>'},
+				{find:/([^\|><]+) \| /g, rep: '<span class="ui-selectmenu-item-content">$1</span>'},
+				{find:/([^\|><\(\)]+) (\()/g, rep: '<span class="ui-selectmenu-item-content">$1</span>$2'},
+				{find:/([^\|><\(\)]+)$/g, rep: '<span class="ui-selectmenu-item-content">$1</span>'},
+				{find:/(\([^\|><]+\))$/g, rep: '<span class="ui-selectmenu-item-footer">$1</span>'}
+			];
+			
+			for(var i in findreps){
+				newText = newText.replace(findreps[i].find, findreps[i].rep);
+			}
+			return newText;
+		}
+function isDate(currVal) {
+        //var currVal = txtDate;
+        if (currVal == '')
+            return false;
+
+        //Declare Regex  
+        var rxDatePattern = /^(\d{1,2})(\/|-)(\d{1,2})(\/|-)(\d{4})$/;
+        var dtArray = currVal.match(rxDatePattern); // is format OK?
+
+        if (dtArray == null)
+            return false;
+
+        //Checks for dd/mm/yyyy format.
+        var dtDay = dtArray[1];
+        var dtMonth = dtArray[3];
+        var dtYear = dtArray[5];
+
+        if (dtMonth < 1 || dtMonth > 12)
+            return false;
+        else if (dtDay < 1 || dtDay > 31)
+            return false;
+        else if ((dtMonth == 4 || dtMonth == 6 || dtMonth == 9 || dtMonth == 11) && dtDay == 31)
+            return false;
+        else if (dtMonth == 2) {
+            var isleap = (dtYear % 4 == 0 && (dtYear % 100 != 0 || dtYear % 400 == 0));
+            if (dtDay > 29 || (dtDay == 29 && !isleap))
+                return false;
+        }
+
+        return true;
+    }
+
+
+    function InitDatePicker(id) {
+        $(id).datepicker({
+            showOn: "button",
+            buttonImage: "/Portals/_default/Skins/VIB-retails/images/icon-calendar-grey.png",
+            buttonImageOnly: true,
+            dateFormat: "dd/mm/yy",
+			changeMonth:true,
+			changeYear:true,
+			autoSize:false
+        });
+		SetLanguageToDatePicker(id)
+    }
+	//02-May-2013 Add by TamVT
+	function InitDatePickerMaxDate(id,maxdate) {
+        $(id).datepicker({
+            showOn: "button",
+            buttonImage: "/Portals/_default/Skins/VIB-retails/images/icon-calendar-grey.png",
+            buttonImageOnly: true,
+            dateFormat: "dd/mm/yy",
+			changeMonth:true,
+			changeYear:true,
+			autoSize:false,
+			maxDate: maxdate
+        });
+		SetLanguageToDatePicker(id)
+    }
+	//02-May-2013 Add by TamVT
+	function InitDatePickerMinDate(id,mindate) {
+        $(id).datepicker({
+            showOn: "button",
+            buttonImage: "/Portals/_default/Skins/VIB-retails/images/icon-calendar-grey.png",
+            buttonImageOnly: true,
+            dateFormat: "dd/mm/yy",
+			changeMonth:true,
+			changeYear:true,
+			autoSize:false,
+			minDate: mindate
+        });
+		SetLanguageToDatePicker(id)
+    }
+	
+	function InitDatePickerMaxMinDate(id,mindate,maxdate) {
+        $(id).datepicker({
+            showOn: "button",
+            buttonImage: "/Portals/_default/Skins/VIB-retails/images/icon-calendar-grey.png",
+            buttonImageOnly: true,
+            dateFormat: "dd/mm/yy",
+			changeMonth:true,
+			changeYear:true,
+			autoSize:false,
+			minDate: mindate,
+			maxDate: maxdate
+        });
+		SetLanguageToDatePicker(id)
+    }
+	
+function SetLanguageToDatePicker(id){
+	if($('html').attr('lang')=='vi-VN'){
+				$(id).datepicker( "option", "dayNames", ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"] );			
+				$(id).datepicker( "option", "dayNamesMin", ["CN", "T2", "T3", "T4", "T5", "T6", "T7"] );
+				$(id).datepicker( "option", "monthNames", ["Tháng 1","Tháng 2","Tháng 3","Tháng 4","Tháng 5","Tháng 6","Tháng 7","Tháng 8","Tháng 9","Tháng 10","Tháng 11","Tháng 12"] );
+				$(id).datepicker( "option", "monthNamesShort", ["Th1","Th2","Th3","Th4","Th5","Th6","Th7","Th8","Th9","Th10","Th11","Th12"] );
+				$(id).datepicker( "option", "nextText", "Tới" );
+				$(id).datepicker( "option", "prevText", "Lui" );
+			}
+}
+jQuery.fn.limitMaxlength = function (options) {
+
+        var settings = jQuery.extend({
+            attribute: "maxlength",
+            onLimit: function () { },
+            onEdit: function () { }
+        }, options);
+
+        // Event handler to limit the textarea
+        var onEdit = function () {
+            var textarea = jQuery(this);
+            var maxlength = parseInt(textarea.attr(settings.attribute));
+
+            if (textarea.val().length > maxlength) {
+                textarea.val(textarea.val().substr(0, maxlength));
+
+                // Call the onlimit handler within the scope of the textarea
+                jQuery.proxy(settings.onLimit, this)();
+            }
+
+            // Call the onEdit handler within the scope of the textarea
+            jQuery.proxy(settings.onEdit, this)(maxlength - textarea.val().length);
+        }
+
+        this.each(onEdit);
+
+        return this.keyup(onEdit)
+	                .keydown(onEdit)
+	                .focus(onEdit)
+	                .on('input paste', onEdit);
+    }
+    
+
+function OpenPrintPopup(title,divPrintableId) {
+    //Creating new page
+    var pp = window.open('', '', 'letf=0,top=0,width=800,height=600,toolbar=0,scrollbars=1,status=0');
+    //Adding HTML opening tag with <HEAD> … </HEAD> portion
+    pp.document.writeln('<HTML><HEAD><title>' + title + '</title>');
+    pp.document.writeln('<!--[if lt IE 8]><link rel="stylesheet" href="/portals/_default/skins/vib-retails/css/ie7.css" type="text/css" /><![endif]-->');
+    pp.document.writeln('<LINK href="/portals/_default/skins/vib-retails/css/style.css?v=1"  type="text/css" rel="stylesheet">');
+    pp.document.writeln('<LINK href="/Administrator/Styles/vib.css"  type="text/css" rel="stylesheet">');
+    pp.document.writeln('<LINK href="/Administrator/Styles/PrintStyle.css"  type="text/css" rel="stylesheet" media="print"><base target="_self">');
+    //pp.document.writeln('<style type="text/css" id="styleprint">');
+    //
+    //Ending Tag of </form>, </body> and </HTML>
+    //pp.document.writeln('</style>');
+    pp.document.writeln('</HEAD>');
+    //Adding Body Tag
+    //pp.document.writeln('<body MS_POSITIONING="GridLayout" bottomMargin="0" leftMargin="0" topMargin="0" rightMargin="0">');
+    pp.document.writeln('<body>');
+    //Adding form Tag
+    pp.document.writeln('<form  method="post">');
+    pp.document.writeln('<div style="text-align:left;">');
+    pp.document.writeln(dtnow);
+    pp.document.writeln('</div>');
+    pp.document.writeln('<div class="table5">');
+    pp.document.writeln('<img src="/portals/_default/skins/vib-retails/images/VIBlogo.jpg">');
+    pp.document.writeln('</div>');
+    //Creating two buttons Print and Close within a table
+    //pp.document.writeln('<div style="text-align:right"><INPUT ID="PRINT" type="button" value="Print" onclick="javascript:window.print();"><INPUT ID="CLOSE" type="button" value="Close" onclick="window.close();"></div>');
+    //Writing print area of the calling page
+    pp.document.writeln(document.getElementById(divPrintableId).innerHTML);
+    //Ending Tag of </form>, </body> and </HTML>
+    pp.document.writeln('</form><script type="text/javascript">window.print();</script>');
+    pp.document.writeln('</body></HTML>');
+    //pp.document.close();
+}
+
+function GetFileSize(id) {
+    var size = 0;
+    //this.files[0].size gets the size of your file.
+    if (!$.browser.msie) {
+        var item = $("#" + id);
+        if (item.length > 0) {
+            size = item[0].files[0].size;
+            size = size == undefined ? item[0].files[0].fileSize : size;
+        }
+    } else {
+        try {
+            var filepath = document.getElementById(id).value;
+            var myFso = new ActiveXObject("Scripting.FileSystemObject");
+            var thefile = myFso.getFile(filepath);
+            size = thefile.size;    
+        } catch(e) {
+		
+            size = 0;
+        } 
+        
+    }
+    return size;
+}
+
+function GetExtention(str) {
+        var ext = str.substring(str.lastIndexOf('.')).toLowerCase();
+        return ext;
+    }
+function Redirect (url) {
+    var ua        = navigator.userAgent.toLowerCase(),
+        isIE      = ua.indexOf('msie') !== -1,
+        version   = parseInt(ua.substr(4, 2), 10);
+
+    // Internet Explorer 8 and lower
+    if (isIE && version < 9) {
+        var link = document.createElement('a');
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+    }
+
+    // All other browsers
+    else { window.location.href = url; }
+}
+
+function WindowOpen(url){
+	var ua        = navigator.userAgent.toLowerCase(),
+        isIE      = ua.indexOf('msie') !== -1,
+        version   = parseInt(ua.substr(4, 2), 10);
+
+    // Internet Explorer 8 and lower
+    if (isIE && version < 9) {
+        var link = document.createElement('a');
+        link.href = url;
+		link.setAttribute("target", '_blank');
+		link.style.display = "none";
+        document.body.appendChild(link);
+        link.click();
+    }
+
+    // All other browsers
+    else { window.open(url); }
+}
+
+function RBAjaxError(xhr, textStatus){
+if(xhr.status===401){
+window.location='/';
+}
+}

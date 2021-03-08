@@ -1,0 +1,362 @@
+﻿.urlControl{ float: left;display: block;}
+.banner-right{
+	padding-left: 10px;
+	margin-top: 30px;
+}
+.banner-login-bottom{
+}
+
+.RadUpload{ float: left;}
+.RadUpload .ruInputs li{ list-style: none;}
+ul.dnnActions li{ margin-left: 10px;}
+
+.VIBPopup-modal-bg { 
+	position: fixed; 
+	_position: fixed; /* hack for internet explorer 6*/
+	height: 100%;
+	width: 100%;
+	background: #FFF;
+	background: rgba(0,0,0,.5);	
+	filter:alpha(opacity=50);
+	z-index: 9998;
+	display: none;
+	top: 0;
+	left: 0; 
+}	
+.VIBPopup-modal {
+	visibility: hidden;
+	text-align:center;
+	top: 150px; 
+	left: 50%;
+	margin-left: -350px;				
+	/*background: rgba(0,0,0,.8);		*/
+	position: absolute;
+	_position: absolute; /* hack for internet explorer 6*/
+	z-index: 9999;
+	padding: 0px 0px 0px;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	border-radius: 5px;
+	-moz-box-shadow: 0 0 10px rgba(255,255,255,.0);
+	-webkit-box-shadow: 0 0 10px rgba(255,255,255,.0);
+	-box-shadow: 0 0 10px rgba(255,255,255,.0);
+}
+.VIBPopup-modal.small 		{ width: 200px; margin-left: -140px;}
+.VIBPopup-modal.medium 		{ width: 400px; margin-left: -240px;}
+.VIBPopup-modal.large 		{ width: 600px; margin-left: -340px;}
+.VIBPopup-modal.xlarge 		{ width: 800px; margin-left: -440px;}
+
+.VIBPopup-modal .close-VIBPopup-modal {
+	font-size: 20px;
+	line-height: 20px;
+	position: absolute;
+	top: -25px;
+	right: -20px;
+	color: white;
+	text-shadow: 0 0 0 rbga(0,0,0,1);
+	font-weight: bold;
+	cursor: pointer;
+	} 
+.big-link { display:block; margin-top: 100px; text-align: center; font-size: 70px; color: #FFF;}
+.procam{ width: 100%;font-size: 12px;}
+.procam .txt{ width: 300px;padding: 3px;}
+.procam .row{ width: 100%;margin: 5px 0;}
+.procam .cl1{ width: 140px;float: left;}
+.clear{ clear: both;}
+.procam .button-send{ float: left;}
+.procam .btnsend2{ margin-left: 20px;}
+.procam .buttcent{ width: 300px;margin: 0 auto;}
+.procam .title{ padding-bottom: 10px;color: #0066b3;}
+
+
+.IAO-Popup img{
+	border: none;
+}
+
+.IAO-Popup img{
+	border: none;
+}
+
+.IAO-Container img{
+	border: none;
+}
+
+.IAO-Popup{
+	width:436px;
+	border-radius:15px;
+	background-color: #fff;
+	padding-bottom: 35px;
+}
+.IAO-Popup p{
+	margin: 0px;
+	padding: 0px;
+}
+.IAO-Popup .IAO-POP-Message{
+	text-align: center;
+	font-size: 19px;
+	font-weight: bold;
+	padding: 30px 0;
+}
+.IAO-Gohome a{
+	display: block;
+	width: 152px;
+	height: 44px;
+	background: url("/banners/preappcard/iao-gohomebt.jpg");
+	text-decoration: none;
+	text-align: center;
+	margin: 0 auto;
+	color: #fff;
+	line-height: 44px;
+	padding-left: 18px;
+	font-size: 16px;
+}
+.IAO-Container{
+	width: 690px;
+	background-color: #fff;
+}
+.IAO-Container a{
+	text-decoration: none;
+}
+.IAO-Topmenu{
+	width: 690px;
+}
+.IAO-Pro-Img{
+	width: 690px;
+	height: 201px;
+	display: block;
+}
+.IAO-Topmenu-Paging{
+	text-align: center;
+	padding-top: 5px;
+	margin-bottom: 20px;
+}
+.IAO-Container h5{
+	color: #ff9933;
+	font-size: 20px;
+	font-weight: bold;
+    margin: 15px 0;
+}
+.IAO-Feedback{
+	background: #f2f2f2;
+	padding-top: 20px;
+	padding-bottom: 30px;font-size: 13px;
+}
+.IAO-Fb-Content{
+	width: 100%;
+	vertical-align: middle;
+}
+
+.IAO-Fb-Content td{
+	vertical-align: middle;
+	height: 40px;
+}
+.IAO-Fb-Td-Left{
+	text-align: right;
+	color: #999;
+	padding-right: 20px;
+}
+
+.IAO-Normalbt{
+	display: block;
+	width: 167px;
+	height: 44px;
+	background: url("/banners/preappcard/iao-normalbt.jpg");
+	text-align: center;
+	margin: 0 auto;
+	color: #fff !important;
+
+	line-height: 44px;
+	font-size: 16px;
+}
+
+.IAO-Fulltext{
+	text-align: center;
+}
+.IAO-Line{
+	width: 630px;
+	margin: 0 auto;
+	height: 1px;
+	border-bottom: 1px solid #ccc;
+}
+.IAO-ConfirmText{
+	color: #006699;
+	font-weight: bold;
+}
+.IAO-CenterNote{
+	width: 500px;text-align: center;margin: 0 auto;padding: 15px 0;
+}
+.IAO-Document td{
+	vertical-align:middle;
+	height: 40px;
+	padding-left: 40px;
+}
+.IAO-Document a{
+	text-decoration:none;
+	color: #000;
+}
+.IAO-Document-Img{
+	display: block;
+	width: 40px;
+	height: 40px;
+	float: left;
+}
+.IAO-Document-Text{
+	font-size: 13px;
+	line-height: 40px;
+	padding-left: 5px;
+}
+.IAO-MainRegister{
+	background-color: #f2f2f2;
+}
+.IAO-LeftRegister{
+	width: 225px;
+	float: left;
+	padding: 0 45px 0 20px;
+}
+.IAO-LeftRegister p{ margin: 10px 0;}
+.IAO-RightRegister{
+	width: 345px;
+	float: left;
+}
+.IAO-TitleText{
+	color: #000;
+	text-align: left;
+	font-size: 14px;
+	font-weight: bold;
+}
+.IAO-Hanmuc{
+	width: 171px;
+	height: 43px;
+	background: url("/banners/preappcard/iao-hanmuc.png");
+	display: block;
+	line-height: 43px;
+	color: #fff;
+	padding-left: 50px;
+    font-size: 16px;
+}
+.IAO-IntroText{
+	font-size: 13px;
+}
+.IAO-Apply{
+	width: 215px;
+	height: 48px;
+	background: url("/banners/preappcard/iao-apply-bg.png");
+	display: block;
+	line-height: 20px;
+	color: #fff;
+	font-size: 12px;
+	padding: 5px 0 0 5px;
+}
+.IAO-Doituong td{
+	height: 45px;
+}
+.IAO-ConfirmRegister{
+	margin-top: 10px;
+	padding-bottom: 10px;
+}
+.IAO-ConfirmRegister label{
+	font-size: 12px;
+	font-weight: bold;
+}
+.IAO-Thamgia{
+	width: 144px;
+	height: 42px;
+	background: url("/banners/preappcard/iao-thamgia.png");
+	display: block;
+	line-height: 42px;
+	color: #fff !important;
+	font-size: 12px;
+	text-align: center;
+	text-transform: uppercase;
+}
+.IAO-KhongThamgia{
+	width: 144px;
+	height: 42px;
+	background: url("/banners/preappcard/iao-khongthamgia.png");
+	display: block;
+	line-height: 42px;
+	color: #ff9933 !important;
+	font-size: 12px;
+	text-align: center;
+	text-transform: uppercase;
+}
+
+.IAO-ProPopup{
+	width: 615px !important;
+	border-radius:15px !important;
+	background-color: #0065b7 !important;
+	padding: 10px 15px 15px 25px !important;
+}
+.IAO-ProPopup img{
+	border: none;
+}
+.IAO-ProPopup-Top{
+	
+}
+.IAO-ProPopup-Close{
+	display: block;
+	float: right;
+	width: 18px;
+	height: 18px;
+	
+}
+.IAO-ProPopup-Top-Right{
+	float: right;
+	padding-top: 10px;
+}
+.IAO-ProPopup-Top-Right img{width: 154px}
+.IAO-ProPopup-Top-Left{
+	width: 440px;
+	float: left;
+	padding-top: 10px;
+}
+.IAO-ProPopup p{
+	margin: 0px;
+	padding: 0px;
+	text-transform: uppercase;
+}
+.IAO-ProPopup-Top-Left p{
+	padding-bottom: 5px;
+}
+.IAO-ProPopup-Main img{
+	display: block;
+	width: 286px;
+	height: 119px;
+	float: left;
+}
+.IAO-ProPopup-Main-Right{
+	width: 250px;
+	float: right;
+	text-align: right;
+	padding-right: 15px;
+}
+.IAO-ProPopup-Money{
+	width:250px;
+	background-color: #fff;
+	display: block;
+	float: right;
+	height: 40px;
+	font-weight: bold;
+	line-height: 40px;
+	font-size: 25px;
+	color: #ff6600;
+	text-align: center;
+	
+}
+.IAO-ProPop-Click{
+	width: 294px;
+	height: 48px;
+	margin: 0 auto;
+	background: url("/banners/preappcard/iao-pop-detail.jpg");
+	line-height: 48px;
+	display: block;
+	text-decoration: none;
+	text-align: center;
+	color: #fff !important;
+	font-size: 17px;
+	margin-top: 20px;
+	margin-bottom: 20px;
+}
+
+.IAO-ProImg{ margin: 10px 0;}
+.khongcokm{ padding-top: 20px;}

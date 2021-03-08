@@ -1,0 +1,818 @@
+﻿var kytudacbiet = '!@#$%&/<>=?';
+
+var get_vMax = function () {
+    return '99999999999999';
+};
+var get_vMin = function () {
+    return '0';
+};
+
+var rbLoanPayment = {
+    sf: null,
+    bs: null,
+    Init: function (moduleid) {
+        this.sf = $.ServicesFramework(moduleid);
+        this.bs = this.sf.getServiceRoot('LoanPaymentController') + 'Customer/';
+        ShowForm(1);
+        $("#box2_body").hide();
+        $("#box3_body").hide();
+        $('#box2_title').attr('class', 'spec-header2');
+        $('#box3_title').attr('class', 'spec-header2');
+        enableSelectBoxes();
+        if (dnn.getVar('debitshowheader') != null && dnn.getVar('debitshowheader') === "N") {
+            $('#divfromacctheader').hide();
+        }
+        if (dnn.getVar('debitacct') != '' && dnn.getVar('debitacct') != null) {
+            $('#divFromAcct .selected').html($('#divFromAcct .selectOptions .selectOption[val="' + dnn.getVar('debitacct') + '"]').html());
+            $("#divFromAcct").attr("val", dnn.getVar('debitacct'));
+        }
+        // Loan No
+        $("#txtLoanNo").keypress(function (e) {
+            var key = e.charCode || e.keyCode || 0;
+            if (((key == 8 || key == 9 || key == 46 || (key >= 16 && key <= 18) || (key >= 35 && key <= 40)) && e.charCode == 0) /* backspace, end, begin, top, bottom, right, left, del, tab */
+                        || (key >= 48 && key <= 57)) { /* 0-9 */
+                return;
+            } else {
+                e.preventDefault();
+            }
+        });
+
+        // Loan Detail
+        hideLoanDetail();
+
+        $(".nhap-otp").numeric(false, function () { this.value = ""; this.focus(); });
+        $(".nhap-otp").keyup(function (event) {
+            var currentIndex = $(this).attr("id").replace("txtOtp", "");
+            if (nextIndex == 6) return;
+            var nextIndex = parseInt(currentIndex) + 1;
+            $("#txtOtp" + nextIndex).focus();
+            $("#txtOtp" + nextIndex).val("");
+        });
+        $("#txtAmmout").autoNumeric({ vMax: get_vMax, vMin: get_vMin });
+
+        var onEditCallback = function (remaining) {
+            $('#spnotext').html(remaining);
+        };
+
+        var onLimitCallback = function () {
+        };
+
+        $('#txtDescription').limitMaxlength({
+            onEdit: onEditCallback,
+            onLimit: onLimitCallback
+        });
+        if (dnn.getVar("UserRegisterOnline") === "Y") {
+            $("<a href='#divPopup'/>").fancybox({
+                helpers: {
+                    overlay: { closeClick: false } //Disable click outside event
+                },
+                width: 400,
+                height    :100,
+                autoSize: false,
+                wrapCSS   :"userregisteronline"
+            }).trigger("click");
+        }
+        $("#agotosection3").click(function () {
+            rbLoanPayment.goto_section3();
+        });
+        $("#aGetOtp").click(function () {
+            rbLoanPayment.GetOTP();
+        });
+        $("#lnkFinish").click(function () {
+            rbLoanPayment.DoTransfer();
+        });
+
+        $("#btnNext").click(function () {
+            rbLoanPayment.ValidateAndSubmitForm();
+        });
+
+    },
+    goto_section3: function () {
+        HideErrorForm(1);
+        var toLoanId = $('#txtLoanNo').val();
+        if ($('#rbtSelectAccount:checked').val() == "rbtSelectAccount") {
+            toLoanId = $('#divToAccount').attr('val');
+        }
+        if (!toLoanId) {
+            toLoanId = "";
+        }
+        if (toLoanId.length <= 0) {
+            ShowErrorForm(LOANNO_INVALID, 1);
+            return false;
+        }
+        if ($("#isCardLoaded").val() == "1") {
+            show_section(3);
+            return;
+        }
+        // Load Loan
+        var dp = {
+            loanId: toLoanId
+        };
+        $.ajax({
+            type: "GET",
+            url: this.bs + "GetLoanDetail",
+            cache: false,
+            data: dp,
+            beforeSend: this.sf.setModuleHeaders,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (data) {
+                if (data.d == '') return;
+                var isError = $.trim(data.IsError);
+                if (isError == "") {
+                    var objLoan = data.DATA;
+                    var payFor = objLoan.PayFor;
+                    $('#hdfPayFor').val(payFor);
+                    if (payFor == "ME") {
+                        $("#nextFormType").val("1");
+
+                        // Outstanding
+                        $("#trTienPhaiTra").show();
+                        $('#spanTienPhaiTra').html(objLoan.TienPhaiTra + " " + objLoan.Currency);
+
+                        // Interest
+                        $("#trLaiPhaiTra").show();
+                        $('#spanLaiPhaiTra').html(objLoan.LaiPhaiTra + " " + objLoan.Currency);
+
+                        // Penalty
+                        $("#trTienPhatPhaiTra").show();
+                        $('#spanTienPhatPhaiTra').html(objLoan.TienPhatPhaiTra + " " + objLoan.Currency);
+
+                        // Total = Outstading + Interest + Penalty
+                        $("#trTongSoTienPhaiTra").show();
+                        $('#spanTongSoTienPhaiTra').html(objLoan.TongSoTienPhaiTra + " " + objLoan.Currency);
+
+                        // Contract No.
+                        $("#trHDVaySo").show();
+                        $('#spanHDVaySo').html(objLoan.SoHopDong);
+
+                    } else {
+                        // Only show Contract No.
+                        $("#trHDVaySo").show();
+                        $('#spanHDVaySo').html(objLoan.SoHopDong);
+
+                        $("#nextFormType").val("0");
+
+                        // Hide other fields
+                        $("#trTienPhaiTra").hide();
+                        $('#spanTienPhaiTra').html("");
+
+                        $("#trLaiPhaiTra").hide();
+                        $('#spanLaiPhaiTra').html("");
+
+                        $("#trTienPhatPhaiTra").hide();
+                        $('#spanTienPhatPhaiTra').html("");
+
+                        $("#trTongSoTienPhaiTra").hide();
+                        $('#spanTongSoTienPhaiTra').html("");
+                    }
+                    $("#isCardLoaded").val("1");
+                    var needAddedToBen = objLoan.NeedAddToBen;
+                    if (needAddedToBen == "YES") {
+                        // Show Add to Addressbook if loan is not in
+                        $("#trThemTKThuHuong").show();
+                    } else {
+                        $("#trThemTKThuHuong").hide();
+                    }
+                    $("#selectedLoanCCy").html(objLoan.Currency);
+
+                    // Show Section 3
+                    $("#isBox3Shown").val("1");
+
+                    show_section(3);
+                } else {
+                    // Show Error if Loan is not loaded
+                    var errMsg = data.ErrorMessage;
+                    if (data.ErrorCode == "CHI_CHAP_NHAN_VND") {
+                        errMsg = CHI_NHAN_VND;
+                    }
+                    ShowErrorForm(errMsg, 1);
+                }
+            },
+            error: function () {
+                showMessageWhenAjaxError();
+            }
+        });
+    },
+    DoTransfer: function () {
+        HideErrorForm(1);
+        HideErrorForm(2);
+        var otpNumber = $("#txtOtp1").val().toString() + $("#txtOtp2").val().toString() + $("#txtOtp3").val().toString() + $("#txtOtp4").val().toString() + $("#txtOtp5").val().toString() + $("#txtOtp6").val().toString();
+        //var payFor = $('#hdfPayFor').val();
+        //if (payFor != "OTHER") {
+        //    otpNumber = "";
+        //}
+
+        if ($('#hdotp').val() == 'Y') {
+            if (otpNumber == "") {
+                ShowErrorForm(OPT_INVALID, 2);
+                return false;
+            }
+        }
+        //else {
+        //    if (payFor != "OTHER") {
+        //            otpNumber = "";
+        //        }
+        //}
+
+        //if (otpNumber == "") {
+        //    ShowErrorForm(OPT_INVALID, 2);
+        //    return false;
+        //}
+
+        if ((otpNumber != "") && (otpNumber.length != 6 || isNaN(otpNumber))) {
+            ShowErrorForm(OPT_INVALID, 2);
+            return false;
+        }
+        var dp = {
+            otp: otpNumber
+        };
+        //var lang = GetLanguage();
+        $.ajax({
+            type: "POST",
+            url: this.bs + "SaveData",
+            data: JSON.stringify(dp),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            beforeSend: this.sf.setModuleHeaders,
+            success: function (data) {
+                if (data.d == 'OTPINVALID') {
+                    ShowErrorForm(OPT_INVALID, 2);
+                    return;
+                }
+                if (data.d == '') return;
+                var isError = $.trim(data.IS_ERROR);
+                if (isError == "") {
+                    var bill = data.objLoanForm;
+                    // set value                    
+                    var payFor = bill.PayFor;
+                    $('#f3-SoHoaDon').html(bill.BillID);
+                    $('#f3-TuTaiKhoan').html(bill.AccountType + " - " + bill.AccountId);
+                    $('#f3-HDVaySo').html(bill.ContractId);
+                    $('#f3-KhoanVaySo').html(bill.LoandId);
+                    $('#f3-LaiPhaiTra').html(bill.InterestAmt + " " + bill.CCY);
+                    //
+                    if (payFor == "ME") {
+                        $('#totalOutstanding').show();
+                        $('#f3-TongSoTienThanhToan').html(bill.TotalAmt + " " + bill.CCY);
+                        $('#remainingBal').show();
+                        $('#f3-SotienConLai').html(bill.RemainBal + " " + bill.CCY);
+                    } else {
+                        $('#totalOutstanding').hide();
+                        $('#f3-TongSoTienThanhToan').html("");
+                        $('#remainingBal').hide();
+                        $('#f3-SotienConLai').html("");
+                    }
+                    $('#f3-SoDuTKTruoc').html(bill.OldBal + " " + bill.CCY);
+                    $('#f3-SoDuTKSau').html(bill.NewBal + " " + bill.CCY);
+
+                    $('#f3-SotienThanhToan').html(bill.Amount + " " + bill.CCY);
+                    $('#f3-NoidungThanhToan').html(bill.Description);
+                    $('#f3-DoneBy').html(bill.DoneBy);
+                    // Show form
+                    ShowForm(3);
+                    // Show BEN ERROR
+                    var isBenError = $.trim(bill.IS_ADDING_BEN_ERROR);
+                    if (isBenError != "") {
+                        var benMsg = bill.BEN_ERROR_MESSAGE;
+                        ShowErrorForm(benMsg, 3);
+                    }
+                    return true;
+                } else {
+
+                    //var code = bill.ERROR_CODE;
+                    var message = data.ERROR_MESSAGE;
+                    ShowErrorForm(message, 2);
+                    //if (code == "TRANSACTION_ERROR") {
+                    //    if (confirm("Giao dịch thực hiện không thành công, bạn có muốn thử lại không?")) {
+                    //        // Reload
+                    //        NewForm();
+                    //    }
+                    //}
+                    return false;
+                }
+            },
+            error: function () {
+                showMessageWhenAjaxError();
+                return false;
+            }
+        });    
+    },
+    GetOTP: function () {
+        $.ajax({
+            type: "GET",
+            url: this.bs + "GetOTP",
+            cache: false,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            beforeSend: this.sf.setModuleHeaders,
+            success: function (data) {
+                alert(data);
+                $('#aGetOtp').fadeOut("slow");
+                $('#txtOtp1').focus();
+                setTimeout(function () {
+                    $('#aGetOtp').fadeIn("slow");
+                }, THOIGIANDISABLEGETOTP);
+            },
+            error: function () {
+                alert(OTPMSG);
+            }
+        });
+    },
+    LoadLoanDetail: function (loanId, type) {
+        HideErrorForm(1);
+        if (type == 1) {
+            var obj1 = document.getElementById("rbtSelectAccount");
+            obj1.checked = true;
+
+        } else {
+            var obj2 = document.getElementById("rbtAddNewAccount");
+            obj2.checked = true;
+        }
+        resetValue();
+        if (!loanId) {
+            return;
+        }
+        var form3Shown = $("#isBox3Shown").val();
+        if (form3Shown != "1") {
+            return;
+        }
+        loanId = $.trim(loanId);
+        if (loanId.length <= 0) {
+            return;
+        }
+        var dp = {
+            loanId: loanId
+        };
+        $.ajax({
+            type: "GET",
+            url: this.bs + "GetLoanDetail",
+            cache: false,
+            data: dp,
+            beforeSend: this.sf.setModuleHeaders,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (data) {
+
+                var isError = $.trim(data.IsError);
+                if (isError == "") {
+                    var objLoan = data.DATA;
+                    var payFor = objLoan.PayFor;
+                    $('#hdfPayFor').val(payFor);
+                    if (payFor == "ME") {
+                        $("#nextFormType").val("1");
+
+                        // Outstanding
+                        $("#trTienPhaiTra").show();
+                        $('#spanTienPhaiTra').html(objLoan.TienPhaiTra + " " + objLoan.Currency);
+
+                        // Interest
+                        $("#trLaiPhaiTra").show();
+                        $('#spanLaiPhaiTra').html(objLoan.LaiPhaiTra + " " + objLoan.Currency);
+
+                        // Penalty
+                        $("#trTienPhatPhaiTra").show();
+                        $('#spanTienPhatPhaiTra').html(objLoan.TienPhatPhaiTra + " " + objLoan.Currency);
+
+                        // Total = Outstading + Interest + Penalty
+                        $("#trTongSoTienPhaiTra").show();
+                        $('#spanTongSoTienPhaiTra').html(objLoan.TongSoTienPhaiTra + " " + objLoan.Currency);
+
+                        // Contract No.
+                        $("#trHDVaySo").show();
+                        $('#spanHDVaySo').html(objLoan.SoHopDong);
+
+                    } else {
+                        // Only show Contract No.
+                        $("#trHDVaySo").show();
+                        $('#spanHDVaySo').html(objLoan.SoHopDong);
+
+                        $("#nextFormType").val("0");
+
+                        // Hide other fields
+                        $("#trTienPhaiTra").hide();
+                        $('#spanTienPhaiTra').html("");
+
+                        $("#trLaiPhaiTra").hide();
+                        $('#spanLaiPhaiTra').html("");
+
+                        $("#trTienPhatPhaiTra").hide();
+                        $('#spanTienPhatPhaiTra').html("");
+
+                        $("#trTongSoTienPhaiTra").hide();
+                        $('#spanTongSoTienPhaiTra').html("");
+                    }
+                    $("#isCardLoaded").val("1");
+                    var needAddedToBen = objLoan.NeedAddToBen;
+                    if (needAddedToBen == "YES") {
+                        // Show Add to Addressbook if loan is not in
+                        $("#trThemTKThuHuong").show();
+                    } else {
+                        $("#trThemTKThuHuong").hide();
+                    }
+                    $("#selectedLoanCCy").html(objLoan.Currency);
+                } else {
+                    // Show Error if Loan is not loaded
+                    var errMsg = data.ErrorMessage;
+                    if (data.ErrorCode == "CHI_CHAP_NHAN_VND") {
+                        errMsg = CHI_NHAN_VND;
+                    }
+                    ShowErrorForm(errMsg, 1);
+                }
+            },
+            error: function () {
+                showMessageWhenAjaxError();
+            }
+        });
+    },
+    ValidateAndSubmitForm: function () {
+        HideErrorForm(1);
+        HideErrorForm(2);
+        $("#txtOtp1").val("");
+        $("#txtOtp2").val("");
+        $("#txtOtp3").val("");
+        $("#txtOtp4").val("");
+        $("#txtOtp5").val("");
+        $("#txtOtp6").val("");
+        // From Account
+        var fromAccountId = $("#divFromAcct").attr("val");
+        fromAccountId = $.trim(fromAccountId);
+        if (fromAccountId.length <= 0) {
+            ShowErrorForm(ERR_ACCNT_INVALID, 1);
+            return false;
+        }
+
+        // LoanId
+        var toLoanId = $('#txtLoanNo').val();
+        if ($('#rbtSelectAccount:checked').val() == "rbtSelectAccount") {
+            toLoanId = $('#divToAccount').attr('val');
+        }
+        if (!toLoanId) {
+            toLoanId = "";
+        }
+        toLoanId = $.trim(toLoanId);
+        if (toLoanId.length <= 0) {
+            ShowErrorForm(LOANNO_INVALID, 1);
+            return false;
+        }
+
+        // Thêm vào TK thụ hưởng
+        var isAddedToBen = "0";
+        var objAddToBen = document.getElementById("chkAddToBen");
+        if (objAddToBen && objAddToBen.checked) {
+            isAddedToBen = "1";
+        }
+
+        // Ammount
+        var ammount = 0;
+        var otherAmt = $("#txtAmmout").val().replace(/[^0-9\.]+/g, "");
+        if (!isNaN(otherAmt)) {
+            ammount = Number(otherAmt);
+        }
+
+        // Desc
+        var desc = $('#txtDescription').val();
+        if (!desc) {
+            desc = "";
+        }
+        desc = $.trim(desc);
+
+        // CCy
+        var ccy = $('#selectedMCCCy').html();
+        if (!ccy) {
+            ccy = "";
+        }
+        ccy = $.trim(ccy);
+
+        // Validate at client
+        // Ammount
+        if (ammount <= 0) {
+            ShowErrorForm(AMOUNT_INVALID, 1);
+            return false;
+        }
+
+        // Pay for: payFor
+        var payFor = $('#hdfPayFor').val();
+
+        // Daily Limit
+        var maxDailyText = $('#hdfMaxLimit').val().replace(/[^0-9\.]+/g, "");
+        var maxDaily = 0;
+        if (!isNaN(maxDailyText)) {
+            maxDaily = Number(maxDailyText);
+        }
+
+        //if ((payFor != "ME") && (maxDaily - ammount < 0)) {
+        //    ShowErrorForm(NOT_ENOUGH_LIMIT, 1);
+        //    return false;
+        //}
+
+        // DESC
+        var isInvalid = checkkytu(desc, kytudacbiet);
+        if (isInvalid) {
+            ShowErrorForm(KO_DC_KY_TU_DAC_BIET, 1);
+            return false;
+        }
+
+
+
+        $("#box2_title").attr('class', 'spec-header');
+        $("#box-step3").attr('class', 'box-grey');
+        $("#nsb3").attr('class', 'box-bot-grey');
+        var param = {
+            AccountId: fromAccountId,
+            LoanId: toLoanId,
+            Amount: ammount,
+            Desc: desc,
+            IsAddedToBen: isAddedToBen
+        };
+
+        $.ajax({
+            type: "POST",
+            url: this.bs + "ValidateTransaction",
+            data: JSON.stringify(param),
+            contentType: "application/json; charset=utf-8",
+            beforeSend: this.sf.setModuleHeaders,
+            dataType: "json",
+            success: function (data) {
+                if (data.d == '') return;
+                var trs = data;
+                var isError = $.trim(trs.IS_ERROR);
+                if (isError == "") {
+                    //var trs = jQuery.parseJSON(data.d);
+                    if (trs == null) return;
+                    $('#f2-TuTaiKhoan').html(trs.AccountType + " - " + trs.AccountId);
+                    $('#f2-SoDuTruoc').html(trs.OldBal + " " + trs.CCY);
+                    $('#f2-SoDuSau').html(trs.NewBal + " " + trs.CCY);
+                    $('#f2-KhoanVaySo').html(trs.LoandId);
+                    $('#f2-HDVaySo').html(trs.ContractId);
+                    var type = $('#f2-nextFormType').val();
+                    var payFor = trs.PayFor;
+                    if (payFor == "ME") {
+                        $('#tr-TongSoTienPhaiTra').show();
+                        $('#f2-TongSoTienPhaiTra').html($('#spanTongSoTienPhaiTra').html());
+
+                        $('#tr-SotienPhaiTraConLai').show();
+                        $('#f2-SotienPhaiTraConLai').html(trs.RemainBal + " " + trs.CCY);
+
+                    } else {
+                        $('#tr-TongSoTienPhaiTra').hide();
+                        $('#f2-TongSoTienPhaiTra').html("");
+
+                        $('#tr-SotienPhaiTraConLai').hide();
+                        $('#f2-SotienPhaiTraConLai').html("");
+                    }
+                    $('#f2-SotienThanhToan').html(trs.Amount + " " + trs.CCY);
+                    $('#f2-NoidungThanhToan').html(trs.Description);
+
+                    // Hide OTP Section if PayFor = OTHER
+                    if (payFor == "OTHER") {
+                        $("#divOTP").show();
+                    } else {
+                        if ($('#hdotp').val() == "Y") {
+                            $("#divOTP").show();
+                        } else {
+                            $("#divOTP").hide();
+                        }
+                    }
+                    ShowForm(2);
+                    return true;
+                } else {
+                    var code = $.trim(trs.ERROR_CODE);
+                    var message = trs.ERROR_MESSAGE;
+                    if (code == "NOT_ENOUGH_BALANCE") {
+                        message = NOT_ENOUGH_BAL;
+                    } else if (code == "CHI_CHAP_NHAN_VND") {
+                        message = CHI_NHAN_VND;
+                    }
+                    ShowErrorForm(message, 1);
+                    return false;
+                }
+            },
+            error: function () {
+                showMessageWhenAjaxError();
+                return false;
+            }
+        });    
+    }
+};
+
+function checkkytu(val, invalidChar) {
+    for (i = 0; i < val.length; i++) {
+        if (invalidChar.indexOf(val[i]) >= 0) return true;
+    }
+    return false;
+}
+function GetLanguage() {
+    var selectedLang = $('html').attr('lang');
+    var engLang = "en-us";
+    if (engLang.toLowerCase() == selectedLang.toLowerCase()) {
+        return "EN";
+    }
+    return "VI";
+}
+function ShowErrorForm(errMsg, formNo) {
+    HideErrorForm(1);
+    HideErrorForm(2);
+    $(document).scrollTop(0);
+    $("#pnlError" + formNo).show();
+    $("#lblErrorMessage" + formNo).html(errMsg);
+}
+function HideErrorForm(formNo) {
+    $("#pnlError" + formNo).hide();
+    $("#lblErrorMessage" + formNo).html("");
+}
+
+
+function hideLoanDetail() {
+    $("#trLaiPhaiTra").hide();
+    $("#trTienPhatPhaiTra").hide();
+    $("#trTongSoTienPhaiTra").hide();
+    $("#trKhoanVaySo").hide();
+    $("#trThemTKThuHuong").hide();
+    $("#trHDVaySo").hide();
+    $("#trTienPhaiTra").hide();
+}
+function showLoanDetailSection(isShownBen) {
+    if (isShownBen == 0) {
+        $("#trLaiPhaiTra").show();
+        $("#trTienPhatPhaiTra").show();
+        $("#trTongSoTienPhaiTra").show();
+        $("#trKhoanVaySo").show();
+    } else {
+        $("#trLaiPhaiTra").hide();
+        $("#trTienPhatPhaiTra").hide();
+        $("#trTongSoTienPhaiTra").hide();
+        $("#trKhoanVaySo").hide();
+    }
+    if (isShownBen == 1) {
+        $("#trThemTKThuHuong").show();
+    } else {
+        $("#trThemTKThuHuong").hide();
+    }
+}
+
+function show_section(sectionid) {
+    HideErrorForm(1);
+    var box_title = "#box" + sectionid + "_title";
+    var box_body = "#box" + sectionid + "_body";
+    if (sectionid == 2) {
+        // From Account
+        var fromAccountId = $("#divFromAcct").attr("val");
+        fromAccountId = $.trim(fromAccountId);
+        if (fromAccountId.length <= 0) {
+            ShowErrorForm(ERR_ACCNT_INVALID, 1);
+            return false;
+        }
+
+        $("#box1_title").attr('class', 'spec-header');
+        $("#box-step1").attr('class', 'box-grey');
+        $("#nsb1").attr('class', 'box-bot-grey');
+        $("#ns1").hide();
+    }
+    if (sectionid == 3) {
+        // LoanId
+        var toLoanId = $('#txtLoanNo').val();
+        if ($('#rbtSelectAccount:checked').val() == "rbtSelectAccount") {
+            toLoanId = $('#divToAccount').attr('val');
+        }
+        if (!toLoanId) {
+            toLoanId = "";
+        }
+        toLoanId = $.trim(toLoanId);
+        if (toLoanId.length <= 0) {
+            ShowErrorForm(LOANNO_INVALID, 1);
+            return false;
+        }
+
+        $("#box2_title").attr('class', 'spec-header');
+        $("#box-step2").attr('class', 'box-grey');
+        $("#nsb2").attr('class', 'box-bot-grey');
+        $("#ns2").hide();
+        $("#button-next").show();
+    }
+    $(box_title).attr('class', 'spec-header1');
+    $(box_body).show();
+}
+
+function select_payment_type() {
+    var max = $("#max");
+    var min = $("#min");
+    var rbtMin = document.getElementById("rbtMinimumPay");
+    var rbtMax = document.getElementById("rbtMaximumPay");
+    var rbtOther = document.getElementById("rbtOtherPay");
+    var maxVal = "";
+    if (max && max.html()) {
+        var number = Number(max.html().replace(/[^0-9\.]+/g, ""));
+        if (number <= 0) {
+            maxVal = "";
+        } else {
+            maxVal = number;
+        }
+    }
+    var minVal = "";
+    if (min && min.html()) {
+        var number = Number(min.html().replace(/[^0-9\.]+/g, ""));
+        if (number <= 0) {
+            minVal = "";
+        } else {
+            minVal = number;
+        }
+    }
+    if (rbtMin && rbtMin.checked) {
+        $("#txtAmmout").val(minVal);
+    } else if (rbtMax && rbtMax.checked) {
+        $("#txtAmmout").val(maxVal);
+    } else {
+        $("#txtAmmout").val("");
+    }
+}
+
+function resetValue() {
+    var x = document.getElementById("rbtAddNewAccount");
+    if (x.checked == true) {
+        hideLoanDetail();
+        $("#divToAccount").children('span.selected').html($("#divToAccount").children('div.selectOptions').children('div.selectOption:first').html());
+        $("#divToAccount").attr("val", "");
+    } else {
+        hideLoanDetail();
+        $("#txtLoanNo").val("");
+    }
+}
+
+
+function enableThisOption() {
+    var obj2 = document.getElementById("rbtAddNewAccount");
+    obj2.checked = true;
+}
+
+function SelectLoan() {
+    resetValue();
+}
+
+function ShowForm(formnumber) {
+    $(document).scrollTop(0);
+    HideErrorForm(1);
+    HideErrorForm(2);
+    if (formnumber == 1) {
+        $("#txtOtp1").val("");
+        $("#txtOtp2").val("");
+        $("#txtOtp3").val("");
+        $("#txtOtp4").val("");
+        $("#txtOtp5").val("");
+        $("#txtOtp6").val("");
+
+        $("#input-form").show();
+        $("#confirm-form").hide();
+        $("#bill").hide();
+    } else if (formnumber == 2) {
+        $("#input-form").hide();
+        $("#confirm-form").show();
+        $("#bill").hide();
+    } else {
+        $("#input-form").hide();
+        $("#confirm-form").hide();
+        $("#bill").show();
+    }
+}
+
+
+
+function select_input_card() {
+    var obj = document.getElementById("rbtAddNewAccount");
+    if (obj && !obj.checked) {
+        obj.checked = true;
+    }
+}
+function NewForm() {
+    window.location.href = window.location.href;
+}
+
+function enableSelectBoxes() {
+    $('div.selectBox').each(function () {
+        $(this).children('span.selected').html($(this).children('div.selectOptions').children('div.selectOption:first').html());
+        $(this).attr('val', $(this).children('div.selectOptions').children('div.selectOption:first').attr('val'));
+
+        $(this).children('span.selected,span.selectArrow').click(function (e) {
+            var div = $(this).parent().children('div.selectOptions');
+            if (div.is(':visible')) {
+                div.hide();
+
+            } else {
+                $('div.selectOptions').hide();
+                $(this).parent().children('div.selectOptions').show();
+            }
+            e.stopPropagation();
+        });
+
+
+        $(this).find('div.selectOption').click(function () {
+            $(this).parent().css('display', 'none');
+            $(this).closest('div.selectBox').attr('val', $(this).attr('val'));
+            $(this).parent().siblings('span.selected').html($(this).html());
+        });
+    });
+}
+
+function showMessageWhenAjaxError() {
+    alert(AJAX_ERROR);
+}

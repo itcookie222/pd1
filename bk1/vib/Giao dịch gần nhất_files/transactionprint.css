@@ -1,0 +1,17 @@
+﻿#acc-stt-gold,#table,#dtottalrecord{ float: left;width: 100%;}
+#abc1{ float: left;width: 100%;padding-top: 40px;}
+form{ width: 690px;}
+a{ text-decoration: none !important;}
+.acc-stt-gold1,.acc-stt-gold2,.acc-stt-gold5{ position: static !important;padding-top: 20px;width: 650px;}
+#acc-stt-gold{ height: auto;}
+#table
+{
+    display:inline !important;
+    page-break-after: always;
+}
+body
+{
+    page-break-after: always;
+}
+.trande{visibility: hidden;page-break-after: always;}
+.tbltran {page-break-after: always;}

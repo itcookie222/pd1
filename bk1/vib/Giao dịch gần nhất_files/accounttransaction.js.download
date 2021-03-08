@@ -1,0 +1,459 @@
+﻿$(document).ready(function () {
+    InitDatePicker("#txtDateFrom");
+    InitDatePicker("#txtDateTo");
+    $("#txtfromamount,#txttoamount").autoNumeric({ pSign: 's', aSign: ccy });
+
+    $('#show-off tr td.col5 ul li').last().css('border', 'medium none');
+});
+var total = 0;
+var ispageload = true;
+var numberloadtranlist = 0;
+var n = m + 2;
+//if (n > 12) n = 1;
+var p = m - 2;
+var yp = year;
+var yn = year;
+var ml = 0;
+var no = 0;
+var w = 0;
+var ow = 0;
+var searchkeyword = $('#txtSearchKeyword').val();
+$('#txtSearchKeyword').focus(function () {
+    if ($('#txtSearchKeyword').val() == searchkeyword) {
+        $('#txtSearchKeyword').val('');
+    }
+}).focusout(function () {
+    if ($('#txtSearchKeyword').val() == '') {
+        $('#txtSearchKeyword').val(searchkeyword);
+    }
+});
+function ShowTransDetail(id) {
+    var div = $('#trans-detail-tab' + id);
+    var htm = div.html().trim();
+    var oldid = $('.trande:visible').attr('id');
+
+    $('.trande').hide();
+
+    if (oldid == ('trans-detail-tab' + id)) {
+        //console.log(id);
+        $('#trans-detail-tab' + id).show();
+    }
+    div.fadeToggle();
+//    if (div.is(':visible'))
+//        div.hide();
+//    else
+//        div.show();
+    if(htm.length>0) {
+        div.show();
+        return;
+    }
+    var requrl = "/DesktopModules/VIBAccountTransaction/TranDetail.aspx?type=" + type + "&acctid=" + acctid + "&tm=" + div.attr('tm') + "&tt=" + div.attr('st') + "&tn=" + div.attr('tn') + "&td=" + div.attr('td') + "&dt=" + (new Date()).getTime();
+    if (div.attr('ref') != 'undefined') {
+        requrl += '&ref=' + div.attr('ref');
+    }
+    requrl += '&ccy=' + div.attr('tc');
+    requrl += '&language='+$('html').attr('lang');
+    
+    $('#trans-detail-tab'+id).html('<img src="/Portals/_default/Skins/VIB-Retails/images/loading.gif" alt="" width="100px" />');
+    $.ajax({
+        type: "GET",
+        url: requrl,
+        contentType: "application/text; charset=utf-8",
+        success: function (data) {
+            div.html(data);
+            div.show();
+        },
+        error: function () {
+            //alert("Đã có lỗi xảy ra bạn vui lòng thao tác lại!");
+        }
+    });
+}
+
+function pageLoad() {
+    InitSearchDate();
+    w = $('#searchdate li:first').outerWidth();
+    no = $('#searchdate li').length;
+    ow = w * no;
+    $('#searchdate').width(ow);
+    //var y = <%= DateTime.Today.Year %>;
+
+    $(".arrow-l a").click(function () {
+        prev();
+    });
+
+    $(".arrow-r a").click(function () {
+        next();
+    });
+    ShowTransList(true);
+}
+
+function showTranDetails(id) {
+    var oldid = $('.trande:visible').attr('id');
+
+    $('.trande').hide();
+    
+}
+function showSearchPane() {
+    ispageload = false;
+    if ($("#show-off").css("display") == "none") {
+        $("#show-off").css("display", "block");
+        $("#show-off-button").css("display", "block");
+        $("#txtSearchTimeType").val($('ul.abc li.active-option').attr('val'));
+    }
+    else {
+        $("#show-off").css("display", "none");
+        $("#show-off-button").css("display", "none");
+    }
+}
+
+function ShowTransList(isappend) {
+    var timetype = $("#txtSearchTimeType").val();
+    if (ispageload) timetype = 'all';
+    var pageindex = $('#txtPageIndex').val();
+    var dtfrom = '0';
+    var dtto = '0';
+    //alert('before');
+    //alert($find('cmbAccountList'));
+    //var combo = <%= cmbAccountList.ClientID %>;  
+    //var acctid = document.getElementById(combo.InputID).value;
+    //var acctid=$find('cmbAccountList').get_selectedItem().get_value();        
+    //alert('after');
+    if (acctid.length == 0) return;
+//    var type = "";
+//    for (var i = 0; i < lstaccount.length; i++) {
+//        if (lstaccount[i]["id"] == acctid) {
+//            type = lstaccount[i]["type"];
+//        }
+//    }
+    switch (timetype) {
+        case 'month':
+            dtfrom = $('#txtdate').val();
+            break;
+        case 'choosedate':
+            dtfrom = $('#txtDateFrom').val();
+            dtto = $('#txtDateTo').val();
+            var f = $('#txtDateFrom').datepicker("getDate");
+            var t = $('#txtDateTo').datepicker("getDate");
+            if (f > t) {
+                alert(ngaytimkiemkhonghople);
+                return;
+            }
+            var minutes = 1000 * 60;
+            var hours = minutes * 60;
+            var days = hours * 24;
+            var totaldays = Math.round((t - f) / days);
+            if (totaldays > 31) {
+                alert(ngaytimkiemkhonghople);
+            }
+            break;
+        default:
+    }
+    if(!isappend) {
+        $('div#table').html('<img src="/Portals/_default/Skins/VIB-Retails/images/loading.gif" alt="" width="100px" />');
+    }
+    numberloadtranlist = numberloadtranlist + 1;
+    var fromamt = $('#txtfromamount').autoNumericGet();
+    var toamt = $('#txttoamount').autoNumericGet();
+    if (fromamt == '') fromamt = 0;
+    if (toamt == '') toamt = 0;
+    var requrl = "/DesktopModules/VIBAccountTransaction/Handler.aspx?type=" + type + "&acctid=" + acctid + "&pi=" + pageindex + "&fromamt=" + fromamt + "&toamt=" + toamt + "&language=" + $('html').attr('lang');
+    requrl += '&timetype=' + timetype;
+    requrl += '&period=' + $('#ddlTimeperiod').val();
+    requrl += '&dtfrom=' + dtfrom;
+    requrl += '&dtto=' + dtto;
+    requrl += '&st=' + $("#txtSearchTranType").val();
+    requrl += '&dt=' + (new Date()).getTime();
+    dnn.setVar("CurrentSearch_timetype", timetype);
+    dnn.setVar("CurrentSearch_dtfrom", dtfrom);
+    dnn.setVar("CurrentSearch_dtto", dtto);
+    //dnn.getVar("TRANSHISTTYPE",);
+    //dnn.getVar("TRANSHISTACCTID",);
+    dnn.setVar("CurrentSearch_st",$("#txtSearchTranType").val());
+    dnn.setVar("CurrentSearch_fromamt", fromamt.toString());
+    dnn.setVar("CurrentSearch_toamt", toamt.toString());
+    dnn.setVar("CurrentSearch_period", $('#ddlTimeperiod').val());
+    dnn.setVar("CurrentSearch_pageindex", pageindex);
+        //dnn.getVar("CurrentSearch_pageindex",);
+    $('#spTotalrecord').html('<img src="/Portals/_default/Skins/VIB-Retails/images/loading.gif" alt="" width="70px" />');
+    $.ajax({
+        type: "GET",
+        url: requrl,
+        contentType: "application/text; charset=utf-8",
+        success: function (data) {
+            if (isappend) {
+                $('div#table').append(data);
+            } else {
+                $('div#table').html(data);
+            }
+            $('#txtPageIndex').val(parseInt(pageindex) + 1);
+            if (pageindex == 0) {
+                if ($('#hdfTotalRecord').val() === "") {
+                    total = 0;
+                } else {
+                    total = parseInt($('#hdfTotalRecord').val());
+                }
+            }
+            if (total == 0) {
+                $('#spTotalrecord').html(norecordfound);
+            } else {
+                var htm = hienthiketqua.replace('{{from}}', $('.tranfrom:first').attr('val'));
+                var htm = htm.replace('{{to}}', $('.tranto').last().attr('val'));
+                var htm = htm.replace('{{total}}', total);
+                if (numberloadtranlist == 1) {
+                    var lang = $('html').attr('lang');
+                    if (lang == 'en-US') {
+                        htm = htm + ' of last 30 days';
+                    } else {
+                        htm = htm + ' giao dịch trong 30 ngày';
+                    }
+                }
+                $('#spTotalrecord').html(htm);
+            }
+            if (total <= parseInt($('.tranto').last().attr('val'))) {
+                $('.button-next').hide();
+            }
+            else {
+                $('.button-next').show();
+            }
+        },
+        error: function () {
+            //alert("Đã có lỗi xảy ra bạn vui lòng thao tác lại!");
+        }
+    });
+}
+
+function searchmonth(control) {
+    $('#txtdate').val($(control).attr('val'));
+    $('#txtPageIndex').val(0);
+    $("#show-off").hide();
+    $("#show-off-button").hide();
+    $("#txtSearchTimeType").val('month');
+    ispageload = false;
+    ShowTransList(false);
+}
+
+function InitSearchDate() {
+//        if (i >= 12) i = 0;
+//        if (i < 0) i = 11;
+    for (var i = p - 1; i < n; i++) {
+        var yyy = year;
+        //console.log(i);
+        var index = i;
+        if (i >= 12) {
+            index = i-12;
+            yyy++;
+            //yn++;
+        }
+        if (i < 0) {
+            index = 12+i;
+            yyy--;
+            //yp--;
+        }
+        //console.log(index);
+        $("#searchdate").append("<li><a href='javascript:void(0)' onclick='searchmonth(this)' val='" + (index + 1) + "-" + yyy + "'>" + month[index] + " " + yyy.toString().substring(2, 4) + "</a></li>");
+    }
+    if (n >= 12) {
+        n = n-12;
+        yn++;
+    }
+    if (p <= 1) {
+        p = 12+p;
+        yp--;
+    }
+}
+
+function showTimeperiod(el) {
+    $("ul.abc > li.active-option").attr('class', '');
+
+    $(el).attr('class', 'active-option');
+
+    $("div.choosedates").hide();
+    $("#ddlTimeperiod").show();
+    $("#txtSearchTimeType").val($(el).attr('val'));
+}
+
+function showChooseDate(el) {
+    $("ul.abc > li.active-option").attr('class', '');
+
+    $(el).attr('class', 'active-option');
+
+    $("div.choosedates").show();
+    $("#ddlTimeperiod").hide();
+    $("#txtSearchTimeType").val($(el).attr('val'));
+}
+function selectSearchType(el, by) {
+    $("#show-off tr td.col5 ul li").attr('class', '');
+
+    $(el).attr('class', 'active-option');
+
+    $("#txtSearchTranType").val(by);
+}
+
+function prev() {
+    if (ml == 0) {
+        if (p <= 1) {
+            p = 13;
+            yp--;
+        }
+        p--;
+        $('<li><a href="javascript:void(0)" onclick="searchmonth(this)" val="' + p + '-' + yp + '" >' + month[p - 1] + ' ' + yp.toString().substring(2, 4) + '</a></li>').insertBefore($('#searchdate li:first'));
+        no++;
+    }
+    if (ml != 0) {
+        ml = ml + w;
+    }
+    $('#searchdate').animate({ marginLeft: ml + 'px' }, 100, function () {
+    });
+    $('#searchdate').width(w * no);
+}
+
+function next() {
+    //           var ulw = $('#ul').width();
+    if (no * w + ml <= ow) {
+        if (n >= 12) {
+            n = 0;
+            yn++;
+        }
+        n++;
+        $('#searchdate').append('<li><a href="javascript:void(0)" onclick="searchmonth(this)" val="' + n + '-' + yn + '">' + month[n - 1] + ' ' + yn.toString().substring(2, 4) + '</a></li>');
+        no++;
+    }
+    //if(no*w+ml>ow) {
+    ml = ml - w;
+    //}
+    $('#searchdate').animate({ marginLeft: ml + 'px' }, 500, function () {
+    });
+    $('#searchdate').width(w * no);
+}
+function showExportBox() {
+    var div = $("#export-box");
+    if (div.css("display") == "none")
+        div.css("display", "block");
+    else
+        div.css("display", "none");
+}
+
+function advanceSearch() {
+    $('#txtPageIndex').val(0);
+    ispageload = false;
+    ShowTransList(false);
+}
+
+function OpenPrintTransactionList() {
+    //Creating new page
+    var pp = window.open('', '', 'letf=0,top=0,width=800,height=600,toolbar=0,scrollbars=1,status=0');
+    pp.document.writeln("<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>");
+    pp.document.writeln('<HTML><HEAD><title>Transaction list</title>');
+    pp.document.writeln('<!--[if lt IE 8]><link rel="stylesheet" href="/portals/_default/skins/vib-retails/css/ie7.css" type="text/css" /><![endif]-->');
+    pp.document.writeln('<LINK href="/portals/_default/skins/vib-retails/css/style.css" type="text/css" rel="stylesheet"/>');
+    pp.document.writeln('<LINK href="/portals/_default/skins/vib-retails/css/vib.css" type="text/css" rel="stylesheet"/>');
+    pp.document.writeln('<LINK href="/DesktopModules/VIBAccountTransaction/transactionprint.css?v=0.01" type="text/css" rel="stylesheet" media="print"/>');
+    //pp.document.writeln('<LINK href="/portals/_default/skins/vib-retails/css/PrintStyle.css" type="text/css" rel="stylesheet" media="print"><base target="_self">');
+    //pp.document.writeln('<style type="text/css" id="styleprint">');
+    //
+    //Ending Tag of </form>, </body> and </HTML>
+    //pp.document.writeln('</style>');
+    pp.document.writeln('</HEAD>');
+    //Adding Body Tag
+    pp.document.writeln('<body MS_POSITIONING="GridLayout" bottomMargin="0" leftMargin="0" topMargin="0" rightMargin="0">');
+    //pp.document.writeln('<body>');
+    //Adding form Tag
+    pp.document.writeln('<form method="post">');
+    pp.document.writeln('<div style="text-align:left;float:left; width:100%">');
+    pp.document.writeln(dtnow);
+    pp.document.writeln('</div>');
+    pp.document.writeln('<div class="table5" style="float:left; width:100%">');
+    pp.document.writeln('<img src="/portals/_default/skins/vib-retails/images/VIBlogo.jpg">');
+    pp.document.writeln('</div>');
+    //Creating two buttons Print and Close within a table
+    //pp.document.writeln('<div style="text-align:right"><INPUT ID="PRINT" type="button" value="Print" onclick="javascript:window.print();"><INPUT ID="CLOSE" type="button" value="Close" onclick="window.close();"></div>');
+    //Writing print area of the calling page
+    pp.document.writeln('<div id="acc-stt-gold">');
+    pp.document.writeln($('#acc-stt-gold').html());
+    pp.document.writeln('</div>');
+    pp.document.writeln('<div id="abc1">');
+    pp.document.writeln($('#abc1').html());
+    pp.document.writeln('</div>');
+    pp.document.writeln('<div id="table">');
+    
+    
+    pp.document.writeln($('#table').html());
+    
+    pp.document.writeln('</div>');
+    pp.document.writeln('<div id="dtottalrecord">');
+    pp.document.writeln($('#dtottalrecord').html());
+    pp.document.writeln('</div>');
+    //Ending Tag of </form>, </body> and </HTML>
+    pp.document.writeln("</form><script type='text/javascript'>window.addEventListener('load', (event) => {window.print()});</script>");
+    pp.document.writeln('</body></HTML>');
+    pp.document.close();
+}
+
+function ExportTransactionList() {
+    var dp = {
+        exporttype: $('#ddlExportType').val(),
+        AcctId: acctid,
+        fromamt: dnn.getVar("CurrentSearch_fromamt"),
+        toamt: dnn.getVar("CurrentSearch_toamt"),
+        pageindex: dnn.getVar("CurrentSearch_pageindex"),
+        pagesize: $("#TransactionList1_hdfPageSize").val(),
+        timetype: dnn.getVar("CurrentSearch_timetype"),
+        dtfrom: dnn.getVar("CurrentSearch_dtfrom"),
+        dtto: dnn.getVar("CurrentSearch_dtto"),
+        period: dnn.getVar("CurrentSearch_period"),
+        trantype: dnn.getVar("CurrentSearch_st")
+    }
+    window.open("/DesktopModules/RBAcctTranController/API/WebAPI/ExportTransList?" + $.param(dp));
+    //Creating new page
+    //var pp = window.open('', '', 'letf=0,top=0,width=800,height=600,toolbar=0,scrollbars=1,status=0');
+    //pp.document.writeln('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">');
+    //pp.document.writeln('<HTML><HEAD><title>Transaction list</title>');
+    //pp.document.writeln('</HEAD>');
+    ////Adding Body Tag
+    //pp.document.writeln('<body MS_POSITIONING="GridLayout" bottomMargin="0" leftMargin="0" topMargin="0" rightMargin="0">');
+
+    //pp.document.writeln('<form method="post" id="form1" action="/desktopmodules/vibaccounttransaction/Handler1.ashx"  enctype="multipart/form-data">');
+    //pp.document.writeln('<textarea name="exporttype" style="height: 180px; width: 186px;display:none">' + $('#ddlExportType').val() + '</textarea>');
+    //pp.document.writeln('<textarea name="accountinfo" style="height: 180px; width: 186px;display:none">' + $('#lblAccountInfo').html() + '</textarea>');
+    //pp.document.writeln('<textarea id="paramexport" name="paramexport" style="height: 180px; width: 186px;display:none">' + $('.exportparam').last().html() + '</textarea>');
+    ////Ending Tag of </form>, </body> and </HTML>
+    //pp.document.writeln('</form><script type="text/javascript">document.getElementById("form1").submit();</script>');
+    //pp.document.writeln('</body></HTML>');
+    ////pp.document.close();
+}
+
+
+
+function OpenPrintPopupTranDetail(divPrintableId) {
+    //Creating new page
+    var pp = window.open('', '', 'letf=0,top=0,width=800,height=600,toolbar=0,scrollbars=1,status=0');
+    //Adding HTML opening tag with <HEAD> … </HEAD> portion
+    pp.document.writeln('<HTML><HEAD><title>Transaction detail</title>');
+    pp.document.writeln('<!--[if lt IE 8]><link rel="stylesheet" href="/portals/_default/skins/vib-retails/css/ie7.css" type="text/css" /><![endif]-->');
+    pp.document.writeln('<LINK href="/portals/_default/skins/vib-retails/css/style.css"  type="text/css" rel="stylesheet">');
+    pp.document.writeln('<LINK href="/DesktopModules/VIBAccountTransaction/transactiondetailprint.css?v=0.01" type="text/css" rel="stylesheet"/>');
+    //pp.document.writeln('<style type="text/css" id="styleprint">');
+    //
+    //Ending Tag of </form>, </body> and </HTML>
+    //pp.document.writeln('</style>');
+    pp.document.writeln('</HEAD>');
+    //Adding Body Tag
+    //pp.document.writeln('<body MS_POSITIONING="GridLayout" bottomMargin="0" leftMargin="0" topMargin="0" rightMargin="0">');
+    pp.document.writeln('<body>');
+    //Adding form Tag
+    pp.document.writeln('<form  method="post">');
+    pp.document.writeln('<div style="text-align:left;">');
+    pp.document.writeln(dtnow);
+    pp.document.writeln('</div>');
+    pp.document.writeln('<div class="table5">');
+    pp.document.writeln('<img src="/portals/_default/skins/vib-retails/images/VIBlogo.jpg">');
+    pp.document.writeln('</div>');
+    //Creating two buttons Print and Close within a table
+    //pp.document.writeln('<div style="text-align:right"><INPUT ID="PRINT" type="button" value="Print" onclick="javascript:window.print();"><INPUT ID="CLOSE" type="button" value="Close" onclick="window.close();"></div>');
+    //Writing print area of the calling page
+    pp.document.writeln(document.getElementById(divPrintableId).innerHTML);
+    //Ending Tag of </form>, </body> and </HTML>
+    pp.document.writeln('</form><script type="text/javascript">window.print();</script>');
+    pp.document.writeln('</body></HTML>');
+    //pp.document.close();
+}

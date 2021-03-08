@@ -1,0 +1,187 @@
+.banner-right{
+	padding-left: 10px;
+	margin-top: 30px;
+}
+.banner-right a img{margin-bottom: 30px}
+.banner-login-bottom{
+}
+.source_links_left
+    {
+        width: 270px;
+        background: white;
+        border: 1px solid #C5C5C5;
+        border-radius: 4px;
+        padding-top: 10px;
+    }
+    .my_links_right
+    {
+        width: 270px;
+        background: white;
+        border: 1px solid #C5C5C5;
+        border-radius: 4px;
+        padding-top: 10px;
+    }
+    .source_links_left table tr td, .my_links_right table tr td
+    {
+        padding:5px;
+    }
+    .dual-select-box div.button1 a:hover
+    {
+        background: url(/portals/_default/skins/vib-retails/images/button-dual-select-blue-hover.png) no-repeat !important;
+    }
+    .dual-select-box div.button2 a:hover
+    {
+        background: url(/portals/_default/skins/vib-retails/images/button-dual-select-grey-hover.png) no-repeat !important;
+    }
+.truy-van-lich-su-giao-dichpng
+    {
+        background: url(/images/quicklinks/truy-van-lich-su-giao-dich.png) no-repeat 0% 70%;
+    }
+    .truy-van-lich-su-giao-dichpng:hover
+    {
+        background: url(/images/quicklinks/hover/truy-van-lich-su-giao-dich_hover.png) no-repeat 0% 70%;
+    }
+    .truy-van-giao-dich-tuong-laipng
+    {
+        background: url(/images/quicklinks/truy-van-giao-dich-tuong-lai.png) no-repeat 0% 70%;        
+    }
+    .truy-van-giao-dich-tuong-laipng:hover
+    {
+        background: url(/images/quicklinks/hover/truy-van-giao-dich-tuong-lai_hover.png) no-repeat 0% 70%;        
+    }
+    .truy-van-thong-tin-tai-khoan-chi-tietpng
+    {        
+        background: url(/images/quicklinks/truy-van-thong-tin-tai-khoan-chi-tiet.png) no-repeat 0% 70%;
+    }
+    .truy-van-thong-tin-tai-khoan-chi-tietpng:hover
+    {
+        background: url(/images/quicklinks/hover/truy-van-thong-tin-tai-khoan-chi-tiet_hover.png) no-repeat 0% 70%;
+    }
+    /*.truy-van-giao-dich-tuong-laipng
+    {
+        background: url(/images/quicklinks/truy-van-giao-dich-tuong-lai.png) no-repeat 0% 70%;
+    }
+    .truy-van-giao-dich-tuong-laipng:hover
+    {
+        background: url(/images/quicklinks/hover/truy-van-giao-dich-tuong-lai_hover.png) no-repeat 0% 70%;
+    }*/
+    .chuyen-tien-giua-cac-tk-cua-minhpng
+    {
+        background: url(/images/quicklinks/chuyen-tien-giua-cac-tk-cua-minh.png) no-repeat 0% 70%;
+    }
+    .chuyen-tien-giua-cac-tk-cua-minhpng:hover
+    {
+        background: url(/images/quicklinks/hover/chuyen-tien-giua-cac-tk-cua-minh_hover.png) no-repeat 0% 70%;
+    }
+    .nap-tien-vao-di-dong-tra-truocpng
+    {
+        background: url(/images/quicklinks/nap-tien-vao-di-dong-tra-truoc.png) no-repeat 0% 70%;
+    }
+    .nap-tien-vao-di-dong-tra-truocpng:hover
+    {
+        background: url(/images/quicklinks/hover/nap-tien-vao-di-dong-tra-truoc_hover.png) no-repeat 0% 70%;
+    }
+    .tao-giao-dich-chuyen-tien-dinh-kypng
+    {
+        background: url(/images/quicklinks/tao-giao-dich-chuyen-tien-dinh-ky.png) no-repeat 0% 70%;
+    }
+    .tao-giao-dich-chuyen-tien-dinh-kypng:hover
+    {
+        background: url(/images/quicklinks/hover/tao-giao-dich-chuyen-tien-dinh-ky_hover.png) no-repeat 0% 70%;
+    }
+    .chuyen-tien-tu-tk-luong-den-tk-thanh-toanpng
+    {
+        background: url(/images/quicklinks/chuyen-tien-tu-tk-luong-den-tk-thanh-toan.png) no-repeat 0% 70%;
+    }
+    .chuyen-tien-tu-tk-luong-den-tk-thanh-toanpng:hover
+    {
+        background: url(/images/quicklinks/hover/chuyen-tien-tu-tk-luong-den-tk-thanh-toan_hover.png) no-repeat 0% 70%;
+    }
+    .thanh-toan-hoa-don-tien-dienpng
+    {
+        background: url(/images/quicklinks/thanh-toan-hoa-don-tien-dien.png) no-repeat 0% 70%;
+    }
+    .thanh-toan-hoa-don-tien-dienpng:hover
+    {
+        background: url(/images/quicklinks/hover/thanh-toan-hoa-don-tien-dien_hover.png) no-repeat 0% 70%;
+    }
+    .tra-no-the-tin-dungpng
+    {
+        background: url(/images/quicklinks/tra-no-the-tin-dung.png) no-repeat 0% 70%;
+    }
+    .tra-no-the-tin-dungpng:hover
+    {
+        background: url(/images/quicklinks/hover/tra-no-the-tin-dung_hover.png) no-repeat 0% 70%;
+    }
+    .tra-no-khoan-vaypng
+    {
+        background: url(/images/quicklinks/tra-no-khoan-vay.png) no-repeat 0% 70%;
+    }
+    .tra-no-khoan-vaypng:hover
+    {
+        background: url(/images/quicklinks/hover/tra-no-khoan-vay_hover.png) no-repeat 0% 70%;
+    }
+    .chao-hangpng
+    {
+        background: url(/images/quicklinks/chao-hang.png) no-repeat 0% 70%;
+    }
+    .chao-hangpng:hover
+    {
+        background: url(/images/quicklinks/hover/chao-hang_hover.png) no-repeat 0% 70%;
+    }
+    .thay-doi-mat-khaupng
+    {
+        background: url(/images/quicklinks/thay-doi-mat-khau.png) no-repeat 0% 70%;
+    }
+    .thay-doi-mat-khaupng:hover
+    {
+        background: url(/images/quicklinks/hover/thay-doi-mat-khau_hover.png) no-repeat 0% 70%;
+    }
+    .truy-van-lich-su-hoat-dong-tren-ebankingpng
+    {
+        background: url(/images/quicklinks/truy-van-lich-su-hoat-dong-tren-ebanking.png) no-repeat 0% 70%;
+    }
+    .truy-van-lich-su-hoat-dong-tren-ebankingpng:hover
+    {
+        background: url(/images/quicklinks/hover/truy-van-lich-su-hoat-dong-tren-ebanking_hover.png) no-repeat 0% 70%;
+    }
+    .tong-hop-danh-sach-tai-khoanpng
+    {
+        background: url(/images/quicklinks/tong-hop-danh-sach-tai-khoan.png) no-repeat 0% 70%;
+    }
+    .tong-hop-danh-sach-tai-khoanpng:hover
+    {
+        background: url(/images/quicklinks/hover/tong-hop-danh-sach-tai-khoan_hover.png) no-repeat 0% 70%;
+    }
+    .dat-link-truy-cappng
+    {
+        background: url(/images/quicklinks/dat-link-truy-cap.png) no-repeat 0% 70%;
+    }
+    .dat-link-truy-cappng:hover
+    {
+        background: url(/images/quicklinks/hover/dat-link-truy-cap_hover.png) no-repeat 0% 70%;
+    }
+    .trang-chupng
+    {
+        background: url(/images/quicklinks/trang-chu.png) no-repeat 0% 70%;
+    }
+    .trang-chupng:hover
+    {
+        background: url(/images/quicklinks/hover/trang-chu_hover.png) no-repeat 0% 70%;
+    }
+    .iaoApplicationpng
+    {
+        background: url(/images/quicklinks/iaoApplication.png) no-repeat 0% 70%;
+    }
+    .iaoApplicationpng:hover
+    {
+        background: url(/images/quicklinks/iaoApplication.png) no-repeat 0% 70%;
+    }
+    .iaoOpenaccpng
+    {
+        background: url(/images/quicklinks/iaoOpenacc.png) no-repeat 0% 70%;
+    }
+    .iaoOpenaccpng:hover
+    {
+        background: url(/images/quicklinks/iaoOpenacc.png) no-repeat 0% 70%;
+    }

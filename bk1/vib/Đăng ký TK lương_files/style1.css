@@ -1,0 +1,23 @@
+﻿.tit2{padding-top:20px;margin-bottom: 17px;}
+.tit2 p{font-size:30px;color:#333;font-family:'myriadprosemibold';}
+.tit2 span{font-size:16px;color:#666;}
+
+#box-id{width:690px;position:relative;margin-top:20px;padding-bottom:30px;background:#f7f8f9;border:1px solid #d5d5d5;}
+#box-id .top {width: 3px; height: 3px; background: url(../images/border-tip.png) top left no-repeat;position: absolute;top: -1px; left: -1px;}
+#box-id .right {width: 3px; height: 3px; background: url(../images/border-tip.png) top right no-repeat;position: absolute;top: -1px; right: -1px;}
+#box-id .bottom {width: 3px; height: 3px; background: url(../images/border-tip.png) bottom right no-repeat;position: absolute;bottom: -1px; right: -1px;}
+#box-id .left {width: 3px; height: 3px; background: url(../images/border-tip.png) bottom left no-repeat;position: absolute;bottom: -1px; left: -1px;}
+#box-id p{font-size:12px;color:#333;padding-top:20px;padding-left:20px;line-height:18px;}
+#box-id h2{font-size:12px;color:#333;padding-top:30px;padding-left:20px;font-weight:bold;}
+#box-id .col1{padding-top:10px;padding-bottom:10px;padding-left:40px;width:240px;}
+#box-id .col2{padding-top:10px;padding-bottom:10px;}
+
+#box-id .text1{font-size:14px;color:#0066b3;font-weight:bold;}
+#box-id .text2{font-size:14px;color:#f79b2c;font-weight:bold;}
+#box-id .text3{font-size:13px;color:#0066b3;font-family:'myriadprosemibold';line-height:17px;}
+#box-id .text4{font-size:13px;color:#333;}
+
+#box-id .nhap{width:240px;padding: 6px 10px; border-radius:4px;border:1px solid #ccc;
+background: url(../images/bg_input.png) repeat-x;}
+#box-id .nhap1{width:10px;height:10px;padding: 5px 5px;border-radius:4px;border:1px solid #ccc;
+background: url(../images/bg_input.png) repeat-x;margin-right:7px;}

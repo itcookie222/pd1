@@ -1,0 +1,99 @@
+﻿var rbai = {
+    sf: null,
+    bs: null,
+    Init: function (moduleid) {
+        this.sf = $.ServicesFramework(moduleid);
+        this.bs = this.sf.getServiceRoot('RBAccountInformation') + 'WebAPI/';
+        $("#lnkCloseAcct").click(function () {
+            rbai.CheckAccount($(this).attr("acct"), $(this).attr("accttype"));
+        });
+        $("#lnkPrint").click(function () {
+            rbai.Print($(this).attr("acctid"));
+        });
+
+    },
+    CheckAccount: function (acctid, accttype) {
+        var datap = {
+            accid: acctid,
+            accttype: accttype,
+        };
+        $.ajax({
+            type: "POST",
+            url: this.bs + "CheckAccountClose",
+            beforeSend: this.sf.setModuleHeaders,
+            data: datap,
+            cache: false,
+            success: function (result) {
+                if (typeof result !== "undefined" && result != null) {
+                    if (result.STATUSCODE === "000000") {
+                        location.href = $("#lnkCloseAcct").attr("lnk");
+                    } else {
+                        alert(result.MESSAGE);
+                    }
+                }
+            },
+            error: function (xhr, textStatus) {
+                RBAjaxError(xhr, textStatus);
+            }
+        });
+    },
+    Print: function (acctid) {
+        window.open(this.bs + 'PrintSaving?accid=' + acctid, '_blank');
+    },
+    GetGSDetail: function () {
+        var datap = {
+            accountid: dnn.getVar("AcctID"),
+            amt:parseFloat(dnn.getVar("SoDuHienTai"))
+        };
+        $.ajax({
+            type: "GET",
+            url: this.bs + "GetGSInfo",
+            beforeSend: this.sf.setModuleHeaders,
+            contentType: "application/json; charset=utf-8",
+            cache: false,
+            data: datap,
+            success: function (result) {
+                if (typeof result !== "undefined" && result != null) {
+                    if (result.StatusCode === "000000") {
+                        $("#sgoalname").html(result.GoalName);
+                        $("#sgoaldate").html(result.GoalDate);
+                        $("#sgoalamt").html(result.GoalAmount);
+                        $("#spGSFreq").html(result.Freq);
+                        $("#spGSHoanThanh").html(result.Complete);
+                        $("#spGSFreqAmt").html(result.FreqAmt);
+                    } else {
+                        alert(result.MESSAGE);
+                    }
+                }
+            },
+            error: function (xhr, textStatus) {
+                RBAjaxError(xhr, textStatus);
+            }
+        });
+
+    },
+    GetAssociateCard:function(acctid) {
+        $.ajax({
+            type: "GET",
+            url: this.bs + "GetAssociateCard",
+            data: { accountid: acctid },
+            cache: false,
+            beforeSend: this.sf.setModuleHeaders,
+        }).done(function (result) {
+            if (typeof result !== "undefined" && result != null) {
+                if (result.StatusCode != '000000') {
+                    $('#pThongTinTheThanhToan').append('<span>'+vibmessage.msgLoiKetNoiHeThongThe+'</span>');
+                    return;
+                }
+                if (result.data != null && result.data.length > 0) {
+                    for (var i = 0; i < result.data.length; i++) {
+                        $('#pThongTinTheThanhToan').append('<span>' + result.data[i].CardNumber + ' - ' + result.data[i].CardType + '</span>');
+                    }
+                    if (result.ShowCardSetting) {
+                        $('#lnkCSS').show();
+                    }
+                }
+            }
+        });
+    }
+}

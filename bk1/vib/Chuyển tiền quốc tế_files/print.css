@@ -1,0 +1,63 @@
+.noprint{display: none;}
+.fl-home-transaction-detail {
+	/*width: 100%;*/
+	background: #F6F5F5;
+	webkit-border-radius: 3px;
+	-moz-border-radius:  3px;
+	border-radius:  3px;
+	box-shadow: 0 1px 4px 0 rgba(0,0,0,0.17);
+	margin-left: -10px;
+	margin-right: -10px;
+	top: -10px;
+	position: relative;
+}
+.fl-home-transaction-detail .fl-transaction-detail-title {
+	height: 40px;
+	background: #fff;
+	position: relative;
+}
+.fl-home-transaction-detail .fl-transaction-detail-content {
+	background: #EDEDED;
+	height: 93px;
+	border-top: 1px solid #c9c9c9;
+	position: relative;
+}
+.fl-home-transaction-detail .fl-transaction-detail-col {
+	float: left;
+	height: 100%;
+	border-right: 1px solid #dadada;
+	padding: 0 15px;
+	font-size: 10px;
+	font-weight: bold;
+}
+.fl-home-transaction-detail .fl-transaction-detail-col.fl-detail-col-05 {
+	border-right: 0 none;
+}
+.fl-home-transaction-detail .fl-transaction-detail-print {	
+	display: none;
+}
+.fl-home-transaction-detail .fl-transaction-detail-col .fl-transaction-detail-col-text {
+	font-size: 10px;
+	font-weight: bold;
+	margin-top: 20px;
+	color: #7b7b7b;
+}
+.fl-home-transaction-detail .fl-transaction-detail-col .fl-transaction-detail-col-val {
+	font-size: 10px;
+	font-weight: normal;
+	margin-top: 8px;
+}
+.fl-home-transaction-detail .fl-transaction-detail-col .fl-currency {
+	color: #f5821f;
+}
+ul.fl-home-tranaction-list li.tranaction-success .fl-home-transaction-detail .fl-transaction-detail-col .fl-currency {
+	color: #0066B2;
+}
+.fl-home-transaction-detail .fl-transaction-detail-title .fl-home-tranaction-item-name{
+	font-size: 14px;
+	text-transform: uppercase;
+	padding-left: 10px;	
+}
+.fl-home-transaction-detail .icon-calcel-black {	
+	display: none;	
+}

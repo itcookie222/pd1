@@ -1,0 +1,355 @@
+﻿div.tagsinput { border:1px solid #CCC; background: #FFF; padding:5px; width:300px;  overflow-y: auto;}
+div.tagsinput span.tag { border: 1px solid #a5d24a; -moz-border-radius:2px; -webkit-border-radius:2px; display: block; float: left; padding: 5px; text-decoration:none; background: #cde69c; color: #638421; margin-right: 5px; margin-bottom:5px;font-family: helvetica;  font-size:13px;}
+div.tagsinput span.tag a { font-weight: bold; color: #82ad2b; text-decoration:none; font-size: 11px;  }
+div.tagsinput input { width:80px; margin:0px; font-family: helvetica; font-size: 13px; border:1px solid transparent; padding:5px; background: transparent; color: #000; outline:0px;  margin-right:5px; margin-bottom:5px; }
+div.tagsinput div { display:block; float: left; }
+.tags_clear { clear: both; width: 100%; height: 0px; }
+.not_valid { background: #FBD8DB !important; color: #90111A !important;}
+.AddSenderGroup table{ width: 600px;}
+.AddSenderGroup td{ padding: 10px;}
+.slwith300 { width: 300px;}
+
+.sperror{ color: red;}
+.messagetype br{ display: none;}
+.messagetype label{ padding-right: 20px;}
+#divPopupDetail .titc2{ width: 938px;}
+.tit-text51{font-family:'myriadprosemibold';font-size:26px;color:#fff;text-shadow:#dc7c16 0.5px 0.5px 1px;padding-left:20px;padding-top: 8px;}
+.btn-target{color:#fff !important; padding:0px 20px; background:#f37820; display:inline-block; border-radius:6px; line-height:40px; margin-top:20px; font-size:14px;}
+.btn-target-back{ border:solid 1px #f37820; color:#f37820 !important; background:#fff;}
+.box-target{padding:40px; border:solid 1px #ccc; background:#f8f8f8; text-align:center; font-size:14px; width:760px; margin:auto;}
+.btn-target img{margin-bottom: -8px;}
+.box-thongbao1{ font-size:16px; text-align:center;width:840px; margin:auto; padding-top:30px;}
+.box-thongbao1 .text-camon{
+	color:#ed6d25; font-size:18px; margin:15px 0px 20px 0px;	
+}
+.box-thongbao1 .print-mail{ font-size:11px; text-align:right; margin-top:25px; padding-bottom:10px; border-bottom:solid 1px #ccc;}
+.box-thongbao1 .print-mail img{ margin-left:15px;}
+.box-thongbao1 .tbl_info{ width:550px; margin:20px auto; padding:0; text-align:left; font-size:14px; margin-left:235px;}
+.box-thongbao1 .tbl_info .tit{ color:#8e8e8e;}
+.box-thongbao1 .tbl_info td{ padding:8px 0px}
+
+/**/
+.tit-banner{color:#0066b3; font-size:22px; }
+.tea-banner{font-size:14px; margin:20px 0px 25px 0px;}
+.bn-text-area{ width:435px; padding-top:50px;}
+.list-inbox-home {
+    padding: 15px;
+    margin: 0;
+	background:#ededed;
+}
+.list-inbox-home li {
+    list-style-type: none;
+    padding: 15px 0px;
+    background: #fff;
+	margin-bottom:15px;
+}
+.list-inbox-home li:last-child{
+	margin-bottom:0px;
+}
+.list-inbox-home .check {
+    width: 50px;
+    text-align: center;
+	margin-top:15px;
+}
+.list-inbox-home .info-inbox {
+    width: 500px;
+    float: left;
+}
+.list-inbox-home .title {
+    font-size: 13px;
+    color: #0066b3;
+    font-weight: bold;
+}
+.list-inbox-home .dadoc {
+    font-size: 13px;
+    color: #0066b3;
+}
+.list-inbox-home .quahan {
+    font-size: 13px;
+    color: #A9A9A9;
+}
+.list-inbox-home .teaser {
+    font-size: 12px;
+    margin-top: 5px;
+    color: #333;
+}
+.list-inbox-home .time {
+    float: right;
+    font-size: 12px;
+    padding-right: 10px;
+    color: #888;
+	margin-top:15px;
+}
+.bot-list-inbox-home {
+    background: #ededed;
+	padding-bottom:15px;
+	
+}
+.break_inbox-home{
+	float:right;
+	margin-right:15px;
+}
+.break_inbox-home a{
+	font-size:13px;
+	padding: 3px 7px;
+    display: inline-block;
+	border-radius:3px;
+}
+.break_inbox-home a.active{
+	color:#fff;
+	background:#f5821f;	
+}
+.box-home-inbox{ background:#ededed;}
+.box-home-inbox .chek_all{ float:left; font-size:13px; margin-left:15px;}
+.detail-mail-home{background:#f3f3f3; margin-top:100px;}
+.detail-mail-home img{ max-width:100%;max-height: 230px;}
+.detail-mail-home .content-mail{ padding:20px; }
+.content-mail .tit-mail{ color:#0066b3; font-size:18px; margin-bottom:8px;}
+.content-mail .date{color:#969696; font-size:12px; margin-bottom:20px;}
+.content-mail .description{ font-size:13px;}
+.content-mail .description p{ margin-bottom:15px;}
+.btn-delete-mail{color:#333 !important; padding:0px 20px; display:inline-block; border-radius:6px; line-height:40px; margin-top:20px; font-size:14px; border:solid 1px #ccc;}
+.content-mail .list-rep{ border-top:solid 1px #979797; padding:20px 0px;}
+.content-mail .ava{ float:left; width:40px; margin-right:15px;}
+.content-mail .list-rep .name{color:#0066b3; font-size:15px; margin-top:3px;}
+.content-mail .list-rep .description{ margin:20px 0px;}
+.box-rep{ background:#ececec; padding:20px;}
+.box-rep .tit{ color:#0066b3; font-size:16px; border-bottom:solid 1px #979797; padding-bottom:15px;}
+.box-rep .text-rep{width:99%; height:100px;}
+.btn-send-rep{
+	border: solid 1px #0066b3;
+    background: #0066b3;
+    display: inline-block;
+    color: #fff !important;
+    font-size: 14px;
+    padding: 10px 40px;
+    margin-top: 20px;
+    border-radius: 4px;	
+}
+.btn-delete-mail2{
+    color: #333 !important;
+    padding: 0px 14px;
+    display: inline-block;
+    border-radius: 6px;
+    line-height: 28px;
+    font-size: 12px;
+    border: solid 1px #ccc;	
+	margin-left:20px;
+}
+.list-inbox-home .info-inbox .exp_date{
+	display:block;
+	font-size:10px;
+	color:#bdbdbd;
+	margin:3px 0px 8px 0px;	
+}
+.box-home-inbox .box-control{
+	background:#fcfcfc;
+	margin:15px 15px 0px 15px;	
+	padding:10px 0px;
+}
+.box-control .slt{ float:right; height:30px; margin-right:10px; width:180px; padding:0 10px; border-radius:4px; border:solid 1px #ccc; background:none;}
+.grdData td{ word-break: break-all; }
+
+/* CSS Document */
+.ecard-login-title {
+	font-size: 14px;
+	line-height: 18px;
+	margin-top: 20px;
+}
+.ecard-login-title .ecard-account-name {
+	color: #0066b3;
+	font-weight: bold;
+	text-transform: uppercase;
+}
+.list-inbox-home li.expiried {
+	background: #d5d5d5;
+	padding-bottom: 20px;
+}
+.list-inbox-home li.expiried .info-inbox {
+	margin-top: 18px;
+	font-weight: bold;
+}
+.list-inbox-home li.expiried .time {
+	margin-top: 20px;	
+}
+.list-inbox-home .dadoc {
+	font-weight: normal;
+}
+.list-inbox-home li a {
+	font-size: 13px;
+}
+.list-inbox-home li.readed a {
+	font-weight: normal;
+}
+.list-inbox-home li.unreaded a {
+	font-weight: bold;
+}
+.list-inbox-home li.item-ecard {
+	background-image: url(/js/css/images/ecard-ico.png);
+	background-position: right bottom;
+	background-repeat: no-repeat;
+	/*background-size: auto 100%;*/
+	min-height: 45px;
+}
+.list-inbox-home li.item-ecard.readed {
+	background-image: url(/js/css/images/ecard-ico-readed.png);
+}
+.list-inbox-home li .time, .list-inbox-home li.expiried .time-2{
+	display: none;
+}
+.list-inbox-home li .time-2{
+	display: inline-block;
+	background: #d8d8d8;
+	border-radius: 3px;
+	padding: 2px 5px;
+	margin-left: 15px;
+}
+.list-inbox-home li .time-expiried {
+	font-size: 13px;
+	color: #A9A9A9;
+	margin-top: 20px;
+	text-align: right;
+	padding-right: 20px;
+}
+.box-home-inbox input[type=checkbox] {
+	height: 19px;
+	width: 19px;
+	border: 0 none;
+	-webkit-appearance: none;
+	outline: none;
+	background: #f5f5f5 url(/js/css/images/icon-uncheck.png) center no-repeat;	
+	box-sizing: none;
+}
+.box-home-inbox input[type=checkbox]:checked  {
+	background: #f5821f url(/js/css/images/icon-checked.png) center no-repeat;;
+	border: 0 none;
+	color: #fff;
+}
+.box-home-inbox .chek_all input[type=checkbox] {
+	position: relative;
+	top: 7px;
+}
+.ecard-inbox {
+	margin-top: 20px;
+}
+.ecard-inbox .tit-mail {
+	text-transform: uppercase;
+}
+.ecard-inbox .inbox-from {
+	margin: 20px auto;
+	background-color: #e3e3e3;
+	color: #000;
+	font-weight: 600;
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	border-radius: 5px;
+	padding: 20px;
+	font-size: 16px;
+	line-height: 18px;
+}
+.ecard-box-show {
+	min-height: 567px;
+	background: url(/js/css/images/ecard-bg.png) top center no-repeat;
+	background-size: 100% auto;
+	position: relative;
+	vertical-align: bottom;
+	overflow: hidden;
+}
+.ecard-box-show .ecard-box{
+	width: 318px;
+	position: absolute;
+	bottom: 0;
+	left: 50%;
+	transform: translateX(-50%);
+	-webkit-transform: translateX(-50%);
+  	-ms-transform: translateX(-50%);
+}
+.ecard-box-show .ecard-box img{
+	width: 100%;
+	max-height: inherit;
+}
+.ecard-box-show .ecard-box .box-content{
+	position: absolute;
+	bottom: -7px;
+	vertical-align: bottom;
+	width: 100%;
+	overflow: hidden;
+}
+.ecard-box-show .box-close .bg-box-open, .ecard-box-show .box-close .ecard-card, .ecard-box-show .box-close .ecard-shadow {
+	display: none;
+}
+.ecard-box-show .box-close .bg-box-close {
+	display: block;
+}
+.ecard-box-show .box-open .bg-box-open, .ecard-box-show .box-open .ecard-card, .ecard-box-show .box-open .ecard-shadow{
+	display: block;
+}
+.ecard-box-show .box-open .bg-box-close {
+	display: none;
+}
+
+.ecard-box-show .ecard-content {
+	position: absolute;
+	width: 100%;
+	color: #f3d220;
+	font-size: 12px;
+	text-align: center;
+	top: 50%;
+	transform: translateY(-50%);
+	-webkit-transform: translateY(-50%);
+  	-ms-transform: translateY(-50%);
+}
+.ecard-box-show .box-close .ecard-bottom{
+	position: relative;
+	bottom: 0;
+	min-height: 318px;
+}
+.ecard-box-show .box-open .ecard-bottom{
+	min-height: none;
+	position: relative;
+	bottom: 0;
+}
+.ecard-box-show .ecard-card{
+	position: relative;
+	text-align: center;	
+	top: 80%;
+}
+.ecard-box-show .ecard-card img{
+	width: 80%;
+	border: 4px solid #fff;
+	border-radius: 5px;
+	border-radius: 5px;
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	-webkit-box-shadow: 2px 2px 10px 0px rgba(0,0,0,0.75);
+	-moz-box-shadow: 2px 2px 10px 0px rgba(0,0,0,0.75);
+	box-shadow: 2px 2x 10px 0px rgba(0,0,0,0.75);
+}
+.ecard-box-show .ecard-box{
+	
+}
+.box-close .press-to-open {
+	text-align: center;
+	color: #fff;
+	font-size: 14px;
+	cursor: pointer;
+	font-weight: bold;
+	position: absolute;
+	width: 100%;
+	top: 0;
+	z-index: 9998;
+	display: block;
+}
+.box-open .press-to-open {
+	display: none;
+}
+.icon-arrow-up{
+	height: 23px;
+	width: 14px;
+	background: url(/js/css/images/icon-narrow-up.png) center no-repeat;
+	display: block;
+	margin: 0 auto;
+}
+.content-mail .list-rep {
+	border-top: solid 1px #c9c9c9;
+}

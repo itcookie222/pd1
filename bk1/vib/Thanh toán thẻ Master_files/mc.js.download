@@ -1,0 +1,795 @@
+﻿var kytudacbiet = '!@#$%&/<>=?';
+
+var rbMCPayment = {
+    sf: null,
+    bs: null,
+    Init: function (moduleid) {
+        this.sf = $.ServicesFramework(moduleid);
+        this.bs = this.sf.getServiceRoot('MCPaymentController') + 'WebApi/';
+        ShowForm(1);
+        $("#box2_body").hide();
+        $("#box3_body").hide();
+        $('#box2_title').attr('class', 'spec-header2');
+        $('#box3_title').attr('class', 'spec-header2');
+        enableSelectBoxes();
+        if (dnn.getVar('debitshowheader') != null && dnn.getVar('debitshowheader') === "N") {
+            $('#divfromacctheader').hide();
+        }
+        if (dnn.getVar('debitacct') != '' && dnn.getVar('debitacct') != null) {
+            $('#divFromAcct .selected').html($('#divFromAcct .selectOptions .selectOption[val="' + dnn.getVar('debitacct') + '"]').html());
+            $('#divFromAcct .selectOptions .selectOption[val="' + dnn.getVar('debitacct') + '"]').click();
+        }
+        // Card Number
+        $("#txtCardNumber").keypress(function (e) {
+            var key = e.charCode || e.keyCode || 0;
+            if (((key == 8 || key == 9 || key == 46 || (key >= 16 && key <= 18) || (key >= 35 && key <= 40)) && e.charCode == 0) /* backspace, end, begin, top, bottom, right, left, del, tab */
+                        || (key >= 48 && key <= 57)) { /* 0-9 */
+                return;
+            } else {
+                e.preventDefault();
+            }
+        });
+
+        // MC Detail
+        hideMCDetail();
+        select_card();
+
+        $("#txtAmmout").autoNumeric({ vMax: get_vMax, vMin: get_vMin });
+
+        var onEditCallback = function (remaining) {
+            $('#spnotext').html(remaining);
+        };
+
+        var onLimitCallback = function () {
+        };
+        $(".nhap-otp").numeric(false, function () { this.value = ""; this.focus(); });
+        $(".nhap-otp").keyup(function (event) {
+            var currentIndex = $(this).attr("id").replace('txtOtp', '');
+            if (nextIndex == 6) return;
+            var nextIndex = parseInt(currentIndex) + 1;
+            $("#txtOtp" + nextIndex).focus();
+            $("#txtOtp" + nextIndex).val("");
+        });
+
+        $('#txtDescription').limitMaxlength({
+            onEdit: onEditCallback,
+            onLimit: onLimitCallback
+        });
+        if (dnn.getVar("UserRegisterOnline") === "Y") {
+            $("<a href='#divPopup'/>").fancybox({
+                helpers: {
+                    overlay: { closeClick: false } //Disable click outside event
+                },
+                width: 400,
+                height    :100,
+                autoSize: false,
+                wrapCSS   :"userregisteronline"
+            }).trigger("click");
+        }
+        if (dnn.getVar("payforcardser")) {
+            show_section(2);
+            $('#divToAccount .selected').html($('#divToAccount .selectOptions .selectOption[val="' + dnn.getVar('payforcardser') + '"]').html());
+            $('#divToAccount .selectOptions .selectOption[val="' + dnn.getVar('payforcardser') + '"]').click();
+            rbMCPayment.goto_section3();
+        }
+        $('#rbtAddNewAccount').click(function () {
+            if ($(this).is(':checked')) {
+                $("#tr-commit-pay").hide();
+                $("#spanMinPay").hide();
+                $("#spanMaxPay").hide();
+                $("#spanCommitPay").hide();
+            }
+        });
+        $("#aGetOtp").click(function () {
+            rbMCPayment.GetOTP();
+        });
+        $("#agotosection3").click(function () {
+            rbMCPayment.goto_section3();
+        });
+        $("#lnkFinish").click(function () {
+            rbMCPayment.DoTransfer();
+        });
+        //
+    },
+    GetOTP: function () {
+        $.ajax({
+            type: "GET",
+            url: this.bs + "GetOTP",
+            cache: false,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            beforeSend: this.sf.setModuleHeaders,
+            success: function (data) {
+                alert(data);
+                $('#txtOtp1').focus();
+                $('#aGetOtp').fadeOut("slow");
+                setTimeout(function () {
+                    $('#aGetOtp').fadeIn("slow");
+                }, vibcode.ThoiGianDisablebtnGetOTP);
+            },
+            error: function () {
+                alert(vibcode.OTPMSG);
+            }
+        });
+    },
+    LoadMCDetail: function (toMCId, type) {
+        HideErrorForm(1);
+        if (type == 1) {
+            var obj1 = document.getElementById("rbtSelectAccount");
+            obj1.checked = true;
+        } else {
+            var obj2 = document.getElementById("rbtAddNewAccount");
+            obj2.checked = true;
+        }
+        resetValue();
+
+        // Do loading if form 3 is not shown
+        var form3Shown = $("#isBox3Shown").val();
+        if (form3Shown != "1") {
+            return false;
+        }
+        toMCId = $.trim(toMCId);
+
+        if (toMCId.length == 0) {
+            return false;
+        }
+
+        if (type == 2 && toMCId.length != 16 && (toMCId.length > 0)) {
+            ShowErrorForm(CARDNO_INVALID, 1);
+            return false;
+        }
+        var dp = {
+            accountId: toMCId,
+            type: type
+        };
+        $.ajax({
+            type: "GET",
+            url: this.bs + "GetMCInfo",
+            cache: false,
+            data: dp,
+            beforeSend: this.sf.setModuleHeaders,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (data) {
+                var mc = data;
+                var isError = $.trim(mc.IsError);
+                if (isError == "") {
+                    // Owner
+                    $('#spCardOwner').html(mc.CustomerName);
+                    $('#tr-card-owner').show();
+                    // Currency
+                    $('#selectedMCCCy').html(mc.Currency);
+                    // Payfor
+                    var payFor = mc.PayFor;
+                    $('#hdfPayFor').val(payFor);
+                    if (payFor == "ME") {
+                        $('#spRemainingBalance').html(mc.RemainingBal + " " + mc.Currency);
+                        $('#spMinimumPay').html("<span id='min'>" + mc.MinimumPayment + "</span>" + " " + mc.Currency);
+                        $('#spMaximumPay').html("<span id='max'>" + mc.MaximumPayment + "</span>" + " " + mc.Currency);
+                        $('#spCommitPay').html("<span id='commit'>" + mc.strCommitPayment + "</span>" + " " + mc.Currency);
+                        $("#tr-remaining-balance").show();
+                        $("#tr-min-pay,#tr-max-pay").show();
+                        $("#trMinPay,#trMaxPay").show();
+                        $("#spanMinPay").html(mc.MinimumPayment + " " + mc.Currency);
+                        $("#spanMaxPay").html(mc.MaximumPayment + " " + mc.Currency);
+                        $("#spanCommitPay").html(mc.strCommitPayment + " " + mc.Currency);
+                    } else {
+                        $("#trMinPay,#trMaxPay,#tr-commit-pay,#trCommitPay").hide();
+
+                        $('#spRemainingBalance').html("");
+                        $('#spMinimumPay,#spMaximumPay,#spCommitPay').html("");
+                        $("#tr-remaining-balance").hide();
+                        $("#tr-min-pay,#tr-max-pay").hide();
+                    }
+                    if (mc.SHOWCOMMITAMT === "Y") {
+                        $("#tr-commit-pay,#trCommitPay").show();
+                    } else {
+                        $("#tr-commit-pay,#trCommitPay").hide();
+                    }
+                    document.getElementById("rbtOtherPay").checked = true;
+                    $("#txtAmmout").removeAttr('readonly');
+                    $("#txtAmmout").removeAttr('disabled');
+
+                    $("#spanMinPay,#spanMaxPay,#spanCommitPay").hide();
+                    dnn.setVar("CardSerNo", mc.CardSerNo);
+                    var isAddedToBen = mc.IsAddedToBen;
+                    if (isAddedToBen == "YES") {
+                        $("#tr-added-to-ben").show();
+                    } else {
+                        $("#tr-added-to-ben").hide();
+                    }
+                } else {
+                    
+                    if (mc.ErrorCode === "MAXREQUEST") {
+                        ShowErrorForm(vibcode.msgMAXREQUEST, 1);
+                    } else if (mc.ErrorCode === "CARD_NOT_FOUND") {
+                        var errMsg = ERR_NO_CARD_FOUND;
+                        ShowErrorForm(errMsg, 1);
+                    } else {
+                        ShowErrorForm(mc.ERROR_MESSAGE, 1);
+                    }
+                }
+            },
+            error: function () {
+                showMessageWhenAjaxError();
+                return false;
+            }
+        });
+    },
+    ValidateAndSubmitForm: function () {
+        $("#txtOtp1,#txtOtp2,#txtOtp3,#txtOtp4,#txtOtp5,#txtOtp6").val("");
+        HideErrorForm(1);
+        //var tmp = false;
+        // From Accnt
+        var fromAccountId = $("#divFromAcct").attr("val");
+        fromAccountId = $.trim(fromAccountId);
+        if (fromAccountId.length <= 0) {
+            ShowErrorForm(ERR_ACCNT_INVALID, 1);
+            return false;
+        }
+        //var type = 2;
+        // To MC
+        var toMCId = dnn.getVar("CardSerNo");
+
+        toMCId = $.trim(toMCId);
+        if (toMCId.length === "") {
+            ShowErrorForm(CARDNO_INVALID, 1);
+            return false;
+        }
+
+        $("#box3_title").attr('class', 'spec-header');
+        $("#box-step3").attr('class', 'box-grey');
+        $("#nsb3").attr('class', 'box-bot-grey');
+
+        var addToBen = document.getElementById("chkAddToBen");
+        var isAddedToBen = "0";
+        if (addToBen && addToBen.checked) {
+            isAddedToBen = "1";
+        }
+
+        // AMOUNT
+        var max = $("#max");
+        var min = $("#min");
+        var commit = $("#commit");
+        var rbtMin = document.getElementById("rbtMinimumPay");
+        var rbtMax = document.getElementById("rbtMaximumPay");
+        var rbtOther = document.getElementById("rbtOtherPay");
+        var rbtCommitPay = document.getElementById("rbtCommitPay");
+        var maxVal = 0;
+        if (max && max.html()) {
+            var number = Number(max.html().replace(/[^0-9\.]+/g, ""));
+            maxVal = number;
+        }
+        var minVal = 0;
+        if (min && min.html()) {
+            var number = Number(min.html().replace(/[^0-9\.]+/g, ""));
+            minVal = number;
+        }
+
+        var commitVal = 0;
+        if (commit && commit.html()) {
+            var number = Number(commit.html().replace(/[^0-9\.]+/g, ""));
+            commitVal = number;
+        }
+
+        var otherAmt = $("#txtAmmout").val().replace(/[^0-9\.]+/g, "");
+        var ammount = 0;
+        if (rbtMin && rbtMin.checked) {
+            ammount = minVal;
+        } else if (rbtMax && rbtMax.checked) {
+            ammount = maxVal;
+        } else if (rbtCommitPay && rbtCommitPay.checked) {
+            ammount = commitVal;
+        } else {
+            if (!isNaN(otherAmt))
+                ammount = Number(otherAmt);
+        }
+        var desc = $('#txtDescription').val();
+        if (!desc) {
+            desc = "";
+        }
+        desc = $.trim(desc);
+        var ccy = $('#selectedMCCCy').html();
+        if (!ccy) {
+            ccy = "";
+        }
+        ccy = $.trim(ccy);
+
+        // Ammount
+        if (ammount <= 0) {
+            ShowErrorForm(AMOUNT_INVALID, 1);
+            return false;
+        }
+
+        // DESC
+        var isInvalid = checkkytu(desc, kytudacbiet);
+        if (isInvalid) {
+            ShowErrorForm(KO_DC_KY_TU_DAC_BIET, 1);
+            return false;
+        }
+        var req = {
+            accIdFrom: fromAccountId,
+            mcIdTo: toMCId,
+            ammount: ammount,
+            desc: desc,
+            isAddedToBen: isAddedToBen
+        }
+        $.ajax({
+            type: "POST",
+            url: this.bs + "ValidateTransaction",
+            data: JSON.stringify(req),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            beforeSend: this.sf.setModuleHeaders,
+            success: function (data) {
+                var trs = data;
+                var isError = $.trim(trs.IS_ERROR);
+                if (isError === "") {
+                    $('#ltrAccount').html(trs.AccountType + " - " + trs.AccountID);
+                    $('#ltrCardInfo').html(trs.MasterCardID + "<br>" + trs.MCOwner);
+                    $('#ltrSoduTruoc').html(trs.SoDuTruoc + " " + trs.CCY);
+                    $('#ltrSoduSau').html(trs.SoDuSau + " " + trs.CCY);
+                    $('#ltrAmount').html(trs.Amount + " " + trs.CCY);
+                    $('#ltrDesc').html("<pre>" + trs.Description + "</pre>");
+                    $('#ltrFee').html(trs.Fee + " " + trs.CCY);
+                    if (GetLanguage() != "VI") {
+                        $('#ltrTotal_ammount').html(trs.TotalAmount + " " + trs.CCY + " including payment amount and fee");
+                    } else {
+                        $('#ltrTotal_ammount').html(trs.TotalAmount + " " + trs.CCY + " bao gồm số tiền cần chuyển và phí");
+                    }
+
+                    // Hide OTP Section if PayFor = OTHER
+                    var payFor = trs.PayFor;
+                    if (payFor == "OTHER") {
+                        $("#divOTP").show();
+                    } else {
+                        if ($('#hdotp').val() == "Y") {
+                            $("#divOTP").show();
+                        } else {
+                            $("#divOTP").hide();
+                        }
+                    }
+                    ShowForm(2);
+                    return true;
+                } else {
+
+                    var code = $.trim(trs.ERROR_CODE);
+                    var message = trs.ERROR_MESSAGE;
+                    if (code === "KO_DC_TT_THE_PHU") {
+                        message = KO_DC_TT_THE_PHU;
+                    }
+                    if (code === "MAXREQUEST") {
+                        message = vibcode.msgMAXREQUEST;
+                    }
+                    ShowErrorForm(message, 1);
+                    return false;
+                }
+            },
+            error: function (xhr, textStatus, errorThrown) {
+                showMessageWhenAjaxError();
+                return false;
+            }
+        });
+        return false;
+    },
+    DoTransfer: function () {
+        var otpNumber = $("#txtOtp1").val().toString() + $("#txtOtp2").val().toString() + $("#txtOtp3").val().toString() + $("#txtOtp4").val().toString() + $("#txtOtp5").val().toString() + $("#txtOtp6").val().toString();
+        var payFor = $('#hdfPayFor').val();
+
+        //if (otpNumber == "") {
+        //    ShowErrorForm(OPT_INVALID, 2);
+        //    return false;
+        //}
+        if ($('#hdotp').val() == 'Y') {
+            if (otpNumber == "") {
+                ShowErrorForm(OPT_INVALID, 2);
+                return false;
+            }
+        } else {
+            if (payFor != "OTHER") {
+                otpNumber = "";
+            }
+        }
+
+        if ((otpNumber != "") && (otpNumber.length != 6 || isNaN(otpNumber))) {
+            ShowErrorForm(OPT_INVALID, 2);
+            return false;
+        }
+        var dp = {
+            OTP: otpNumber
+        };
+        $.ajax({
+            type: "POST",
+            url: this.bs + "SaveData",
+            data: JSON.stringify(dp),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            beforeSend: this.sf.setModuleHeaders,
+            success: function (data) {
+                if (data.ERROR_CODE == 'OTPINVALID') {
+                    ShowErrorForm(OPT_INVALID, 2);
+                    return;
+                }                
+                var isError = $.trim(data.IS_ERROR);
+                if (isError == "") {
+                    var bill = data.DATA;
+                    $('#f3-so-hoa-don').html(bill.XferFeeId);
+                    $('#f3-tk-chi-tiet').html(bill.AccountType + " - " + bill.AccountID);
+                    $('#f3-chi-tiet-the').html(bill.MasterCardID + "<br/>" + bill.MCOwner);
+                    $('#f3-so-tien').html(bill.Amount + " " + bill.CCY);
+                    if (GetLanguage() == "VI") {
+                        $('#f3-phi-thanh-toan').html(bill.Fee + " " + bill.CCY + " ghi nợ vào tài khoản " + bill.AccountID + " của bạn");
+                        $('#f3-tong-so-tien').html(bill.TotalAmount + " " + bill.CCY + " bao gồm số tiền cần chuyển và phí");
+                    } else {
+                        $('#f3-phi-thanh-toan').html(bill.Fee + " " + bill.CCY + " charge to your " + bill.AccountID + " account");
+                        $('#f3-tong-so-tien').html(bill.TotalAmount + " " + bill.CCY + " including payment amount and fee");
+                    }
+                    $('#f3-noi-dung-thanh-toan').html("<pre>" + bill.Description + "</pre>");
+                    $('#f3-nguoi-thanh-toan').html(bill.DoneBy);
+                    $('#f3-SoduTruoc').html(bill.SoDuTruoc + " " + bill.CCY);
+                    $('#f3-SoduSau').html(bill.SoDuSau + " " + bill.CCY);
+
+                    ShowForm(3);
+
+                    // Show BEN ERROR
+                    var isBenError = $.trim(bill.IS_ADDING_BEN_ERROR);
+                    if (isBenError != "") {
+                        var benMsg = bill.BEN_ERROR_MESSAGE;
+                        ShowErrorForm(benMsg, 3);
+                    }
+
+                    return true;
+                } else {
+                    var code = data.ERROR_CODE;
+                    var message = data.ERROR_MESSAGE;
+                    ShowErrorForm(message, 2);
+                    //if (code == "TRANSACTION_ERROR") {
+                    //    if (confirm("Giao dịch thực hiện không thành công, bạn có muốn thử lại không?")) {
+                    //        // Reload
+                    //        NewForm();
+                    //    }
+                    //}
+                    return false;
+                }
+            },
+            error: function () {
+                showMessageWhenAjaxError();
+                return false;
+            }
+        });
+    },
+    goto_section3: function () {
+        HideErrorForm(1);
+        var type = 2;
+        var toMCId = $('#txtCardNumber').val();
+        if ($('#rbtSelectAccount:checked').val() == "rbtSelectAccount") {
+            toMCId = $('#divToAccount').attr('val');
+            type = 1;
+        }
+        if (!toMCId) {
+            toMCId = "";
+        }
+        toMCId = $.trim(toMCId);
+        if (toMCId === "") {
+            ShowErrorForm(CARDNO_INVALID, 1);
+            return false;
+        }
+        var mcPattern = /(512824|526887|513892|513094)[0-9]{10}/
+        if (type == 2 && (toMCId.length != 16 || !mcPattern.test(toMCId))) {
+            ShowErrorForm(CARDNO_INVALID, 1);
+            return false;
+        }
+        var dp = {
+            accountId: toMCId,
+            type: type
+        };
+        $.ajax({
+            type: "GET",
+            url: this.bs + "GetMCInfo",
+            cache: false,
+            data: dp,
+            beforeSend: this.sf.setModuleHeaders,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (data) {
+                var mc = data;
+                var isError = $.trim(mc.IsError);
+                if (isError == "") {
+                    // Owner
+                    $('#spCardOwner').html(mc.CustomerName);
+                    $('#tr-card-owner').show();
+                    $('#selectedMCCCy').html(mc.Currency);
+                    var payFor = mc.PayFor;
+                    $('#hdfPayFor').val(payFor);
+                    if (payFor == "ME") {
+                        $('#spRemainingBalance').html(mc.RemainingBal + " " + mc.Currency);
+                        $('#spMinimumPay').html("<span id='min'>" + mc.MinimumPayment + "</span>" + " " + mc.Currency);
+                        $('#spMaximumPay').html("<span id='max'>" + mc.MaximumPayment + "</span>" + " " + mc.Currency);
+                        $('#spCommitPay').html("<span id='commit'>" + mc.strCommitPayment + "</span>" + " " + mc.Currency);
+                        $("#tr-remaining-balance").show();
+                        $("#tr-min-pay,#tr-max-pay,#trMinPay,#trMaxPay").show();
+                        $("#spanMinPay").html(mc.MinimumPayment + " " + mc.Currency);
+                        $("#spanMaxPay").html(mc.MaximumPayment + " " + mc.Currency);
+                        $("#spanCommitPay").html(mc.strCommitPayment + " " + mc.Currency);
+                    } else {
+                        $("#trMinPay,#trMaxPay,#tr-commit-pay,#trCommitPay").hide();
+                        $('#spMinimumPay,#spMaximumPay,#spRemainingBalance,#spCommitPay').html("");
+                        $("#tr-remaining-balance").hide();
+                        $("#tr-max-pay,#tr-min-pay").hide();
+                    }
+                    if (mc.SHOWCOMMITAMT === "Y") {
+                        $("#tr-commit-pay,#trCommitPay").show();
+                    } else {
+                        $("#tr-commit-pay,#trCommitPay").hide();
+                    }
+                    document.getElementById("rbtOtherPay").checked = true;
+                    $("#txtAmmout").removeAttr('readonly');
+                    $("#txtAmmout").removeAttr('disabled');
+
+                    $("#spanMinPay,#spanMaxPay,#spanCommitPay").hide();
+                    dnn.setVar("CardSerNo", mc.CardSerNo);
+                    //$("#isCardLoaded").val("1");
+                    $("#isBox3Shown").val("1");
+
+                    var isAddedToBen = mc.IsAddedToBen;
+                    if (isAddedToBen == "YES") {
+                        $("#tr-added-to-ben").show();
+                    } else {
+                        $("#tr-added-to-ben").hide();
+                    }
+                    // Show Section 3
+                    show_section(3);
+                } else {
+                    if (mc.ErrorCode === "MAXREQUEST") {
+                        ShowErrorForm(vibcode.msgMAXREQUEST, 1);
+                    } else {
+                        var errMsg = ERR_NO_CARD_FOUND;
+                        ShowErrorForm(errMsg, 1);
+                    }
+                }
+            },
+            error: function () {
+                showMessageWhenAjaxError();
+                return false;
+            }
+        });    
+    }
+
+}
+
+var get_vMax = function () {
+    return '99999999999999';
+};
+var get_vMin = function () {
+    return '0';
+};
+
+function GetLanguage() {
+    var selectedLang = $('html').attr('lang');
+    var engLang = "en-us";
+    if (engLang.toLowerCase() == selectedLang.toLowerCase()) {
+        return "EN";
+    }
+    return "VI";
+}
+
+
+function checkkytu(val, invalidChar) {
+    for (i = 0; i < val.length; i++) {
+        if (invalidChar.indexOf(val[i]) >= 0) return true;
+    }
+    return false;
+}
+
+function ShowErrorForm(errMsg, formNo) {
+    HideErrorForm(1);
+    HideErrorForm(2);
+    $(document).scrollTop(0);
+    if (formNo == 1) {
+        $("#pnlError1").show();
+        $("#lblErrorMessage1").html(errMsg);
+    } else if (formNo == 2) {
+        $("#pnlError2").show();
+        $("#lblErrorMessage2").html(errMsg);
+    } else {
+        $("#pnlError3").show();
+        $("#lblErrorMessage3").html(errMsg);
+    }
+}
+function HideErrorForm(formNo) {
+    if (formNo == 1) {
+        $("#pnlError1").hide();
+        $("#lblErrorMessage1").html("");
+    } else {
+        $("#pnlError2").hide();
+        $("#lblErrorMessage2").html("");
+    }
+}
+
+function GetErrorMessage(errMsg) {
+    return errMsg.substring(9);
+}
+
+function ShowBill(isShown) {
+    if (isShown == 1) {
+        $("#form").hide();
+        $("#bill").show();
+    }
+    else {
+        $("#form").show();
+        $("#bill").hide();
+    }
+}
+
+function hideMCDetail() {
+    $("#tr-card-owner").hide();
+    $("#tr-remaining-balance").hide();
+    $("#tr-min-pay").hide();
+    $("#tr-max-pay").hide();
+    $("#tr-added-to-ben").hide();
+}
+function showMCdetailSection(isShownBen) {
+    $("#tr-card-owner").show();
+    if (isShownBen == 0) {
+        $("#tr-remaining-balance").show();
+        $("#tr-min-pay").show();
+        $("#tr-max-pay").show();
+    } else {
+        $("#tr-remaining-balance").hide();
+        $("#tr-min-pay").hide();
+        $("#tr-max-pay").hide();
+    }
+    if (isShownBen == 1) {
+        $("#tr-added-to-ben").show();
+    } else {
+        $("#tr-added-to-ben").hide();
+    }
+}
+function show_section(sectionid) {
+    HideErrorForm(1);
+    var box_title = "#box" + sectionid + "_title";
+    var box_body = "#box" + sectionid + "_body";
+    if (sectionid == 2) {
+        // From Accnt
+        var fromAccountId = $("#divFromAcct").attr("val");
+        fromAccountId = $.trim(fromAccountId);
+        if (fromAccountId.length <= 0) {
+            ShowErrorForm(ERR_ACCNT_INVALID, 1);
+            return false;
+        }
+
+        $("#box1_title").attr('class', 'spec-header');
+        $("#box-step1").attr('class', 'box-grey');
+        $("#nsb1").attr('class', 'box-bot-grey');
+        $("#ns1").hide();
+    }
+    if (sectionid == 3) {
+        $("#box2_title").attr('class', 'spec-header');
+        $("#box-step2").attr('class', 'box-grey');
+        $("#nsb2").attr('class', 'box-bot-grey');
+        $("#ns2").hide();
+        $("#button-next").show();
+    }
+    $(box_title).attr('class', 'spec-header1');
+    $(box_body).show();
+}
+function select_payment_type() {
+    var rbtMin = document.getElementById("rbtMinimumPay");
+    var rbtMax = document.getElementById("rbtMaximumPay");
+    //var rbtOther = document.getElementById("rbtOtherPay");
+    var rbtCommit = document.getElementById("rbtCommitPay");
+    if (rbtMin && rbtMin.checked) {
+        $("#spanMinPay").show();
+        $("#spanMaxPay").hide();
+        $("#spanCommitPay").hide();
+
+        $("#txtAmmout").attr("readonly", "readonly");
+        $("#txtAmmout").attr("disabled", "disabled");
+        $("#txtAmmout").val("");
+    } else if (rbtMax && rbtMax.checked) {
+        $("#spanMinPay").hide();
+        $("#spanMaxPay").show();
+        $("#spanCommitPay").hide();
+
+        $("#txtAmmout").attr("readonly", "readonly");
+        $("#txtAmmout").attr("disabled", "disabled");
+        $("#txtAmmout").val("");
+    } else if (rbtCommit && rbtCommit.checked) {
+        $("#spanMinPay").hide();
+        $("#spanMaxPay").hide();
+        $("#spanCommitPay").show();
+
+        $("#txtAmmout").attr("readonly", "readonly");
+        $("#txtAmmout").attr("disabled", "disabled");
+        $("#txtAmmout").val("");
+    } else {
+        $("#spanMinPay").hide();
+        $("#spanMaxPay").hide();
+        $("#spanCommitPay").hide();
+        $("#txtAmmout").removeAttr('readonly');
+        $("#txtAmmout").removeAttr('disabled');
+    }
+}
+function enableThisOption() {
+    var obj2 = document.getElementById("rbtAddNewAccount");
+    obj2.checked = true;
+}
+
+
+
+function resetValue() {
+    var x = document.getElementById("rbtAddNewAccount");
+    if (x.checked == true) {
+        hideMCDetail();
+        val1 = "";
+        $("#divToAccount").children('span.selected').html($("#divToAccount").children('div.selectOptions').children('div.selectOption:first').html());
+        $("#divToAccount").attr("val", "");
+    } else {
+        hideMCDetail();
+        $("#txtCardNumber").val("");
+    }
+}
+function select_card() {
+    resetValue();
+}
+
+function ShowForm(formnumber) {
+    // Scroll to Top
+    $(document).scrollTop(0);
+    HideErrorForm(1);
+    HideErrorForm(2);
+    if (formnumber == 1) {
+        $("#txtOtp1,#txtOtp2,#txtOtp3,#txtOtp4,#txtOtp5,#txtOtp6").val("");
+
+        $("#input-form").show();
+        $("#confirm-form").hide();
+        $("#bill").hide();
+        document.title = "Thanh toán thẻ Master";
+    } else if (formnumber == 2) {
+        $("#input-form").hide();
+        $("#confirm-form").show();
+        $("#bill").hide();
+        document.title = "Xác nhận thanh toán";
+    } else {
+        $("#input-form").hide();
+        $("#confirm-form").hide();
+        $("#bill").show();
+        document.title = "Hóa đơn";
+    }
+}
+
+
+
+function NewForm() {
+    window.location.href = window.location.href;
+}
+
+function enableSelectBoxes() {
+    $('div.selectBox').each(function () {
+        $(this).children('span.selected').html($(this).children('div.selectOptions').children('div.selectOption:first').html());
+        $(this).attr('val', $(this).children('div.selectOptions').children('div.selectOption:first').attr('val'));
+
+        $(this).children('span.selected,span.selectArrow').click(function (e) {
+            var div = $(this).parent().children('div.selectOptions');
+            if (div.is(':visible')) {
+                div.hide();
+
+            } else {
+                $('div.selectOptions').hide();
+                $(this).parent().children('div.selectOptions').show();
+            }
+
+            e.stopPropagation();
+        });
+
+        $(this).find('div.selectOption').click(function () {
+            $(this).parent().css('display', 'none');
+            $(this).closest('div.selectBox').attr('val', $(this).attr('val'));
+            $(this).parent().siblings('span.selected').html($(this).html());
+        });
+    });    
+}
+function showMessageWhenAjaxError() {
+    alert(ERR_DURING_PROCESSING);
+}
+

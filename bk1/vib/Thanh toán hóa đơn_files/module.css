@@ -1,0 +1,201 @@
+﻿.vibForm {
+    width: 100%;
+    font-size: 13px;
+    display: inline-block;
+}
+
+.vibFormItem {
+    clear: both;
+    width: 100%;
+    display: inline-block;
+    position: relative;
+    text-align: left;
+    margin-bottom: 10px;
+}
+
+.vibFormLabel {
+    display: inline-block;
+    float: left;
+    width: 30%;
+    padding: 7px;
+}
+
+.vibFormLabelAlignLeft {
+    display: inline-block;
+    float: left;
+    width: 30%;
+    padding-top: 7px;
+}
+
+.vibFormField {
+    display: inline-block;
+    float: left;
+    width: 65%;
+}
+
+    .vibFormField .rcbInput {
+        font-family: MyriadPro, verdana, sans-serif;
+        color: #3F3F3F !important;
+        font-size: 14px !important;
+        font-style: normal !important;
+    }
+
+.spec-tit-cont {
+    height: auto !important;
+}
+
+    .spec-tit-cont p {
+        padding: 0px;
+        margin-top: 15px;
+        margin-left: 15px;
+        margin-right: 15px;
+        margin-bottom: 0px;
+    }
+
+.selectOption2 {
+    border-bottom: 1px solid #cccccc;
+    padding: 12px !important;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+    .selectOption2:hover {
+        color: #cdeaff;
+        background: #0066b3;
+    }
+
+.bill-header {
+    background-color: #0066b3;
+}
+
+    .bill-header th {
+        color: white;
+        padding: 5px;
+        text-align: center;
+        font-weight: bold;
+        border: solid 1px white;
+        border-collapse: collapse;
+    }
+
+.bill-tbl td {
+    border: solid 1px white;
+    border-collapse: collapse;
+}
+
+.but-cam {
+    background-image: url('/images/cam-left.png');
+    background-position: left center;
+    background-repeat: no-repeat;
+    position: absolute;
+    right: 0px;
+    top: 15px;
+}
+
+    .but-cam a {
+        display: block;
+        margin-left: 10px;
+        background-image: url('/images/cam-right.png');
+        background-position: right center;
+        background-repeat: no-repeat;
+        color: white;
+        text-decoration: none;
+        display: block;
+        font-size: 15px;
+        font-weight: bold;
+        text-shadow: 0px 1px 1px #d35515;
+        padding: 10px;
+    }
+
+        .but-cam a span {
+            background: url('/images/arrow-trang-mini.png') no-repeat 100% 50%;
+            padding-right: 20px;
+        }
+
+.RadComboBoxDropDown_VIB_WB2 .rcbHovered {
+    padding-top: 0;
+    padding-bottom: 0;
+    background: #c4f190;
+    color: #666666;
+    border: solid #77c34d;
+    border-width: 1px 0;
+}
+
+.vibFormLabelDescription {
+    display: inline-block;
+    float: left;
+    padding-top: 7px;
+    width: 450px;
+}
+
+.bill_button-backvib {
+    position: absolute;
+    left: 0px;
+    top: 15px;
+    background: url('../../../../../../../../../Portals/_default/Skins/VIB-Retails/images/button-back.png') no-repeat;
+    width: 120px;
+    height: 38px;
+}
+
+    .bill_button-backvib a {
+        text-decoration: none;
+        background: url('../../../../../../../../../Portals/_default/Skins/VIB-Retails/images/arrow-trang-mini-back.png') no-repeat 10% 50%;
+        display: block;
+        color: #fff;
+        font-size: 15px;
+        font-weight: bold;
+        text-align: center;
+        text-shadow: 0px 1px 1px #949494;
+        line-height: 36px;
+    }
+
+.bill_button-next {
+    position: absolute;
+    right: 0px;
+    top: 15px;
+    background: url('../../../../../../../../../Portals/_default/Skins/VIB-Retails/images/button-next.png') no-repeat;
+    width: 113px;
+    height: 38px;
+}
+
+    .bill_button-next a {
+        text-decoration: none;
+        display: block;
+        background: url('/images/arrow-trang-mini.png') no-repeat 95% 55%;
+        color: #fff;
+        font-size: 15px;
+        font-weight: bold;
+        text-shadow: 0px 1px 1px #d35515;
+        line-height: 36px;
+        /*padding-left: 18px;*/
+        text-align: center;
+    }
+
+.bill_but-cam {
+    background-image: url('/images/cam-left.png');
+    background-position: left center;
+    background-repeat: no-repeat;
+    position: absolute;
+    right: 0px;
+    top: 15px;
+}
+
+    .bill_but-cam a {
+        display: block;
+        margin-left: 10px;
+        background-image: url('/images/cam-right.png');
+        background-position: right center;
+        background-repeat: no-repeat;
+        color: white;
+        text-decoration: none;
+        display: block;
+        font-size: 15px;
+        font-weight: bold;
+        text-shadow: 0px 1px 1px #d35515;
+        padding: 10px;
+        text-align: center;
+    }
+.table_bill{ width:100%; font-size:13px; margin-top:8px;}
+.table_bill tr:nth-child(odd){ background:#dbdbdb;}
+.table_bill td{ padding:7px 0px;}
+.table_bill td.amount{ padding-right: 10px;text-align: right;}
+.table_bill .remove{ color:#0066b3; text-decoration:underline;}

@@ -1,0 +1,1558 @@
+
+/* custom */
+.table2 a ul, .table2 a ul li{
+	list-type: none;
+	list-style-type: none;
+}
+.table2 a ul li{
+	float: left;	
+	vertical-align: middle;
+	padding-top: 10px;
+	padding-bottom: 10px;
+}
+#acc-list .acc-list .title1 .tit-text-box .tit-text5 {
+	padding-top: 7px;
+}
+.tr-vang .table3 table tr td span.text4, .tr-vang .table3 table tr td span.text5{
+	font-size: 12px !important;
+}
+.general_information h2 span {
+	color: #A3D7FF;
+	font-size: 13px;
+	margin-bottom: 10px;
+	font-weight: bold;
+}
+.table_box{
+	width: 100% !important;
+}
+.table_box tr td {
+	font-size: 12px !important;
+}
+#divAccountRow .table2 .col1 .text2{
+	font-size: 12px;
+}
+.detail .col1 a {
+	width: auto !important;
+}
+.pass-weak-box {
+	height: 70px;
+	width: 261px;
+	background: url(../images/pass-safe-weak.png) no-repeat;
+	position: relative;
+}
+.pass-medium-box {
+	height: 70px;
+	width: 261px;
+	background: url(../images/pass-safe-medium.png) no-repeat;
+	position: relative;
+}
+.pass-weak-box p, .pass-medium-box p{
+	position: absolute;
+	top: 30px;
+	left: 20px;
+}
+.pass-safe-box {
+	height: 70px;
+	width: 261px;
+	background: url(../images/pass-safe.png) no-repeat;
+	position: relative;
+}
+tr td.form-r5{
+	width: auto !important;
+}
+.table_box tr td{
+	padding-right: 3px !important;
+	font-size: 12px !important;
+}
+.table_box tr td:last-child{
+	padding-right: 0px !important;
+}
+#inbox-container, #inbox-box, #inbox-box .content
+{
+	height: auto !important;
+}
+.form-box-container
+{
+	width:688px;margin:0 auto;
+	background:#ededed;border:1px solid #c5c5c5;border-radius:4px;margin-top:40px;
+}
+.form-box{margin-top:px;width:660px;margin:0 auto;}
+#trans-detail-cont tr td.col4 a {
+	background: url(../images/print.png) no-repeat !important;
+	padding-left: 16px;
+}
+textarea {
+    resize: none;
+}
+.dnnFormSuccess {border-radius: 3px !important;padding: 10px 10px 10px 40px !important;line-height: 1.4 !important;margin: 0.5em 1em !important;}
+.table-white tr td .text1, .table-white tr td .text2, .table-white tr td .text3, .table-white tr td .text4, .table-grey tr td .text1, .table-grey tr td .text2, .table-grey tr td .text3, .table-grey tr td .text4 
+{
+	font-size: 11px !important;word-wrap:break-word !important;
+}
+.acc-text 
+{
+	padding-top:30px !important;
+}
+.button-search{
+	position: relative !important;
+	float: right !important;
+}
+.detailt{
+	margin-top:0px !important;
+}
+#show-off-button{
+	width: 680px !important;
+	heigth: 40px !important;
+	padding-right: 0px !important;
+}
+#export-box {
+	width: 480px;
+	height: 90px;
+	position: relative;
+}
+#arrow2 {
+	position: absolute;
+	right: 40px;
+	bottom: 85px;
+	right: -70px;
+}
+#export-cont {
+	width: 480px;
+	height: 80px;
+	background: #0086C7;
+	position: absolute;
+	top: -85px;
+	left: 111px;
+	border-radius: 4px;
+	text-align: center;
+	z-index: 100;
+}
+.search-date{
+	overflow: hidden !important;
+}
+#export-cont .col11{width:100px;}
+#export-cont .col12{width:200px;}
+#export-cont select{width:170px;border-radius:2px;border:none;color:#888;padding: 4px;}
+#export-cont .col13{width:140px;}
+#export-cont .col13 .button{background:url(../images/button-export.png) no-repeat;width:140px;height:25px;}
+#export-cont .col13 a{text-decoration:none;line-height:25px;color:#fff;display:block;font-size:12px;text-shadow:#c77a14 0.5px 0.5px 1px;}
+#export-cont span {
+	font-size: 13px;
+	color: #C3E5FF;
+}
+.box3{
+	height: auto !important;
+}
+.detail tr td.col1 {
+	width: 100px !important;
+}
+.detail tr td.col2 {
+	width: 240px !important;
+}
+.detail .col2 a {
+	background: none !important;
+}
+.detail tr td.col3 {
+	text-align: right !important;
+	width: 170px;
+}
+.detail tr td.col4 {
+	text-align: right !important;
+}
+.first-grey tr td.col4 {
+	width: 180px !important;
+}
+.first-grey tr td.col2 {	
+	width: 140px !important;
+}
+.tr-xam {
+	height: auto !important;
+}
+.first-grey tr td.col3, .first-grey tr td.col4, #divAccountPorfolio tr td.col3, #divAccountPorfolio tr td.col4 {
+	text-align: right !important;
+	width: 180px !important;
+}
+.tr-total tr td.col1{
+	width: 20% !important;
+}
+.tr-total tr td.col4{
+	width: 80% !important;
+}
+.table4 ul li{
+	list-style-type: none !important;
+}
+.table-grey tr td.col4, .table-white tr td.col4 {
+	text-align: right !important;
+	font-size: 10px !important;
+}
+#trans-detail-cont tr td.col1,#trans-detail-cont tr td.col2,#trans-detail-cont tr td.col3,#trans-detail-cont tr td.col4{
+	vertical-align: top !important;
+}
+.content-pane-1
+{
+	width: 701px;
+	height: 700px;
+	margin: 0 auto;
+	margin-top: 20px;
+}
+.content-pane-2
+{	
+	width: 690px;margin:auto;float: left; margin-bottom:20px;
+}
+.right-pane
+{
+	float: right;
+	width: 260px;
+	margin-top:20px;
+
+}
+.left-logoff
+{
+	width: 690px;
+	float: left;
+}
+/* custom menu */
+/* english menu */
+#menu-main ul li.actives ul.menu_ViewAccounts_en-US{left: -20px!important;width: 650px;}
+#menu-main ul li ul.menu_ViewAccounts_en-US li {float:left !important;}
+#menu-main ul li ul.menu_ViewAccounts_en-US li a{padding: 0px 20px 0px 0px;margin-left:0px;}
+
+#menu-main ul li.actives ul.menu_TransferTopup_en-US{left: -170px !important; width: 950px !important;}
+#menu-main ul li.actives ul.menu_Payment_en-US{left: 15px !important; width: 600px;}
+#menu-main ul li.actives ul.menu_san-pham_en-US{left: -406px !important;}
+#menu-main ul li.actives ul.menu_Others_en-US{left: -142px !important; width:auto;}
+
+#menu-main ul li.actives ul.menu_ViewAccounts_NotVib_en-US{left: -25px!important;width: 640px;}
+#menu-main ul li ul.menu_ViewAccounts_NotVib_en-US li {float:left !important;}
+#menu-main ul li ul.menu_ViewAccounts_NotVib_en-US li a{padding: 0px 20px 0px 0px;margin-left:0px;}
+
+#menu-main ul li.actives ul.menu_TransferTopup_NotVib_en-US{left: -20px !important;}
+#menu-main ul li.actives ul.menu_Payment_NotVib_en-US{left: -300px !important; width:900px;}
+#menu-main ul li.actives ul.menu_san-pham_NotVib_en-US{left: -406px !important;}
+#menu-main ul li.actives ul.menu_Others_NotVib_en-US{left: -142px !important; width:auto;}
+
+/* vietnamese menu */
+#menu-main ul li.actives ul.menu_ViewAccounts_vi-VN{left: -60px!important; width: 681px;}
+#menu-main ul li ul.menu_ViewAccounts_vi-VN li {float:left !important;}
+#menu-main ul li ul.menu_ViewAccounts_vi-VN li a{padding: 0px 20px 0px 0px;margin-left:0px;}
+
+#menu-main ul li.actives ul.menu_TransferTopup_vi-VN{left: -200px !important; width:950px;}
+#menu-main ul li.actives ul.menu_Payment_vi-VN{left: -300px !important; width:900px;}
+#menu-main ul li.actives ul.menu_san-pham_vi-VN{left: -406px !important;}
+#menu-main ul li.actives ul.menu_Others_vi-VN{left: -220px !important; width:900px;}
+
+
+#menu-main ul li.actives ul.menu_ViewAccounts_NotVib_vi-VN{left: -75px!important;width: 700px;}
+#menu-main ul li ul.menu_ViewAccounts_NotVib_vi-VN li {float:left !important;}
+#menu-main ul li ul.menu_ViewAccounts_NotVib_vi-VN li a{padding: 0px 20px 0px 0px;margin-left:0px;}
+
+#menu-main ul li.actives ul.menu_TransferTopup_NotVib_vi-VN{left: -55px !important; width:950px;}
+#menu-main ul li.actives ul.menu_Payment_NotVib_vi-VN{left: -300px !important; width:900px;}
+#menu-main ul li.actives ul.menu_san-pham_NotVib_vi-VN{left: -406px !important;}
+#menu-main ul li.actives ul.menu_Others_NotVib_vi-VN{left: -166px !important; width:auto;}
+
+/* end menu */
+
+#footer ul li {list-style-type: none !important;}
+.footer-left-pane
+{
+	float: left;
+	width: 340px;
+}
+.footer-right-pane
+{
+	float: left;
+	width: 627px;
+}
+#show-off tr td.col2 ul li, #show-off tr td.col5 ul li{
+	list-style-type: none !important;
+}
+.search-date ul li {
+
+}
+
+#menu-main ul li {list-style-type:none !important;}
+.general_information ul li {list-style-type: none !important;}
+ul.search-funcion li{list-style-type: none;}
+.search-date ul li {list-style-type: none;}
+/*#menu-main ul li:hover {background: url(../images/trang-chu-hover.png) repeat-x;}*/
+/*#menu-main ul li:hover a {color: #0066B3;}*/
+
+
+/* combobox */
+
+.RadComboBox_VIB5
+{
+	vertical-align: middle;
+    display: -moz-inline-stack;
+    display: inline-block;
+}
+
+*+html .RadComboBox_VIB5  
+{
+    display: inline;
+    zoom: 1;
+}
+
+* html .RadComboBox_VIB5  
+{
+    display: inline;
+    zoom: 1;
+	vertical-align: top; 
+}
+
+.RadComboBox_VIB5 table
+{
+	border: 0;
+	border-collapse: collapse;
+}
+
+.RadComboBox_VIB5 table td.rcbInputCell
+{
+	width: 100%;
+	height: 20px;
+	line-height: 20px;
+	vertical-align: middle;
+	padding: 0;
+	border: 0;
+}
+
+* html .RadComboBox_VIB5 td.rcbInputCell
+{
+	height /**/: 22px;
+	line-height /**/: 22px;
+}
+
+/* combobox */
+.RadComboBox_VIB5 {
+	background-image: url(../images/curent-acc-bar.png);
+	background-position: right center;
+	background-repeat: no-repeat;
+	height: 39px;
+}
+.RadComboBox_VIB5 table {
+	height: 39px;
+}
+.RadComboBoxDropDown_VIB5 .rcbHovered{
+	/*background-color: silver !important;*/
+	background: #0066b3 !important;
+}
+.RadComboBox_VIB5 .rcbInputCellLeft,
+.RadComboBox_VIB5 .rcbInputCellRight,
+.RadComboBox_VIB5 .rcbArrowCellLeft,
+.RadComboBox_VIB5 .rcbArrowCellRight
+{
+	background-color: transparent;
+	background-repeat: no-repeat;		
+}
+
+
+.RadComboBox_VIB5 .rcbInputCell .rcbInput
+{
+	width: 100%;
+	background: transparent;
+	border: 0;
+	vertical-align: middle;
+	padding: 2px 0 1px;
+	outline: 0;
+    -webkit-appearance: none; /* iOS renders an additional shadow on the input */
+    font-size: 20px;
+    color: #0066B3;
+}
+
+* html .RadComboBox_VIB5 .rcbInputCell .rcbInput
+{
+	height /**/: 18px;
+	padding /**/: 2px 0 0; /* This should fix the ajax introduced height in IE6 */
+}
+
+.RadComboBox_VIB5 .rcbInputCell .rcbEmptyMessage
+{
+	font-style: italic;
+}
+
+.RadComboBox_VIB5 .rcbReadOnly .rcbInput
+{
+	cursor: default;
+}
+
+.RadComboBox_VIB5 table td.rcbInputCell,
+.RadComboBox_VIB5 .rcbInputCell .rcbInput
+{
+	padding-left: 2px;
+}
+
+.RadComboBox_rtl table td.rcbInputCell,
+.RadComboBox_rtl .rcbInputCell .rcbInput
+{
+	padding-right: 2px;
+	padding-left: 0;
+}
+
+.RadComboBox_VIB5 table td.rcbArrowCell
+{
+	width: 18px;
+	padding: 0;
+	border: 0;
+}
+
+.RadComboBox_VIB5 .rcbArrowCell a
+{
+	position: relative;
+	outline: 0;
+	overflow: hidden;
+	display: block;
+	width: 18px;
+	height: 22px;
+    cursor: default;
+	text-decoration: none;
+	text-indent: 9999px;
+	font-size: 0;
+	line-height: 1px;
+}
+
+div.RadComboBox_VIB5 td.rcbArrowCellHidden,
+div.RadComboBox_VIB5 .rcbArrowCellHidden a
+{
+	width: 3px;
+}
+
+/* Read-only styles */
+
+.RadComboBox_VIB5 .rcbReadOnly td.rcbArrowCell { width: 16px; }
+.RadComboBox_VIB5 .rcbReadOnly td.rcbArrowCell a { width: 16px; }
+
+.RadComboBox_VIB5 .rcbReadOnly td.rcbArrowCellHidden,
+.RadComboBox_VIB5 .rcbReadOnly td.rcbArrowCellHidden a { width: 3px; } 
+
+/* dropdown */
+
+.rcbSlide
+{
+	position: absolute;
+	overflow: hidden;
+	display: none;
+	_height: 1px;
+	float: left;
+	z-index: 6000 !important;
+}
+
+.RadComboBoxDropDown_VIB5 .rcbHeader,
+.RadComboBoxDropDown_VIB5 .rcbFooter,
+.RadComboBoxDropDown_VIB5 .rcbMoreResults,
+.RadComboBoxDropDown_VIB5 .rcbMoreResults a
+{
+	background-repeat: no-repeat;
+}
+
+.RadComboBoxDropDown_VIB5
+{
+	position: absolute;
+	cursor: default;
+	font-size: 11px;
+	border: solid 1px #ccc !important;
+	background-color: white;	
+}
+
+.RadComboBoxDropDown_rtl
+{
+	text-align: right;
+	direction: rtl;
+}
+
+.RadComboBoxDropDown_VIB5 .rcbScroll
+{
+	overflow: auto !important;
+	position: relative !important;
+	background-color: #DFF1FF;
+	border-bottom: none;
+	width: 100%;
+	font-size: 14px;
+	color: #8F8F8F;	
+}
+
+.RadComboBoxDropDown_VIB5 .rcbList
+{
+	list-style: none outside;
+	position: relative;
+	margin: 0;
+	padding: 0;
+}
+
+.RadComboBoxDropDown_VIB5 .rcbHeader,
+.RadComboBoxDropDown_VIB5 .rcbFooter
+{
+	background-repeat: repeat-x;
+	padding: 5px 7px 4px;
+}
+
+.RadComboBoxDropDown_VIB5 .rcbHeader
+{
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+	margin-bottom: 1px;
+}
+
+.RadComboBoxDropDown_VIB5 .rcbFooter
+{
+	border-top-width: 1px;
+	border-top-style: solid;
+	margin-top: 1px;
+}
+
+.RadComboBoxDropDown_VIB5 .rcbNoWrap .rcbItem,
+.RadComboBoxDropDown_VIB5 .rcbNoWrap .rcbHovered,
+.RadComboBoxDropDown_VIB5 .rcbNoWrap .rcbDisabled,
+.RadComboBoxDropDown_VIB5 .rcbNoWrap .rcbLoading
+{
+	white-space: nowrap;
+}
+
+.RadComboBoxDropDown_VIB5 .rcbItem,
+.RadComboBoxDropDown_VIB5 .rcbHovered,
+.RadComboBoxDropDown_VIB5 .rcbDisabled,
+.RadComboBoxDropDown_VIB5 .rcbLoading,
+.RadComboBoxDropDown_VIB5 .rcbCheckAllItems,
+.RadComboBoxDropDown_VIB5 .rcbCheckAllItemsHovered
+{
+	padding: 2px 6px;
+	margin: 0 1px;
+}
+.RadComboBoxDropDown_VIB5 .rcbHovered .acct-name{
+	color: #CDEAFF;
+}
+.RadComboBoxDropDown_VIB5 .rcbHovered .acct-id{
+	color: #FDB813;
+}
+html>/**/body .RadComboBoxDropDown_VIB5 .rcbItem,
+html>/**/body .RadComboBoxDropDown_VIB5 .rcbHovered,
+html>/**/body .RadComboBoxDropDown_VIB5 .rcbDisabled,
+html>/**/body .RadComboBoxDropDown_VIB5 .rcbLoading,
+html>/**/body .RadComboBoxDropDown_VIB5 .rcbCheckAllItems,
+html>/**/body .RadComboBoxDropDown_VIB5 .rcbCheckAllItemsHovered
+{
+	min-height: 13px;
+	height: 52px;
+}
+
+*+html .RadComboBoxDropDown_VIB5 .rcbItem,
+*+html .RadComboBoxDropDown_VIB5 .rcbHovered,
+*+html .RadComboBoxDropDown_VIB5 .rcbDisabled,
+*+html .RadComboBoxDropDown_VIB5 .rcbLoading,
+*+html .RadComboBoxDropDown_VIB5 .rcbCheckAllItems,
+*+html .RadComboBoxDropDown_VIB5 .rcbCheckAllItemsHovered
+{
+	height: auto;
+}
+*+html .RadComboBoxDropDown_VIB5 .rcbCheckAllItemsHovered
+{
+	background: #0066b3;
+}
+.RadComboBoxDropDown_rtl .rcbItem,
+.RadComboBoxDropDown_rtl .rcbHovered,
+.RadComboBoxDropDown_rtl .rcbDisabled,
+.RadComboBoxDropDown_rtl .rcbLoading,
+.RadComboBoxDropDown_rtl .rcbCheckAllItems,
+.RadComboBoxDropDown_rtl .rcbCheckAllItemsHovered
+{
+	padding: 2px 6px;
+}
+
+.RadComboBoxDropDown_VIB5 .rcbCheckBox,
+.RadComboBoxDropDown_VIB5 .rcbCheckAllItemsCheckBox
+{
+	vertical-align: middle;
+}
+
+
+.RadComboBoxDropDown_VIB5 .rcbImage
+{
+	vertical-align: middle;
+	margin: 0 6px 2px 0;
+}
+
+.RadComboBoxDropDown_rtl .rcbImage
+{
+	margin: 0 0 2px 6px;
+}
+
+.RadComboBoxDropDown_VIB5 .rcbHovered
+{
+	background-repeat: repeat-x;
+}
+
+.RadComboBoxDropDown_VIB5 em
+{
+	font-style: normal;
+	font-weight: bold;
+}
+
+*+html div.RadComboBoxDropDown_VIB5 .rcbList { zoom: 1; } /* IE7 item width fix */
+* html div.RadComboBoxDropDown_VIB5 .rcbItem,
+* html div.RadComboBoxDropDown_VIB5 .rcbHovered { zoom: 1; } /* IE6 item width fix */
+
+.RadComboBox_VIB5 .rcbDisabled .rcbInputCell .rcbInput,
+.RadComboBoxDropDown_VIB5 .rcbDisabled
+{
+	cursor: default;
+}
+
+.RadComboBoxDropDown_VIB5 .rcbLoading
+{
+	text-align: center;
+}
+
+.RadComboBoxDropDown_VIB5 .rcbMoreResults
+{
+	clear: both;
+	border-top-width: 1px;
+	border-top-style: solid;
+	background-repeat: repeat-x;
+	position: relative;
+	padding: 0 6px 0;
+	text-align: center;
+	margin-top: 1px;
+}
+
+.RadComboBoxDropDown_VIB5 .rcbMoreResults a
+{
+	display: inline-block;
+	width: 15px;
+	height: 9px;
+	text-indent: -9999px;
+	overflow: hidden;
+	text-decoration: none;
+	cursor: pointer;
+	vertical-align: middle;
+}
+
+* html .RadComboBoxDropDown_VIB5 .rcbMoreResults a
+{
+	font-size: 0;
+	line-height: 0;
+	text-indent: 0;
+}
+
+*+html .RadComboBoxDropDown_VIB5 .rcbMoreResults a
+{
+	font-size: 0;
+	line-height: 0;
+	text-indent: 0;
+}
+
+.RadComboBoxDropDown_VIB5 .rcbMoreResults span
+{
+	vertical-align: middle;
+	height: 19px;
+	line-height: 19px;
+	display: inline-block;
+}
+
+.RadComboBoxDropDown_VIB5 .rcbSeparatedList .rcbItem,
+.RadComboBoxDropDown_VIB5 .rcbSeparatedList .rcbHovered,
+.RadComboBoxDropDown_VIB5 .rcbSeparatedList .rcbDisabled,
+.RadComboBoxDropDown_VIB5 .rcbSeparatedList .rcbLoading
+{
+	padding-left: 12px;
+}
+
+.RadComboBoxDropDown_VIB5 .rcbSeparatedList .rcbSeparator
+{
+	padding-left: 6px;
+}
+
+/*<ComboBox with Label>*/
+
+.RadComboBoxWithLabel_VIB5 .rcbLabel
+{
+	vertical-align: top;
+	padding-right: 10px;
+	line-height: 22px;
+	zoom: 1;
+}
+
+.RadComboBox_rtl .rcbLabel
+{
+	text-align: right;
+	padding: 0 0 0 10px;
+}
+*+html .RadComboBox_rtl .rcbLabel { margin-right: 5px; }
+* html .RadComboBox_rtl .rcbLabel { margin-right: 5px; }
+
+.RadComboBoxWithLabel_VIB5 table
+{
+	vertical-align: top;
+	float: none;
+	display: inline-block;
+	zoom: 1;
+}
+*+html .RadComboBoxWithLabel_VIB5 table { display: inline; margin-right: 5px; }
+* html .RadComboBoxWithLabel_VIB5 table { display: inline; margin-right: 5px; }
+
+.RadComboBoxWithLabel_VIB5
+{
+	white-space: nowrap;
+	zoom: normal;
+}
+
+
+.RadComboBoxDropDown_VIB5 .rcbCheckAllItems,
+.RadComboBoxDropDown_VIB5 .rcbCheckAllItemsHovered {
+	background-image: url('Common/Gradients/lightSmoothTile.png');
+	_background-image: none;
+	background-position: 0 0;
+	background-repeat: repeat-x;
+}
+.RadComboBoxDropDown_VIB5 .rcbCheckAllItemsHovered {
+	background-position: 0 -20px;
+}
+
+/*</ComboBox with Label>*/
+
+/*hacks*/
+
+/*Opera start*/
+@media screen and (min-width: 550px)
+{
+	.RadComboBoxDropDown_rtl .rcbItem,
+	.RadComboBoxDropDown_rtl .rcbHovered,
+	.RadComboBoxDropDown_rtl .rcbDisabled,
+	.RadComboBoxDropDown_rtl .rcbLoading
+	{
+		padding: 2px 6px 2px 19px;
+	}
+} /*Opera end*/
+.spec-tit-cont{padding-bottom:14px}
+tr td.right2vib{width:445px;height:40px;float:right;padding-top:5px;padding-bottom:5px;}
+
+.table-white tr td a:hover,.table-grey tr td a:hover{text-decoration:none !important;}
+.table-white,.table-grey {cursor:pointer}
+
+.button-backvib{position:absolute;left:0px;top:15px;
+background:url(../images/button-back.png) no-repeat;width:120px;height:37px; }
+.button-backvib a{text-decoration:none;background: url(../images/arrow-trang-mini-back.png) no-repeat 10% 50%;display:block;
+color:#fff;font-size:15px;font-weight:bold;padding-right: 17px;text-align: right;text-shadow: 0px 1px 1px #949494;
+line-height:36px;padding-left:30px;}
+
+.cancel1vib{position:absolute;left:5px;top:25px;}
+.cancel1vib a{text-decoration:underline;color:#0066b3;font-size:14px;}
+
+p.pending-inform1vib{background: url(../images/icon-pending1.png) no-repeat 18% 37%;display:block;height:50px;text-align:center;padding-top:20px;}
+
+.text-form3vib{font-size:13px;color:#333;padding-left:45px;line-height:1.3em;}
+.spec-tit-cont p{font-size:12px !important;}
+b {font-weight: bold !important;}
+
+
+
+/* combobox */
+
+.RadComboBox_VIB_WB
+{
+	vertical-align: middle;
+    display: -moz-inline-stack;
+    display: inline-block;
+}
+
+*+html .RadComboBox_VIB_WB  
+{
+    display: inline;
+    zoom: 1;
+}
+
+* html .RadComboBox_VIB_WB  
+{
+    display: inline;
+    zoom: 1;
+	vertical-align: top; 
+}
+
+.RadComboBox_VIB_WB table
+{
+	border: 0;
+	border-collapse: collapse;
+}
+
+.RadComboBox_VIB_WB table td.rcbInputCell
+{
+	width: 406px !important;
+	height: 20px;
+	line-height: 20px;
+	vertical-align: middle;
+	padding-left: 6px !important;
+	border: 0;
+}
+
+* html .RadComboBox_VIB_WB td.rcbInputCell
+{
+	height /**/: 22px;
+	line-height /**/: 22px;
+}
+
+/* combobox */
+.RadComboBox_VIB_WB {
+	background-image: url(../images/drop-down-list-bg.jpg);
+	background-position: left;
+	background-repeat: repeat-x;
+	height: 46px;
+	border-left: solid 1px #E2E2E2;
+}
+.RadComboBox_VIB_WB table {
+	height: 39px;
+}
+.RadComboBoxDropDown_VIB_WB .rcbHovered{
+	/*background-color: silver !important;*/
+	background: #0066b3 !important;
+}
+.RadComboBox_VIB_WB .rcbInputCellLeft,
+.RadComboBox_VIB_WB .rcbInputCellRight,
+.RadComboBox_VIB_WB .rcbArrowCellLeft,
+.RadComboBox_VIB_WB .rcbArrowCellRight
+{
+	background-color: transparent;
+	background-repeat: no-repeat;		
+}
+
+
+.RadComboBox_VIB_WB .rcbInputCell .rcbInput
+{
+	width: 100%;
+	background: transparent;
+	border: 0;
+	vertical-align: middle;
+	padding: 2px 0 1px;
+	outline: 0;
+    -webkit-appearance: none; /* iOS renders an additional shadow on the input */
+    font-size: 15px;
+    color: #0066B3;
+}
+
+* html .RadComboBox_VIB_WB .rcbInputCell .rcbInput
+{
+	height /**/: 18px;
+	padding /**/: 2px 0 0; /* This should fix the ajax introduced height in IE6 */
+}
+
+.RadComboBox_VIB_WB .rcbInputCell .rcbEmptyMessage
+{
+	font-style: italic;
+}
+
+.RadComboBox_VIB_WB .rcbReadOnly .rcbInput
+{
+	cursor: default;
+}
+
+.RadComboBox_VIB_WB table td.rcbInputCell,
+.RadComboBox_VIB_WB .rcbInputCell .rcbInput
+{
+	padding-left: 2px;
+}
+
+.RadComboBox_rtl table td.rcbInputCell,
+.RadComboBox_rtl .rcbInputCell .rcbInput
+{
+	padding-right: 2px;
+	padding-left: 0;
+}
+
+.RadComboBox_VIB_WB table td.rcbArrowCell
+{
+	width: 18px;
+	padding: 0;
+	border: 0;
+}
+
+.RadComboBox_VIB_WB .rcbArrowCell a
+{
+	position: relative;
+	outline: 0;
+	overflow: hidden;
+	display: block;
+	width: 18px;
+	height: 22px;
+    cursor: default;
+	text-decoration: none;
+	text-indent: 9999px;
+	font-size: 0;
+	line-height: 1px;
+}
+
+div.RadComboBox_VIB_WB td.rcbArrowCellHidden,
+div.RadComboBox_VIB_WB .rcbArrowCellHidden a
+{
+	width: 3px;
+}
+
+/* Read-only styles */
+
+.RadComboBox_VIB_WB .rcbReadOnly td.rcbArrowCell { width: 39px !important; height:46px;width:39px !important;background: url(../images/drop-down-list-click.png) no-repeat;
+border:none; }
+.RadComboBox_VIB_WB .rcbReadOnly td.rcbArrowCell a { width: 39px !important; }
+
+.RadComboBox_VIB_WB .rcbReadOnly td.rcbArrowCellHidden,
+.RadComboBox_VIB_WB .rcbReadOnly td.rcbArrowCellHidden a { width: 3px; } 
+
+/* dropdown */
+
+.rcbSlide
+{
+	position: absolute;
+	overflow: hidden;
+	display: none;
+	_height: 1px;
+	float: left;
+	z-index: 6000 !important;
+}
+
+.RadComboBoxDropDown_VIB_WB .rcbHeader,
+.RadComboBoxDropDown_VIB_WB .rcbFooter,
+.RadComboBoxDropDown_VIB_WB .rcbMoreResults,
+.RadComboBoxDropDown_VIB_WB .rcbMoreResults a
+{
+	background-repeat: no-repeat;
+}
+
+.RadComboBoxDropDown_VIB_WB
+{
+	position: absolute;
+	cursor: default;
+	font-size: 11px;
+	border: solid 1px #ccc !important;
+	background-color: white;	
+}
+
+.RadComboBoxDropDown_rtl
+{
+	text-align: right;
+	direction: rtl;
+}
+
+.RadComboBoxDropDown_VIB_WB .rcbScroll
+{
+	overflow: auto !important;
+	position: relative !important;
+	background-color: #DFF1FF;
+	border-bottom: none;
+	width: 100%;
+	font-size: 13px;
+	color: #8F8F8F;	
+}
+
+.RadComboBoxDropDown_VIB_WB .rcbList
+{
+	list-style: none outside;
+	position: relative;
+	margin: 0;
+	padding: 0;
+}
+
+.RadComboBoxDropDown_VIB_WB .rcbHeader,
+.RadComboBoxDropDown_VIB_WB .rcbFooter
+{
+	background-repeat: repeat-x;
+	padding: 5px 7px 4px;
+}
+
+.RadComboBoxDropDown_VIB_WB .rcbHeader
+{
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+	margin-bottom: 1px;
+}
+
+.RadComboBoxDropDown_VIB_WB .rcbFooter
+{
+	border-top-width: 1px;
+	border-top-style: solid;
+	margin-top: 1px;
+}
+
+.RadComboBoxDropDown_VIB_WB .rcbNoWrap .rcbItem,
+.RadComboBoxDropDown_VIB_WB .rcbNoWrap .rcbHovered,
+.RadComboBoxDropDown_VIB_WB .rcbNoWrap .rcbDisabled,
+.RadComboBoxDropDown_VIB_WB .rcbNoWrap .rcbLoading
+{
+	white-space: nowrap;
+}
+
+.RadComboBoxDropDown_VIB_WB .rcbItem,
+.RadComboBoxDropDown_VIB_WB .rcbHovered,
+.RadComboBoxDropDown_VIB_WB .rcbDisabled,
+.RadComboBoxDropDown_VIB_WB .rcbLoading,
+.RadComboBoxDropDown_VIB_WB .rcbCheckAllItems,
+.RadComboBoxDropDown_VIB_WB .rcbCheckAllItemsHovered
+{
+	padding: 0px;
+	margin: 0 1px;
+}
+.RadComboBoxDropDown_VIB_WB .rcbHovered .acct-name{
+	color: #CDEAFF;
+}
+.RadComboBoxDropDown_VIB_WB .rcbHovered .acct-id{
+	color: #FDB813;
+}
+html>/**/body .RadComboBoxDropDown_VIB_WB .rcbItem,
+html>/**/body .RadComboBoxDropDown_VIB_WB .rcbHovered,
+html>/**/body .RadComboBoxDropDown_VIB_WB .rcbDisabled,
+html>/**/body .RadComboBoxDropDown_VIB_WB .rcbLoading,
+html>/**/body .RadComboBoxDropDown_VIB_WB .rcbCheckAllItems,
+html>/**/body .RadComboBoxDropDown_VIB_WB .rcbCheckAllItemsHovered
+{
+	min-height: 13px;
+	height: 52px;
+}
+
+*+html .RadComboBoxDropDown_VIB_WB .rcbItem,
+*+html .RadComboBoxDropDown_VIB_WB .rcbHovered,
+*+html .RadComboBoxDropDown_VIB_WB .rcbDisabled,
+*+html .RadComboBoxDropDown_VIB_WB .rcbLoading,
+*+html .RadComboBoxDropDown_VIB_WB .rcbCheckAllItems,
+*+html .RadComboBoxDropDown_VIB_WB .rcbCheckAllItemsHovered
+{
+	height: auto;
+}
+*+html .RadComboBoxDropDown_VIB_WB .rcbCheckAllItemsHovered
+{
+	background: #0066b3;
+}
+.RadComboBoxDropDown_rtl .rcbItem,
+.RadComboBoxDropDown_rtl .rcbHovered,
+.RadComboBoxDropDown_rtl .rcbDisabled,
+.RadComboBoxDropDown_rtl .rcbLoading,
+.RadComboBoxDropDown_rtl .rcbCheckAllItems,
+.RadComboBoxDropDown_rtl .rcbCheckAllItemsHovered
+{
+	padding: 2px 6px;
+}
+
+.RadComboBoxDropDown_VIB_WB .rcbCheckBox,
+.RadComboBoxDropDown_VIB_WB .rcbCheckAllItemsCheckBox
+{
+	vertical-align: middle;
+}
+
+
+.RadComboBoxDropDown_VIB_WB .rcbImage
+{
+	vertical-align: middle;
+	margin: 0 6px 2px 0;
+}
+
+.RadComboBoxDropDown_rtl .rcbImage
+{
+	margin: 0 0 2px 6px;
+}
+
+.RadComboBoxDropDown_VIB_WB .rcbHovered
+{
+	background-repeat: repeat-x;
+}
+
+.RadComboBoxDropDown_VIB_WB em
+{
+	font-style: normal;
+	font-weight: bold;
+}
+
+*+html div.RadComboBoxDropDown_VIB_WB .rcbList { zoom: 1; } /* IE7 item width fix */
+* html div.RadComboBoxDropDown_VIB_WB .rcbItem,
+* html div.RadComboBoxDropDown_VIB_WB .rcbHovered { zoom: 1; } /* IE6 item width fix */
+
+.RadComboBox_VIB_WB .rcbDisabled .rcbInputCell .rcbInput,
+.RadComboBoxDropDown_VIB_WB .rcbDisabled
+{
+	cursor: default;
+}
+
+.RadComboBoxDropDown_VIB_WB .rcbLoading
+{
+	text-align: center;
+}
+
+.RadComboBoxDropDown_VIB_WB .rcbMoreResults
+{
+	clear: both;
+	border-top-width: 1px;
+	border-top-style: solid;
+	background-repeat: repeat-x;
+	position: relative;
+	padding: 0 6px 0;
+	text-align: center;
+	margin-top: 1px;
+}
+
+.RadComboBoxDropDown_VIB_WB .rcbMoreResults a
+{
+	display: inline-block;
+	width: 15px;
+	height: 9px;
+	text-indent: -9999px;
+	overflow: hidden;
+	text-decoration: none;
+	cursor: pointer;
+	vertical-align: middle;
+}
+
+* html .RadComboBoxDropDown_VIB_WB .rcbMoreResults a
+{
+	font-size: 0;
+	line-height: 0;
+	text-indent: 0;
+}
+
+*+html .RadComboBoxDropDown_VIB_WB .rcbMoreResults a
+{
+	font-size: 0;
+	line-height: 0;
+	text-indent: 0;
+}
+
+.RadComboBoxDropDown_VIB_WB .rcbMoreResults span
+{
+	vertical-align: middle;
+	height: 19px;
+	line-height: 19px;
+	display: inline-block;
+}
+
+.RadComboBoxDropDown_VIB_WB .rcbSeparatedList .rcbItem,
+.RadComboBoxDropDown_VIB_WB .rcbSeparatedList .rcbHovered,
+.RadComboBoxDropDown_VIB_WB .rcbSeparatedList .rcbDisabled,
+.RadComboBoxDropDown_VIB_WB .rcbSeparatedList .rcbLoading
+{
+	padding-left: 12px;
+}
+
+.RadComboBoxDropDown_VIB_WB .rcbSeparatedList .rcbSeparator
+{
+	padding-left: 6px;
+}
+
+/*<ComboBox with Label>*/
+
+.RadComboBoxWithLabel_VIB_WB .rcbLabel
+{
+	vertical-align: top;
+	padding-right: 10px;
+	line-height: 22px;
+	zoom: 1;
+}
+
+.RadComboBox_rtl .rcbLabel
+{
+	text-align: right;
+	padding: 0 0 0 10px;
+}
+*+html .RadComboBox_rtl .rcbLabel { margin-right: 5px; }
+* html .RadComboBox_rtl .rcbLabel { margin-right: 5px; }
+
+.RadComboBoxWithLabel_VIB_WB table
+{
+	vertical-align: top;
+	float: none;
+	display: inline-block;
+	zoom: 1;
+}
+*+html .RadComboBoxWithLabel_VIB_WB table { display: inline; margin-right: 5px; }
+* html .RadComboBoxWithLabel_VIB_WB table { display: inline; margin-right: 5px; }
+
+.RadComboBoxWithLabel_VIB_WB
+{
+	white-space: nowrap;
+	zoom: normal;
+}
+
+
+.RadComboBoxDropDown_VIB_WB .rcbCheckAllItems,
+.RadComboBoxDropDown_VIB_WB .rcbCheckAllItemsHovered {
+	background-image: url('Common/Gradients/lightSmoothTile.png');
+	_background-image: none;
+	background-position: 0 0;
+	background-repeat: repeat-x;
+}
+.RadComboBoxDropDown_VIB_WB .rcbCheckAllItemsHovered {
+	background-position: 0 -20px;
+}
+
+/*</ComboBox with Label>*/
+/*radcombobox2*/
+.RadComboBox_VIB_WB2 {
+	background-image: url(../images/form-bgwb2.jpg);
+	background-position: left;
+	background-repeat: repeat-x;
+	height: 28px;
+	border: solid 1px #b7b7b7;
+	border-radius: 4px;
+}
+.RadComboBox_VIB_WB2 table {
+	height: 28px;
+}
+.RadComboBox_VIB_WB2 .rcbInputCell .rcbInput
+{
+	width: 95%;
+	background: transparent;
+	border: 0;
+	vertical-align: middle;
+	padding: 2px 10px;
+	outline: 0;
+    -webkit-appearance: none; /* iOS renders an additional shadow on the input */
+    font-size: 13px;
+    color: #333;
+}
+.RadComboBox_VIB_WB2 .rcbReadOnly td.rcbArrowCell { height:29px;width:25px; border-left:solid 1px #ccc; background: url(../images/drop-arrow.png) no-repeat; }
+.RadComboBox_VIB_WB2 .rcbReadOnly td.rcbArrowCell a { width: 26px; }
+.RadComboBox_VIB_WB2 .rcbReadOnly td.rcbArrowCellHidden,
+.RadComboBox_VIB_WB2 .rcbReadOnly td.rcbArrowCellHidden a { width: 3px; } 
+.RadComboBox_VIB_WB2 .rcbArrowCell a
+{
+	position: relative;
+	outline: 0;
+	overflow: hidden;
+	display: block;
+	width: 18px;
+	height: 22px;
+    cursor: default;
+	text-decoration: none;
+	text-indent: 9999px;
+	font-size: 0;
+	line-height: 1px;
+}
+.RadComboBoxDropDown_VIB_WB2
+{
+	border: none !important;
+	background-color: #dff1ff;
+}
+.RadComboBoxDropDown_VIB_WB2 .rcbScroll 
+{
+	overflow: auto !important;
+	position: relative !important;	
+	border-bottom: none;
+	width: 100%;	
+}
+.VIB_DROP_WB2 {		
+	z-index: 1000;
+	background: #DFF1FF;	
+	width: 100%;	
+}
+
+/*end radcombobox2*/
+
+#divToAccount .selectOption h2{ width:170px;}
+#divToAccount .selectOption p{ width:145px;}
+
+#setuparegulartransfer table tr td.form-r3{ width:205px;}
+.VIB_DROP_WB2 .rcbScroll .rcbList .rcbItem, ..VIB_DROP_WB2  .rcbScroll .rcbList .rcbHovered, ..VIB_DROP_WB2  .rcbScroll .rcbList .rcbDisabled
+    {
+        padding: 10px;
+        border: solid 1px #ccc;
+    }
+    .VIB_DROP_WB2 .rcbItem,.VIB_DROP_WB2  .rcbHovered
+    {
+        cursor: pointer;
+    }
+  
+    .VIB_DROP_WB2 li.rcbItem,.VIB_DROP_WB2  li.rcbHovered {
+        cursor: pointer;padding:10px;
+    }
+    .VIB_DROP_WB2 li.rcbHovered {
+        color: white;
+        background: #0066b3;;padding:10px;
+    }
+    .VIB_DROP_WB2 li.rcbItem h2,.VIB_DROP_WB2  li.rcbHovered h2 {
+        float: left;
+        font-size: 12px;
+        
+    }
+    .VIB_DROP_WB2 li.rcbItem p,.VIB_DROP_WB2  li.rcbHovered p {
+        float: right;
+        
+        font-size: 11px;
+    }
+    .VIB_DROP_WB2 li.rcbItem h2 small,.VIB_DROP_WB2  li.rcbHovered h2 small {
+        
+        font-size: 10px;
+        display: block;
+        padding-top: 5px;
+    }
+	.ui-datepicker{width: 340px;}
+.notehdsd {
+font-size: 12px;
+text-align: right;
+float: right;
+padding-right: 30px;
+color: #0066b3;
+text-decoration: none;
+font-family: MyriadPro, verdana, sans-serif;
+}
+#processing_overlay
+{
+	position: absolute;
+	z-index: 99998;
+	top: 0px;
+	left: 0px;
+	width: 100%;
+	height: auto;
+	background-color:#000;
+	/* Theoretically for IE 8 & 9 (more valid) */	
+	/* ...but not required as filter works too */
+	/* should come BEFORE filter */
+	-ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=50)";
+	/* This works in IE 8 & 9 too */
+	/* ... but also 5, 6, 7 */
+	filter: alpha(opacity=50);
+	/* Older than Firefox 0.9 */
+	-moz-opacity:0.5;
+	/* Safari 1.x (pre WebKit!) */
+	-khtml-opacity: 0.5;
+	/* Modern!
+	/* Firefox 0.9+, Safari 2?, Chrome any?
+	/* Opera 9+, IE 9+ */
+	opacity:0.5;
+	cursor:wait;
+}						
+#processing_container {
+	font-family: Arial, sans-serif;
+	font-size: 12px;
+	min-width: 300px; /* Dialog will be no smaller than this */
+	max-width: 600px; /* Dialog will wrap after this width */
+	color: #000;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	border-radius: 5px;
+}
+
+#processing_title {
+	font-size: 14px;
+	font-weight: bold;
+	text-align: center;
+	line-height: 1.75em;
+	color: #FFF;
+	cursor: default;
+	padding: 0em;
+	margin: 0em;
+}
+
+#processing_content {
+	text-align: center;
+	padding: 1em 1.75em;
+	margin: 0em;
+}
+
+#processing_message {
+	text-align:center;
+	vertical-align:middle;
+}
+.otp-box{width: 26px !important;}
+
+.live-chat-box {
+  position: fixed;
+  bottom: 0;
+  right: 1.25em;
+  z-index: 10;
+  max-width: 17.8125em; }
+  .live-chat-box.minimize .input-wrap, .live-chat-box.minimize .icon--minus, .live-chat-box.minimize .main-content {
+    display: none; }
+  .live-chat-box .header {
+    background: #0066b3;
+    height: 40px;
+    color: #fff;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    text-transform: uppercase;
+    font-size: 0.875em;
+    word-spacing: 4px; }
+    .live-chat-box .header a {
+      color: #fff;
+      line-height: 40px; }
+    .live-chat-box .header .icon {
+      line-height: 40px; }
+    .live-chat-box .header .icon--mesage {
+      font-size: 1.4285714286em;
+      margin-right: 0.5em; }
+  .live-chat-box .bar {
+    display: inline-block;
+    margin-left: 1.4285714286em;
+    margin-right: 1.25em; }
+  .live-chat-box .icon--minus {
+    padding-right: 1.25em;
+    padding-left: 1.25em; }
+  .live-chat-box .main-content {
+    background: #f3f3f3;
+    border: 1px solid #ccc;
+    border-top: 0;
+    height: 17.5em;
+    overflow-y: scroll;
+    width: 100%;
+    -webkit-overflow-scrolling: touch; }
+  .live-chat-box .placeholder {
+    padding: 1.875em;
+    position: relative;
+    min-height: 8.125em; }
+    .live-chat-box .placeholder .msg, .live-chat-box .placeholder .img {
+      display: inline-block;
+      vertical-align: middle; }
+    .live-chat-box .placeholder .img {
+      max-width: 4.375em; }
+    .live-chat-box .placeholder .msg {
+      width: 60%;
+      display: inline-block;
+      font-size: 0.875em;
+      padding-left: 1.25em;
+      margin: 0; }
+  .live-chat-box .input-wrap {
+    background: #fff;
+    position: relative;
+    border: 1px solid #ccc;
+    border-top: 0; }
+  .live-chat-box .input {
+    border: 0;
+    outline: 0;
+    padding: 0 0.9375em;
+    line-height: 40px;
+    display: block;
+    width: 100%;
+    padding-right: 3.125em;
+    font-size: 0.875em;
+    min-height: 40px; }
+  .live-chat-box .send {
+    position: absolute;
+    height: 100%;
+    right: 0;
+    top: 0;
+    width: 40px;
+    line-height: 40px;
+    display: inline-block;
+    padding: 0.625em 0.625em; }
+    .live-chat-box .send img {
+      display: block;
+      height: 100%; }
+  .live-chat-box .text-waiting {
+    color: #999;
+    font-size: 0.8571428571em;
+    text-align: center;
+    margin-bottom: 0; }
+  .live-chat-box .cursor-default {
+    cursor: default; }
+  .live-chat-box .desktop-version {
+    display: none; }
+
+.live-chat-offline .brief-boxchat {
+  margin: 0 0 1.5rem; }
+  .live-chat-offline .brief-boxchat span {
+    font-weight: 600; }
+.live-chat-offline .modal-header {
+  background: #0066b3;
+  height: 56px;
+  color: #fff;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  text-transform: uppercase;
+  font-size: 1.125em;
+  word-spacing: 4px;
+  text-align: center; }
+  .live-chat-offline .modal-header .icon--mesage {
+    font-size: 1.4285714286em;
+    margin-right: 0.5em;
+    vertical-align: middle; }
+.live-chat-offline .modal-button {
+  text-align: center;
+  color: #fff;
+  margin: 1.5rem 0 2.5rem; }
+  .live-chat-offline .modal-button button {
+    margin: 0 0.7rem;
+    text-transform: uppercase;
+    width: auto; }
+  .live-chat-offline .modal-button .btn-cancel {
+    background-color: #999; }
+    .live-chat-offline .modal-button .btn-cancel:hover {
+      background-color: #adafb1; }
+.live-chat-offline .modal-body {
+  padding: 1.5rem 3rem; }
+  .live-chat-offline .modal-body label {
+    width: 100%; }
+  .live-chat-offline .modal-body textarea {
+    width: 100%;
+    margin-top: 7px; }
+  .live-chat-offline .modal-body input {
+    margin-top: 7px; }
+  .live-chat-offline .modal-body .pair-input label {
+    width: 45%; }
+
+.conversation-list {
+  padding: 0.9375em;
+  padding-bottom: 0;
+  margin-bottom: 0; }
+  .conversation-list .conversation {
+    border-top: 1px solid #ccc;
+    padding-top: 0.9375em; }
+    .conversation-list .conversation .author {
+      float: left;
+      margin-top: 0;
+      font-weight: 600; }
+    .conversation-list .conversation .time {
+      float: right;
+      font-size: 0.8571428571em;
+      color: #999; }
+    .conversation-list .conversation .message {
+      clear: both;
+      font-size: 1em;
+      margin-bottom: 0;
+      padding-bottom: 1.25em; }
+    .conversation-list .conversation:first-child {
+      border-top: 0; }
+  .conversation-list .conversation--end {
+    border-top: 0;
+    padding-bottom: 0.9375em; }
+  .conversation-list .rate-list .icon {
+    font-size: 1.5625em;
+    color: #0066b3; }
+
+.conversation--status {
+  padding: 0.9375em; }
+  .conversation--status .chatting, .conversation--status .waiting {
+    display: none; }
+  .conversation--status.chatting .chatting {
+    display: block; }
+  .conversation--status.waiting .waiting {
+    display: block; }
+
+.conversation--rate {
+  text-align: center;
+  margin-bottom: 0.9375em; }
+
+.live-chat-mobile {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  max-width: 100%; }
+  .live-chat-mobile .header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    border-radius: 0;
+    z-index: 1; }
+  .live-chat-mobile .main-content {
+    padding-top: 56px;
+    height: auto;
+    padding-bottom: 56px; }
+  .live-chat-mobile .input-wrap {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1;
+    border-top: 1px solid #ccc; }
+  .live-chat-mobile .bar {
+    display: block;
+    text-align: center; }
+  .live-chat-mobile .icon--mesage {
+    display: none; }
+.icon--mesage:before {
+  content: '\e05d'; }
+
+.icon--message:before {
+  content: '\e05e'; }

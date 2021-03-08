@@ -1,0 +1,58 @@
+#processing_overlay
+{
+	position: absolute;
+	z-index: 99998;
+	top: 0px;
+	left: 0px;
+	width: 100%;
+	height: auto;
+	background-color:#000;
+	/* Theoretically for IE 8 & 9 (more valid) */	
+	/* ...but not required as filter works too */
+	/* should come BEFORE filter */
+	-ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=50)";
+	/* This works in IE 8 & 9 too */
+	/* ... but also 5, 6, 7 */
+	filter: alpha(opacity=50);
+	/* Older than Firefox 0.9 */
+	-moz-opacity:0.5;
+	/* Safari 1.x (pre WebKit!) */
+	-khtml-opacity: 0.5;
+	/* Modern!
+	/* Firefox 0.9+, Safari 2?, Chrome any?
+	/* Opera 9+, IE 9+ */
+	opacity:0.5;
+	cursor:wait;
+}						
+#processing_container {
+	font-family: Arial, sans-serif;
+	font-size: 12px;
+	min-width: 300px; /* Dialog will be no smaller than this */
+	max-width: 600px; /* Dialog will wrap after this width */
+	color: #000;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	border-radius: 5px;
+}
+
+#processing_title {
+	font-size: 14px;
+	font-weight: bold;
+	text-align: center;
+	line-height: 1.75em;
+	color: #FFF;
+	cursor: default;
+	padding: 0em;
+	margin: 0em;
+}
+
+#processing_content {
+	text-align: center;
+	padding: 1em 1.75em;
+	margin: 0em;
+}
+
+#processing_message {
+	text-align:center;
+	vertical-align:middle;
+}
